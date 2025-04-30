@@ -1,0 +1,27 @@
+/* Bottom Nav styles */
+.bottom-nav-container {
+  transition: transform 0.3s ease;
+}
+
+/* For screens larger than 768px, hide the bottom nav */
+@media (min-width: 768px) {
+  .bottom-nav-container {
+    transform: translateY(100%);
+  }
+}
+
+/* Add appropriate padding to the bottom of content on mobile */
+@media (max-width: 767px) {
+  .main-content-area {
+    padding-bottom: 70px; /* Adjust based on bottom nav height */
+  }
+}
+
+/* Nav button press animation */
+.nav-button {
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.nav-button:active {
+  transform: scale(0.95);
+}
