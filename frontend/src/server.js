@@ -1,5 +1,8 @@
-export const server = "http://api.bhavyabazaar.com";
+// Update API endpoint to use HTTPS
+export const server = "https://api.bhavyabazaar.com";
 
-export const backend_url = "http://api.bhavyabazaar.com/";
+// Update backend URL to use HTTPS
+export const backend_url = "https://api.bhavyabazaar.com/";
 
-export const socket_url = "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io";
+// Update WebSocket URL to use secure WebSocket connection that matches the domain
+export const socket_url = "wss://bhavyabazaar.com:3003/ws";
