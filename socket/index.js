@@ -1,30 +1,58 @@
 const socketIO = require("socket.io");
 const http = require("http");
+const https = require("https");
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 const app = express();
-const server = http.createServer(app);
+
+// Load env variables first to ensure they're available
+require("dotenv").config({
+  path: path.join(__dirname, "config", ".env")
+});
+
+// Check if SSL certificates are available
+const useSSL = process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH && 
+               fs.existsSync(process.env.SSL_KEY_PATH) && fs.existsSync(process.env.SSL_CERT_PATH);
+
+let server;
+if (useSSL) {
+  // Create HTTPS server with SSL certificates for WSS
+  console.log("Starting secure WebSocket server (WSS)");
+  const sslOptions = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+  };
+  server = https.createServer(sslOptions, app);
+} else {
+  // Create regular HTTP server for WS (development only)
+  console.log("Starting non-secure WebSocket server (WS) - FOR DEVELOPMENT ONLY");
+  server = http.createServer(app);
+}
+
+// Initialize Socket.IO with CORS configuration
 const io = socketIO(server, {
   cors: {
     origin: ["http://localhost:3000", "https://bhavyabazaar.com", "http://bhavyabazaar.com"],
     credentials: true,
   },
+  path: "/socket.io", // Explicitly setting the Socket.IO path
 });
 
-require("dotenv").config({
-  path: "./.env",
-});
-
+// Express middleware
 app.use(cors({
   origin: ["http://localhost:3000", "https://bhavyabazaar.com", "http://bhavyabazaar.com"],
   credentials: true
 }));
 app.use(express.json());
 
+// Basic route for health check
 app.get("/", (req, res) => {
-  res.send("Hello world from socket server!");
+  res.send("Socket server is running!");
 });
 
+// Socket.IO connection handling
 let users = [];
 
 const addUser = (userId, socketId) => {
@@ -145,7 +173,9 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 4000;
+// Use the PORT from environment variable or fallback to 3003
+const PORT = process.env.PORT || 3003;
 server.listen(PORT, () => {
   console.log(`Socket server is running on port ${PORT}`);
+  console.log(`Mode: ${useSSL ? 'Secure (WSS)' : 'Non-secure (WS)'}`);
 });

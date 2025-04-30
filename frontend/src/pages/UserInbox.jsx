@@ -3,14 +3,13 @@ import Header from "../components/Layout/Header";
 import { useSelector } from "react-redux";
 import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-import { backend_url, server } from "../server";
+import { backend_url, server, socket_url } from "../server";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
 import styles from "../styles/styles";
-const ENDPOINT = "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io/";
-const socketId = socketIO(ENDPOINT, { transports: ["websocket"] });
+const socketId = socketIO(socket_url, { transports: ["websocket"] });
 
 const UserInbox = () => {
   const { user } = useSelector((state) => state.user);
