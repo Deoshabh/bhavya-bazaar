@@ -1,5 +1,5 @@
-export const server = "http://localhost:8000/api/v2";
+export const server = "http://api.bhavyabazaar.com";
 
-export const backend_url = "http://localhost:8000/";
+export const backend_url = "http://api.bhavyabazaar.com/";
 
-export const socket_url = "http://localhost:4000";
+export const socket_url = "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io";
