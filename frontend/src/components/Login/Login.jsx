@@ -3,7 +3,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { server } from "../../server";
+import { server, debugConnection, getFallbackUrl } from "../../server";
 import { toast } from "react-toastify";
 
 const Login = () => {
@@ -29,24 +29,68 @@ const Login = () => {
 
     try {
       setLoading(true);
-      const { data } = await axios.post(
-        `${server}/user/login-user`,
-        {
-          phoneNumber,
-          password,
-        },
-        { withCredentials: true }
-      );
-      toast.success("Login successful!");
-      setPhoneNumber("");
-      setPassword("");
-      setLoading(false);
-      navigate("/");
-      window.location.reload(true); 
+      const apiUrl = debugConnection(`${server}/user/login-user`);
+      
+      try {
+        const { data } = await axios.post(
+          apiUrl,
+          {
+            phoneNumber,
+            password,
+          },
+          { withCredentials: true, timeout: 15000 }
+        );
+        toast.success("Login successful!");
+        setPhoneNumber("");
+        setPassword("");
+        setLoading(false);
+        navigate("/");
+        window.location.reload(true); 
+      } catch (mainError) {
+        console.error("Main login error:", mainError.message);
+        
+        // If there's a certificate error or network error, try fallback URL
+        if (mainError.message.includes("certificate") || 
+            mainError.message.includes("network") ||
+            mainError.message.includes("SSL") ||
+            !mainError.response) {
+            
+          const fallbackUrl = debugConnection(getFallbackUrl(apiUrl));
+          console.log(`Certificate/network error detected, trying fallback URL: ${fallbackUrl}`);
+          
+          try {
+            const { data } = await axios.post(
+              fallbackUrl,
+              {
+                phoneNumber,
+                password,
+              },
+              { withCredentials: true }
+            );
+            toast.success("Login successful (using fallback connection)!");
+            setPhoneNumber("");
+            setPassword("");
+            setLoading(false);
+            navigate("/");
+            window.location.reload(true);
+            return;
+          } catch (fallbackError) {
+            console.error("Fallback login error:", fallbackError);
+            throw fallbackError;
+          }
+        }
+        throw mainError;
+      }
     } catch (err) {
       setLoading(false);
       if (err.response && err.response.data) {
         toast.error(err.response.data.message || "Login failed");
+      } else if (err.request) {
+        toast.error("Network error. Please check your internet connection and try again.");
+        console.error("Request error - no response:", err.request);
+      } else if (err.message.includes("certificate") || err.message.includes("SSL")) {
+        toast.error("Connection security error. Please try again.");
+        console.error("SSL error:", err.message);
       } else {
         toast.error("Login failed. Please check your connection.");
       }

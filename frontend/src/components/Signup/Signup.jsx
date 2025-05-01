@@ -4,7 +4,7 @@ import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
 import axios from "axios";
-import { server } from "../../server";
+import { server, isDevelopment } from "../../server";
 import { toast } from "react-toastify";
 
 const Signup = () => {
@@ -56,8 +56,11 @@ const Signup = () => {
             }
         }
 
-        const config = { headers: { "Content-Type": "multipart/form-data" } };
-
+        const config = { 
+            headers: { "Content-Type": "multipart/form-data" },
+            withCredentials: true 
+        };
+        
         const formData = new FormData();
         formData.append("name", name);
         formData.append("phoneNumber", phoneNumber);
@@ -78,22 +81,47 @@ const Signup = () => {
                 hasAvatar: !!avatar
             });
             
-            const { data } = await axios.post(
-                `${server}/user/create-user`,
-                formData,
-                config
-            );
-            
-            toast.success("Account created successfully!");
-            setName("");
-            setPhoneNumber("");
-            setPassword("");
-            setAvatar(null);
-            setLoading(false);
-            
-            // Navigate to home page after successful signup
-            navigate("/");
-            
+            // Try with HTTPS first
+            try {
+                const apiUrl = `${server}/user/create-user`;
+                const { data } = await axios.post(apiUrl, formData, config);
+                
+                toast.success("Account created successfully!");
+                setName("");
+                setPhoneNumber("");
+                setPassword("");
+                setAvatar(null);
+                setLoading(false);
+                
+                navigate("/login");
+            } catch (mainError) {
+                // If there's a certificate error, try HTTP instead
+                if (mainError.message.includes("certificate") || 
+                    (mainError.code && (mainError.code === 'ERR_CERT_AUTHORITY_INVALID' || 
+                    mainError.code === 'CERT_INVALID'))) {
+                    
+                    console.log("Certificate error detected, trying HTTP fallback");
+                    const httpUrl = server.replace('https:', 'http:');
+                    
+                    try {
+                        const { data } = await axios.post(`${httpUrl}/user/create-user`, formData, config);
+                        
+                        toast.success("Account created successfully!");
+                        setName("");
+                        setPhoneNumber("");
+                        setPassword("");
+                        setAvatar(null);
+                        setLoading(false);
+                        
+                        navigate("/login");
+                        return;
+                    } catch (fallbackError) {
+                        console.error("HTTP fallback error:", fallbackError);
+                        throw fallbackError;
+                    }
+                }
+                throw mainError;
+            }
         } catch (error) {
             setLoading(false);
             
@@ -102,22 +130,20 @@ const Signup = () => {
                 const statusCode = error.response.status;
                 const errorData = error.response.data;
                 
-                // Log detailed error info for debugging
                 console.error("Response status:", statusCode);
                 console.error("Response data:", errorData);
                 
-                // Display appropriate message based on error type
                 if (statusCode === 400) {
                     toast.error(errorData.message || "Please check your information and try again");
                 } else {
                     toast.error(errorData.message || "Registration failed. Please try again.");
                 }
             } else if (error.request) {
-                toast.error("Network error. Please check your internet connection and try again.");
                 console.error("Request error - no response:", error.request);
+                toast.error("Network error. Please check your internet connection.");
             } else {
+                console.error("Error:", error.message);
                 toast.error("An unexpected error occurred. Please try again.");
-                console.error("Error details:", error.message);
             }
         }
     }

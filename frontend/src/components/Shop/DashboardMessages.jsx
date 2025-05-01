@@ -1,15 +1,17 @@
-import axios from "axios";
-import React, { useRef, useState } from "react";
-import { useEffect } from "react";
-import { backend_url, server, socket_url } from "../../server";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
 import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
 import styles from "../../styles/styles";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { backend_url, server, socket_url, getSocketOptions } from "../../server";
+import axios from "axios";
 import { format } from "timeago.js";
 import socketIO from "socket.io-client";
-const socketId = socketIO(socket_url, { transports: ["websocket"] });
+import { toast } from "react-toastify";
+
+// Initialize socket with better connection handling
+let socket;
 
 const DashboardMessages = () => {
   const { seller } = useSelector((state) => state.seller);
@@ -17,16 +19,51 @@ const DashboardMessages = () => {
   const [arrivalMessage, setArrivalMessage] = useState(null);
   const [currentChat, setCurrentChat] = useState();
   const [messages, setMessages] = useState([]);
-  const [userData, setUserData] = useState(null);
   const [newMessage, setNewMessage] = useState("");
+  const [userData, setUserData] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const [images, setImages] = useState();
   const [activeStatus, setActiveStatus] = useState(false);
+  const [images, setImages] = useState();
   const [open, setOpen] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    socketId.on("getMessage", (data) => {
+    // Initialize socket connection with more robust connection options
+    try {
+      socket = socketIO(socket_url, getSocketOptions());
+      
+      console.log("DashboardMessages: Attempting to connect to socket server:", socket_url);
+      
+      // Socket connection handling
+      socket.on("connect", () => {
+        console.log("DashboardMessages: Socket connected successfully!");
+      });
+      
+      socket.on("connect_error", (err) => {
+        console.error("DashboardMessages: Socket connection error:", err.message);
+        toast.error("Chat service connection failed. Some features may not work properly.");
+      });
+      
+      socket.on("disconnect", (reason) => {
+        console.log("DashboardMessages: Socket disconnected:", reason);
+        if (reason === "io server disconnect") {
+          // Reconnect if server disconnected us
+          socket.connect();
+        }
+      });
+    } catch (error) {
+      console.error("DashboardMessages: Socket initialization error:", error);
+    }
+
+    return () => {
+      if (socket && socket.connected) {
+        socket.disconnect();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("getMessage", (data) => {
       setArrivalMessage({
         sender: data.senderId,
         text: data.text,
@@ -62,8 +99,8 @@ const DashboardMessages = () => {
   useEffect(() => {
     if (seller) {
       const userId = seller?._id;
-      socketId.emit("addUser", userId);
-      socketId.on("getUsers", (data) => {
+      socket.emit("addUser", userId);
+      socket.on("getUsers", (data) => {
         setOnlineUsers(data);
       });
     }
@@ -104,7 +141,7 @@ const DashboardMessages = () => {
       (member) => member.id !== seller._id
     );
 
-    socketId.emit("sendMessage", {
+    socket.emit("sendMessage", {
       senderId: seller._id,
       receiverId,
       text: newMessage,
@@ -128,7 +165,7 @@ const DashboardMessages = () => {
   };
 
   const updateLastMessage = async () => {
-    socketId.emit("updateLastMessage", {
+    socket.emit("updateLastMessage", {
       lastMessage: newMessage,
       lastMessageId: seller._id,
     });
@@ -167,7 +204,7 @@ const DashboardMessages = () => {
       (member) => member !== seller._id
     );
 
-    socketId.emit("sendMessage", {
+    socket.emit("sendMessage", {
       senderId: seller._id,
       receiverId,
       images: e,

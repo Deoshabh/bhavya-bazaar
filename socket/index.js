@@ -12,44 +12,103 @@ require("dotenv").config({
   path: path.join(__dirname, "config", ".env")
 });
 
-// Check if SSL certificates are available
-const useSSL = process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH && 
-               fs.existsSync(process.env.SSL_KEY_PATH) && fs.existsSync(process.env.SSL_CERT_PATH);
+// Accept connections from all domains where your app might be deployed
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://bhavyabazaar.com", 
+  "http://bhavyabazaar.com",
+  "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+  "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+  "https://api.bhavyabazaar.com",
+  "http://api.bhavyabazaar.com"
+];
 
+console.log("Allowed origins for socket connections:", allowedOrigins);
+
+// Check if SSL certificates are available
 let server;
-if (useSSL) {
-  // Create HTTPS server with SSL certificates for WSS
-  console.log("Starting secure WebSocket server (WSS)");
-  const sslOptions = {
-    key: fs.readFileSync(process.env.SSL_KEY_PATH),
-    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-  };
-  server = https.createServer(sslOptions, app);
-} else {
-  // Create regular HTTP server for WS (development only)
-  console.log("Starting non-secure WebSocket server (WS) - FOR DEVELOPMENT ONLY");
+try {
+  // For production with SSL
+  if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH && 
+      fs.existsSync(process.env.SSL_KEY_PATH) && fs.existsSync(process.env.SSL_CERT_PATH)) {
+    
+    console.log("Starting secure WebSocket server (WSS)");
+    console.log("Using SSL certificates from:", process.env.SSL_KEY_PATH, process.env.SSL_CERT_PATH);
+    
+    const sslOptions = {
+      key: fs.readFileSync(process.env.SSL_KEY_PATH),
+      cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+    };
+    server = https.createServer(sslOptions, app);
+  } else {
+    // For development or if no SSL certs available
+    console.log("SSL certificates not found. Starting non-secure WebSocket server (WS)");
+    server = http.createServer(app);
+  }
+} catch (error) {
+  console.error("Error in server setup:", error.message);
+  console.log("Falling back to non-secure WebSocket server");
   server = http.createServer(app);
 }
 
-// Initialize Socket.IO with CORS configuration
+// Initialize Socket.IO with enhanced configuration
 const io = socketIO(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://bhavyabazaar.com", "http://bhavyabazaar.com"],
+    origin: function(origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if the origin is allowed
+      if (allowedOrigins.indexOf(origin) === -1) {
+        console.log(`Socket connection request from unauthorized origin: ${origin}`);
+        return callback(null, true); // Allow all origins for now
+      }
+      
+      return callback(null, true);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   },
   path: "/socket.io", // Explicitly setting the Socket.IO path
+  transports: ["websocket", "polling"], // Support both WebSocket and long-polling
+  pingTimeout: 60000, // Increase ping timeout
+  pingInterval: 25000, // Ping clients more frequently
 });
 
 // Express middleware
 app.use(cors({
-  origin: ["http://localhost:3000", "https://bhavyabazaar.com", "http://bhavyabazaar.com"],
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log(`HTTP request from unauthorized origin: ${origin}`);
+      return callback(null, true); // Allow all origins for now
+    }
+    
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
 }));
+
 app.use(express.json());
 
 // Basic route for health check
 app.get("/", (req, res) => {
   res.send("Socket server is running!");
+});
+
+// Add status endpoint
+app.get("/status", (req, res) => {
+  res.json({
+    status: "online",
+    connections: io.engine.clientsCount,
+    mode: server instanceof https.Server ? "secure (WSS)" : "non-secure (WS)",
+    serverTime: new Date().toISOString(),
+    allowedOrigins
+  });
 });
 
 // Socket.IO connection handling
@@ -177,5 +236,5 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3003;
 server.listen(PORT, () => {
   console.log(`Socket server is running on port ${PORT}`);
-  console.log(`Mode: ${useSSL ? 'Secure (WSS)' : 'Non-secure (WS)'}`);
+  console.log(`Mode: ${server instanceof https.Server ? 'Secure (WSS)' : 'Non-secure (WS)'}`);
 });

@@ -44,10 +44,33 @@ const server = app.listen(process.env.PORT || 8000, () => {
 app.use(express.json());
 app.use(cookieParser());
 
+// Define all allowed origins
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://bhavyabazaar.com", 
+  "http://bhavyabazaar.com",
+  "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+  "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+  "https://api.bhavyabazaar.com",
+  "http://api.bhavyabazaar.com"
+];
+
 // Improved CORS setup with explicit allowed headers
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://bhavyabazaar.com", "http://bhavyabazaar.com"],
+    origin: function(origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if the origin is allowed
+      if (allowedOrigins.indexOf(origin) === -1) {
+        console.log(`Backend request from unauthorized origin: ${origin}`);
+        // For now, allow all origins in production to troubleshoot
+        return callback(null, true);
+      }
+      
+      return callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [

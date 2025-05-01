@@ -3,16 +3,21 @@ import Header from "../components/Layout/Header";
 import { useSelector } from "react-redux";
 import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-import { backend_url, server, socket_url } from "../server";
+import { backend_url, socket_url, getSocketOptions } from "../server";
 import axios from "axios";
+import { server } from "../server";
 import { useNavigate } from "react-router-dom";
-import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
+import { AiOutlineArrowRight, AiOutlineSend, AiOutlineAudio } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
 import styles from "../styles/styles";
-const socketId = socketIO(socket_url, { transports: ["websocket"] });
+import { toast } from "react-toastify";
+import { GrEmoji } from "react-icons/gr";
+
+// Initialize socket with better connection handling
+let socket;
 
 const UserInbox = () => {
-  const { user } = useSelector((state) => state.user);
+  const { user, loading } = useSelector((state) => state.user);
   const [conversations, setConversations] = useState([]);
   const [arrivalMessage, setArrivalMessage] = useState(null);
   const [currentChat, setCurrentChat] = useState();
@@ -26,48 +31,49 @@ const UserInbox = () => {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    socketId.on("getMessage", (data) => {
-      setArrivalMessage({
-        sender: data.senderId,
-        text: data.text,
-        createdAt: Date.now(),
+    // Initialize socket connection with more robust connection options
+    try {
+      socket = socketIO(socket_url, getSocketOptions());
+      
+      console.log("Attempting to connect to socket server:", socket_url);
+      
+      // Socket connection handling
+      socket.on("connect", () => {
+        console.log("Socket connected successfully!");
       });
-    });
-  }, []);
+      
+      socket.on("connect_error", (err) => {
+        console.error("Socket connection error:", err.message);
+        toast.error("Chat service connection failed. Some features may not work properly.");
+      });
+      
+      socket.on("disconnect", (reason) => {
+        console.log("Socket disconnected:", reason);
+        if (reason === "io server disconnect") {
+          // Reconnect if server disconnected us
+          socket.connect();
+        }
+      });
+    } catch (error) {
+      console.error("Socket initialization error:", error);
+    }
 
-  useEffect(() => {
-    arrivalMessage &&
-      currentChat?.members.includes(arrivalMessage.sender) &&
-      setMessages((prev) => [...prev, arrivalMessage]);
-  }, [arrivalMessage, currentChat]);
-
-  useEffect(() => {
-    const getConversation = async () => {
-      try {
-        const resonse = await axios.get(
-          `${server}/conversation/get-all-conversation-user/${user?._id}`,
-          {
-            withCredentials: true,
-          }
-        );
-
-        setConversations(resonse.data.conversations);
-      } catch (error) {
-        // console.log(error);
+    return () => {
+      if (socket && socket.connected) {
+        socket.disconnect();
       }
     };
-    getConversation();
-  }, [user, messages]);
+  }, []);
 
+  // Add user to online users when logged in
   useEffect(() => {
-    if (user) {
-      const userId = user?._id;
-      socketId.emit("addUser", userId);
-      socketId.on("getUsers", (data) => {
+    if (socket && user) {
+      socket.emit("addUser", user._id);
+      socket.on("getUsers", (data) => {
         setOnlineUsers(data);
       });
     }
-  }, [user]);
+  }, [user, socket]);
 
   const onlineCheck = (chat) => {
     const chatMembers = chat.members.find((member) => member !== user?._id);
@@ -104,7 +110,7 @@ const UserInbox = () => {
       (member) => member !== user?._id
     );
 
-    socketId.emit("sendMessage", {
+    socket.emit("sendMessage", {
       senderId: user?._id,
       receiverId,
       text: newMessage,
@@ -128,7 +134,7 @@ const UserInbox = () => {
   };
 
   const updateLastMessage = async () => {
-    socketId.emit("updateLastMessage", {
+    socket.emit("updateLastMessage", {
       lastMessage: newMessage,
       lastMessageId: user._id,
     });
@@ -164,7 +170,7 @@ const UserInbox = () => {
       (member) => member !== user._id
     );
 
-    socketId.emit("sendMessage", {
+    socket.emit("sendMessage", {
       senderId: user._id,
       receiverId,
       images: e,
