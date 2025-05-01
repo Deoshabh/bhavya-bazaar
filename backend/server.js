@@ -13,7 +13,7 @@ const path = require('path');
 
 // Load env variables first to ensure they're available everywhere
 require("dotenv").config({
-  path: "config/.env",
+  path: path.join(__dirname, "config", ".env"),
 });
 
 // Check required environment variables
@@ -35,9 +35,15 @@ const uploadsPath = path.join(__dirname, 'uploads');
 ensureDirectoryExists(uploadsPath);
 console.log('Uploads directory checked/created at:', uploadsPath);
 
-// create server
-const server = app.listen(process.env.PORT || 8000, () => {
-  console.log(`Server is running on http://localhost:${process.env.PORT || 8000}`);
+// Determine if we're in production
+const isProduction = process.env.NODE_ENV === 'production';
+console.log(`Running in ${isProduction ? 'production' : 'development'} mode`);
+
+// Create server with proper port from env
+const PORT = process.env.PORT || 5003;
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`API server URL: ${isProduction ? 'https://api.bhavyabazaar.com' : `http://localhost:${PORT}`}`);
 });
 
 // middlewares
@@ -94,7 +100,27 @@ app.use((req, res, next) => {
 // OPTIONS pre-flight handling for CORS
 app.options('*', cors());
 
-app.use("/", express.static("uploads"));
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Add a proper root route handler
+app.get("/", (req, res) => {
+  res.json({
+    message: "Bhavya Bazaar API Server",
+    status: "online",
+    version: "2.0",
+    endpoints: {
+      user: "/api/v2/user",
+      shop: "/api/v2/shop",
+      product: "/api/v2/product",
+      order: "/api/v2/order",
+      event: "/api/v2/event",
+      conversation: "/api/v2/conversation",
+      message: "/api/v2/message"
+    },
+    documentation: "https://bhavyabazaar.com/api-docs"
+  });
+});
 
 app.get("/test", (req, res) => {
   res.send("Hello World! Environment is properly configured.");

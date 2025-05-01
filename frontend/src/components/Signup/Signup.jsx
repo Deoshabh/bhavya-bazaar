@@ -4,7 +4,7 @@ import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
 import axios from "axios";
-import { server, isDevelopment } from "../../server";
+import { server, backend_url, isDevelopment } from "../../server";
 import { toast } from "react-toastify";
 
 const Signup = () => {
@@ -71,6 +71,9 @@ const Signup = () => {
             formData.append("file", avatar);
         }
 
+        // Define apiUrl outside try/catch so it's accessible in both blocks
+        const apiUrl = `${backend_url}api/v2/user/create-user`;
+        
         try {
             setLoading(true);
             toast.info("Creating account, please wait...");
@@ -81,11 +84,16 @@ const Signup = () => {
                 hasAvatar: !!avatar
             });
             
-            // Try with HTTPS first
-            try {
-                const apiUrl = `${server}/user/create-user`;
-                const { data } = await axios.post(apiUrl, formData, config);
-                
+            // Use the full API URL from backend_url rather than relying on server variable
+            // which might have the wrong path
+            console.log("Sending request to:", apiUrl);
+            
+            const response = await axios.post(apiUrl, formData, {
+                ...config,
+                timeout: 30000, // Add a 30-second timeout
+            });
+            
+            if (response.data) {
                 toast.success("Account created successfully!");
                 setName("");
                 setPhoneNumber("");
@@ -94,33 +102,6 @@ const Signup = () => {
                 setLoading(false);
                 
                 navigate("/login");
-            } catch (mainError) {
-                // If there's a certificate error, try HTTP instead
-                if (mainError.message.includes("certificate") || 
-                    (mainError.code && (mainError.code === 'ERR_CERT_AUTHORITY_INVALID' || 
-                    mainError.code === 'CERT_INVALID'))) {
-                    
-                    console.log("Certificate error detected, trying HTTP fallback");
-                    const httpUrl = server.replace('https:', 'http:');
-                    
-                    try {
-                        const { data } = await axios.post(`${httpUrl}/user/create-user`, formData, config);
-                        
-                        toast.success("Account created successfully!");
-                        setName("");
-                        setPhoneNumber("");
-                        setPassword("");
-                        setAvatar(null);
-                        setLoading(false);
-                        
-                        navigate("/login");
-                        return;
-                    } catch (fallbackError) {
-                        console.error("HTTP fallback error:", fallbackError);
-                        throw fallbackError;
-                    }
-                }
-                throw mainError;
             }
         } catch (error) {
             setLoading(false);
@@ -135,12 +116,47 @@ const Signup = () => {
                 
                 if (statusCode === 400) {
                     toast.error(errorData.message || "Please check your information and try again");
+                } else if (statusCode === 429) {
+                    toast.error("Too many attempts. Please try again later.");
                 } else {
                     toast.error(errorData.message || "Registration failed. Please try again.");
                 }
             } else if (error.request) {
                 console.error("Request error - no response:", error.request);
-                toast.error("Network error. Please check your internet connection.");
+                
+                // If there's a timeout or network issue, provide a clear message
+                if (error.code === 'ECONNABORTED') {
+                    toast.error("The request timed out. Please check your internet connection and try again.");
+                } else {
+                    toast.error("Unable to reach the server. Please check your internet connection.");
+                }
+                
+                // Try with HTTP fallback if HTTPS fails
+                if (apiUrl.startsWith('https://')) {
+                    try {
+                        console.log("Attempting HTTP fallback...");
+                        const httpUrl = apiUrl.replace('https://', 'http://');
+                        
+                        const fallbackResponse = await axios.post(httpUrl, formData, {
+                            ...config,
+                            timeout: 30000,
+                        });
+                        
+                        if (fallbackResponse.data) {
+                            toast.success("Account created successfully!");
+                            setName("");
+                            setPhoneNumber("");
+                            setPassword("");
+                            setAvatar(null);
+                            setLoading(false);
+                            
+                            navigate("/login");
+                        }
+                    } catch (fallbackError) {
+                        console.error("HTTP fallback failed:", fallbackError);
+                        toast.error("Registration failed. Please try again later.");
+                    }
+                }
             } else {
                 console.error("Error:", error.message);
                 toast.error("An unexpected error occurred. Please try again.");

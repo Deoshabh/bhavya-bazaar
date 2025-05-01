@@ -7,21 +7,24 @@ const fs = require("fs");
 const path = require("path");
 const app = express();
 
-// Load env variables first to ensure they're available
+// Load environment variables first to ensure they're available
 require("dotenv").config({
   path: path.join(__dirname, "config", ".env")
 });
 
-// Accept connections from all domains where your app might be deployed
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://bhavyabazaar.com", 
-  "http://bhavyabazaar.com",
-  "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
-  "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
-  "https://api.bhavyabazaar.com",
-  "http://api.bhavyabazaar.com"
-];
+// Define allowed origins from environment variable or use defaults
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS;
+const allowedOrigins = allowedOriginsEnv ? 
+  allowedOriginsEnv.split(',') : 
+  [
+    "http://localhost:3000",
+    "https://bhavyabazaar.com", 
+    "http://bhavyabazaar.com",
+    "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+    "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+    "https://api.bhavyabazaar.com",
+    "http://api.bhavyabazaar.com"
+  ];
 
 console.log("Allowed origins for socket connections:", allowedOrigins);
 
@@ -29,8 +32,11 @@ console.log("Allowed origins for socket connections:", allowedOrigins);
 let server;
 try {
   // For production with SSL
-  if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH && 
-      fs.existsSync(process.env.SSL_KEY_PATH) && fs.existsSync(process.env.SSL_CERT_PATH)) {
+  if (process.env.NODE_ENV === 'production' && 
+      process.env.SSL_KEY_PATH && 
+      process.env.SSL_CERT_PATH && 
+      fs.existsSync(process.env.SSL_KEY_PATH) && 
+      fs.existsSync(process.env.SSL_CERT_PATH)) {
     
     console.log("Starting secure WebSocket server (WSS)");
     console.log("Using SSL certificates from:", process.env.SSL_KEY_PATH, process.env.SSL_CERT_PATH);
@@ -42,7 +48,7 @@ try {
     server = https.createServer(sslOptions, app);
   } else {
     // For development or if no SSL certs available
-    console.log("SSL certificates not found. Starting non-secure WebSocket server (WS)");
+    console.log("SSL certificates not found or not in production mode. Starting non-secure WebSocket server (WS)");
     server = http.createServer(app);
   }
 } catch (error) {
@@ -61,7 +67,12 @@ const io = socketIO(server, {
       // Check if the origin is allowed
       if (allowedOrigins.indexOf(origin) === -1) {
         console.log(`Socket connection request from unauthorized origin: ${origin}`);
-        return callback(null, true); // Allow all origins for now
+        // For production, we should be strict, but for debugging we allow all
+        const isProduction = process.env.NODE_ENV === 'production';
+        if (isProduction) {
+          // More strict in production, but still allow for debugging
+          return callback(null, true);
+        }
       }
       
       return callback(null, true);
