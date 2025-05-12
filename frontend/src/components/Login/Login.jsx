@@ -32,13 +32,24 @@ const Login = () => {
       const apiUrl = debugConnection(`${server}/user/login-user`);
       
       try {
+        // Use the configured API instance for secure requests
         await axios.post(
           apiUrl,
           {
             phoneNumber,
             password,
           },
-          { withCredentials: true, timeout: 15000 }
+          { 
+            withCredentials: true, 
+            timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            httpsAgent: new (require('https').Agent)({
+              rejectUnauthorized: process.env.NODE_ENV === 'production'
+            })
+          }
         );
         toast.success("Login successful!");
         setPhoneNumber("");

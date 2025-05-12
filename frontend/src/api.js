@@ -3,13 +3,17 @@ import { server, getFallbackUrl } from './server';
 
 // Create a custom instance for API requests
 const api = axios.create({
-  baseURL: server,
-  timeout: 15000,
+  baseURL: process.env.REACT_APP_API_URL || server,
+  timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
   withCredentials: true, // Important for cookies
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-  }
+  },
+  // Force HTTPS
+  httpsAgent: require('https').Agent({
+    rejectUnauthorized: process.env.NODE_ENV === 'production',
+  })
 });
 
 // Add a request interceptor for debugging

@@ -2,7 +2,23 @@
 const path = require("path");
 
 module.exports = {
-  entry: "./src/index.js",
+  entry: "./src/index.js",  resolve: {
+    fallback: {
+      "https": require.resolve('https-browserify'),
+      "http": require.resolve('stream-http'),
+      "stream": require.resolve('stream-browserify'),
+      "util": require.resolve('util/'),
+      "zlib": require.resolve('browserify-zlib'),
+      "url": require.resolve('url/'),
+      "assert": require.resolve('assert/'),
+      "buffer": require.resolve('buffer/'),
+      "crypto": false,
+      "path": false,
+      "fs": false,
+      "os": false
+    },
+    extensions: [".js", ".jsx", ".ts", ".tsx"]
+  },
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "bundle.js",
@@ -30,11 +46,7 @@ module.exports = {
         exclude: /node_modules\/timeago\.js/,
       },
     ],
-  },
-  resolve: {
-    extensions: [".js", ".jsx"],
-  },
-  devtool: "source-map",
+  },  devtool: "source-map",
   devServer: {
     contentBase: path.join(__dirname, "dist"),
     compress: true,

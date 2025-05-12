@@ -13,6 +13,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.4.0",
+    "caniuse-lite": "^1.0.30001717",
     "compression": "^1.8.0",
     "country-state-city": "^3.1.2",
     "express": "^5.1.0",
@@ -31,14 +32,14 @@
     "socket.io-client": "^4.6.1",
     "timeago.js": "^4.0.2",
     "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+  },  "scripts": {
+    "start": "cross-env NODE_ENV=development react-app-rewired start",
+    "build": "cross-env NODE_ENV=production react-app-rewired build --omit=dev",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject",
-    "serve": "node server.js",
-    "start:prod": "npm run build && npm run serve"
+    "serve": "cross-env NODE_ENV=production node server.js",
+    "start:prod": "npm run build && npm run serve",
+    "dev": "cross-env NODE_ENV=development HOST=0.0.0.0 react-app-rewired start"
   },
   "eslintConfig": {
     "extends": [
@@ -48,6 +49,8 @@
   },
   "browserslist": {
     "production": [
+      "defaults",
+      "not IE 11",
       ">0.2%",
       "not dead",
       "not op_mini all"
@@ -60,8 +63,19 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "assert": "^2.1.0",
     "autoprefixer": "^10.4.14",
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "cross-env": "^7.0.3",
+    "https-browserify": "^1.0.0",
     "postcss": "^8.4.24",
-    "tailwindcss": "^3.3.2"
+    "process": "^0.11.10",
+    "react-app-rewired": "^2.2.1",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "tailwindcss": "^3.3.2",
+    "url": "^0.11.4",
+    "util": "^0.12.5"
   }
 }

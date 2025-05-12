@@ -5,10 +5,16 @@ const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.co
 // Environment detection
 export const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// Protocol configuration - use secure protocols for production
-const useSecureProtocol = !isDevelopment; // Use secure protocols in production
+// Protocol configuration
+const forceSecure = process.env.REACT_APP_SECURE === 'true';
+const useSecureProtocol = forceSecure || process.env.NODE_ENV === 'production';
 const httpProtocol = useSecureProtocol ? 'https' : 'http';
 const wsProtocol = useSecureProtocol ? 'wss' : 'ws';
+
+// Allow insecure requests in development
+if (isDevelopment) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 // Extract domain without protocol from API URL for flexible configuration
 const extractDomain = (url) => {
