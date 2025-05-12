@@ -15,24 +15,30 @@ export const initializeSocket = () => {
             autoConnect: true,
             forceNew: true,
             path: '/socket.io',
-            secure: process.env.NODE_ENV === 'production',
-            rejectUnauthorized: process.env.NODE_ENV === 'production',
-            withCredentials: true
+            secure: true,
+            rejectUnauthorized: false,
+            withCredentials: true,
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        'Origin': 'https://bhavyabazaar.com'
+                    }
+                }
+            }
         };
 
         try {
             socket = io(SOCKET_URL, options);
             
             socket.on('connect', () => {
-                console.log('Socket connected successfully');
-                // Resubscribe to rooms if needed
-                socket.emit('__reconnect');
+                console.log('Socket connected successfully to:', SOCKET_URL);
             });
 
             socket.on('connect_error', (error) => {
                 console.error('Socket connection error:', error);
                 // Try to reconnect with polling if WebSocket fails
                 if (socket.io.opts.transports.includes('websocket')) {
+                    console.log('Falling back to polling transport');
                     socket.io.opts.transports = ['polling', 'websocket'];
                 }
             });
