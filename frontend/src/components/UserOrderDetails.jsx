@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import styles from "../styles/styles";
 import { BsFillBagFill } from "react-icons/bs";
+<<<<<<< HEAD
 import { Link, useParams } from "react-router-dom";
+=======
+import { Link,useParams } from "react-router-dom";
+>>>>>>> 9d9216746cd57595402603508e3b8d374147eb4f
 import { toast } from "react-toastify";
 import axios from "axios";
 import { backend_url, server } from "../server";
@@ -107,7 +111,7 @@ const UserOrderDetails = () => {
           return (
             <div className="w-full flex items-start mb-5">
               <img
-                src={`${backend_url}/${item.images[0]}`}
+                src={`${backend_url}${item.images[0]}`}
                 alt="Product item order img"
                 className="w-[80x] h-[80px]"
               />
@@ -146,7 +150,7 @@ const UserOrderDetails = () => {
             <br />
             <div className="w-full flex">
               <img
-                src={`${backend_url}/${selectedItem?.images[0]}`}
+                src={`${backend_url}${selectedItem?.images[0]}`}
                 alt=""
                 className="w-[80px] h-[80px]"
               />

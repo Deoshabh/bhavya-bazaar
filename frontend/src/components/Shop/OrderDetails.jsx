@@ -92,7 +92,7 @@ const OrderDetails = () => {
         data?.cart.map((item, index) => (
           <div className="w-full flex items-start mb-5">
             <img
-              src={`${backend_url}/${item.images[0]}`}
+              src={`${backend_url}${item.images[0]}`}
               alt="Product item order img"
               className="w-[80x] h-[80px]"
             />
