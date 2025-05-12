@@ -71,8 +71,10 @@ app.use(
       // Check if the origin is allowed
       if (allowedOrigins.indexOf(origin) === -1) {
         console.log(`Backend request from unauthorized origin: ${origin}`);
-        // For now, allow all origins in production to troubleshoot
-        return callback(null, true);
+        // In production, be more strict about origins
+        if (process.env.NODE_ENV === 'production') {
+          return callback(new Error('Not allowed by CORS'));
+        }
       }
       
       return callback(null, true);
@@ -86,7 +88,8 @@ app.use(
       "Accept",
       "Origin",
       "Cache-Control"
-    ]
+    ],
+    exposedHeaders: ['Content-Range', 'X-Total-Count']
   })
 );
 

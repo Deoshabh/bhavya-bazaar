@@ -67,11 +67,9 @@ const io = socketIO(server, {
       // Check if the origin is allowed
       if (allowedOrigins.indexOf(origin) === -1) {
         console.log(`Socket connection request from unauthorized origin: ${origin}`);
-        // For production, we should be strict, but for debugging we allow all
-        const isProduction = process.env.NODE_ENV === 'production';
-        if (isProduction) {
-          // More strict in production, but still allow for debugging
-          return callback(null, true);
+        // For production, be strict about origins
+        if (process.env.NODE_ENV === 'production') {
+          return callback(new Error('Not allowed by CORS'));
         }
       }
       
@@ -80,10 +78,14 @@ const io = socketIO(server, {
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
-  path: "/socket.io", // Explicitly setting the Socket.IO path
-  transports: ["websocket", "polling"], // Support both WebSocket and long-polling
-  pingTimeout: 60000, // Increase ping timeout
-  pingInterval: 25000, // Ping clients more frequently
+  path: "/socket.io",
+  transports: ["websocket", "polling"],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 30000,
+  maxHttpBufferSize: 1e8, // 100 MB - for file sharing if needed
+  allowEIO3: true, // Allow Engine.IO protocol version 3
+  serveClient: false // Don't serve client files
 });
 
 // Express middleware

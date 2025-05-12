@@ -1,17 +1,21 @@
 ﻿// Backend URLs configuration with environment variables support
 const getApiDomain = () => {
   const url = process.env.REACT_APP_API_URL;
-  const defaultProdUrl = 'https://api.bhavyabazaar.com/api/v2';
-  const defaultDevUrl = 'http://localhost:8000/api/v2';
-
   if (!url) {
-    return process.env.NODE_ENV === 'production' ? defaultProdUrl : defaultDevUrl;
+    // In production, use HTTPS, in development use HTTP
+    return process.env.NODE_ENV === 'production' 
+      ? 'https://api.bhavyabazaar.com/api/v2'
+      : 'http://localhost:8000/api/v2';
   }
 
-  // Force HTTPS in production
-  return process.env.NODE_ENV === 'production'
-    ? url.replace(/^http:/, 'https:')
-    : url;
+  // For production environment, ensure HTTPS
+  if (process.env.NODE_ENV === 'production') {
+    // Remove any trailing slashes and add /api/v2
+    const baseUrl = url.replace(/\/$/, '');
+    return baseUrl.replace(/^http:/, 'https:') + '/api/v2';
+  }
+
+  return url;
 };
 
 const getWebsocketUrl = () => {
