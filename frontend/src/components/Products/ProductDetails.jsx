@@ -146,18 +146,7 @@ const ProductDetails = ({ data }) => {
                         />
                       </div>
                     ))}
-                  <div
-                    className={`${
-                      select === 1 ? "border" : "null"
-                    } cursor-pointer `}
-                  >
-                    {/* <img
-                                            src={data?.image_Url[1].url}
-                                            alt="img"
-                                            className="h-[200px]"
-                                            onClick={() => setSelect(1)}
-                                        /> */}
-                  </div>
+                  {/* This div was causing the key warning - removing it since it appears to be unused commented code */}
                 </div>
               </div>
               {/* Rtght */}

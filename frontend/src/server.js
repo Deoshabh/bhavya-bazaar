@@ -1,10 +1,9 @@
-// Backend URLs configuration with environment variables support
-const SOCKET_DOMAIN = process.env.REACT_APP_SOCKET_URL || "wss://bhavyabazaar.com:4000";
-const API_DOMAIN = process.env.REACT_APP_API_URL || "https://api.bhavyabazaar.com";
-const FRONTEND_DOMAIN = "https://bhavyabazaar.com";
+﻿// Backend URLs configuration with environment variables support
+const SOCKET_DOMAIN = process.env.REACT_APP_SOCKET_URL || 'wss://bhavyabazaar.com:3003';
+const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.com';
 
 // Environment detection
-export const isDevelopment = process.env.REACT_APP_ENV !== 'production';
+export const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Protocol configuration - use secure protocols for production
 const useSecureProtocol = !isDevelopment;
@@ -33,10 +32,13 @@ export function debugConnection(url) {
 
 // Helper function to get fallback URL (HTTP when HTTPS fails)
 export function getFallbackUrl(url) {
-  if (url.startsWith('https://')) {
-    return url.replace('https://', 'http://');
-  } else if (url.startsWith('wss://')) {
-    return url.replace('wss://', 'ws://');
+  // In production, don't fall back to insecure connections
+  if (isDevelopment) {
+    if (url.startsWith('https://')) {
+      return url.replace('https://', 'http://');
+    } else if (url.startsWith('wss://')) {
+      return url.replace('wss://', 'ws://');
+    }
   }
   return url;
 }
