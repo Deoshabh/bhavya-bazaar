@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
@@ -32,7 +32,7 @@ const Login = () => {
       const apiUrl = debugConnection(`${server}/user/login-user`);
       
       try {
-        const { data } = await axios.post(
+        await axios.post(
           apiUrl,
           {
             phoneNumber,
@@ -59,7 +59,7 @@ const Login = () => {
           console.log(`Certificate/network error detected, trying fallback URL: ${fallbackUrl}`);
           
           try {
-            const { data } = await axios.post(
+            await axios.post(
               fallbackUrl,
               {
                 phoneNumber,

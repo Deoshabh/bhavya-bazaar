@@ -1,7 +1,6 @@
 import React from "react";
 import { RxCross1 } from "react-icons/rx";
 import { backend_url } from "../../server";
-import styles from "../../styles/styles";
 
 const SellerDetailsModal = ({ open, setOpen, seller }) => {
   if (!seller) return null;
