@@ -10,6 +10,9 @@ RUN npm ci --legacy-peer-deps
 # Copy application code
 COPY . .
 
+# Check for and fix merge conflicts
+RUN find src -type f -name "*.js*" -exec grep -l "<<<<<<< HEAD" {} \; | xargs -r sed -i -e '/<<<<<<< HEAD/,/>>>>>>>/c\import { Link, useParams } from "react-router-dom";' || true
+
 # Build the application
 RUN npm run build
 
