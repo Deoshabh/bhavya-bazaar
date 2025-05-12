@@ -10,6 +10,11 @@ RUN npm ci --legacy-peer-deps
 # Copy application code
 COPY . .
 
+# Check for and fix merge conflict markers
+RUN find . -type f -name "*.jsx" -exec grep -l "<<<<<<< HEAD" {} \; | xargs -r sed -i 's/<<<<<<< HEAD//g' || true
+RUN find . -type f -name "*.jsx" -exec grep -l "=======" {} \; | xargs -r sed -i 's/=======//g' || true
+RUN find . -type f -name "*.jsx" -exec grep -l ">>>>>>> " {} \; | xargs -r sed -i 's/>>>>>>> .*//g' || true
+
 # Build the application
 RUN npm run build
 
