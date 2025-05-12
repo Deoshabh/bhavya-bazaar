@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "../../styles/styles";
 import {
@@ -38,7 +38,7 @@ const ProductDetails = ({ data }) => {
     } else {
       setClick(false);
     }
-  }, [data, wishlist]);
+  }, [data, wishlist, dispatch]);
 
   // Remove from wish list
   const removeFromWishlistHandler = (data) => {
@@ -133,8 +133,9 @@ const ProductDetails = ({ data }) => {
                   {data &&
                     data.images.map((i, index) => (
                       <div
+                        key={index}
                         className={`${
-                          select === 0 ? "border" : "null"
+                          select === index ? "border" : "null"
                         } cursor-pointer`}
                       >
                         <img
@@ -340,7 +341,7 @@ const ProductDetailsInfo = ({
         <div className="w-full min-h-[40vh] flex flex-col items-center py-3 overflow-y-scroll">
           {data &&
             data.reviews.map((item, index) => (
-              <div className="w-full flex my-2">
+              <div className="w-full flex my-2" key={index}>
                 <img
                   src={`${backend_url}/${item.user.avatar}`}
                   alt=""
