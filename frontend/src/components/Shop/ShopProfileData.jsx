@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { getAllProductsShop } from "../../redux/actions/product";
 import styles from "../../styles/styles";
 import ProductCard from "../Route/ProductCard/ProductCard";
@@ -14,13 +14,13 @@ const ShopProfileData = ({ isOwner }) => {
     const { products } = useSelector((state) => state.products);
     const { events } = useSelector((state) => state.events);
     const { seller } = useSelector((state) => state.seller);
-    const { id } = useParams();
 
 
     const dispatch = useDispatch();
     useEffect(() => {
+        dispatch(getAllProductsShop(seller._id));
         dispatch(getAllEventsShop(seller._id));
-    }, [dispatch]);
+    }, [dispatch, seller._id]);
 
     const [active, setActive] = useState(1);
 
@@ -112,7 +112,7 @@ const ShopProfileData = ({ isOwner }) => {
                         allReviews.map((item, index) => (
                             <div className="w-full flex my-4">
                                 <img
-                                    src={`${backend_url}/${item.user.avatar}`}
+                                    src={`${backend_url}${item.user.avatar}`}
                                     className="w-[50px] h-[50px] rounded-full"
                                     alt=""
                                 />

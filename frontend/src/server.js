@@ -6,7 +6,7 @@ const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.co
 export const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Protocol configuration - use secure protocols for production
-const useSecureProtocol = !isDevelopment;
+const useSecureProtocol = !isDevelopment; // Use secure protocols in production
 const httpProtocol = useSecureProtocol ? 'https' : 'http';
 const wsProtocol = useSecureProtocol ? 'wss' : 'ws';
 
