@@ -1,55 +1,70 @@
 #!/bin/sh
-# This script updates runtime environment variables in the frontend build
+set -e
 
-# Replace environment variables in the main.js file
-echo "Updating environment variables..."
+# Check SSL certificates
+echo "Checking SSL certificates..."
+if [ ! -f "/etc/nginx/ssl/cert.pem" ] || [ ! -f "/etc/nginx/ssl/key.pem" ]; then
+    echo "Error: SSL certificates not found!"
+    exit 1
+fi
+
+# Verify SSL certificate permissions
+chmod 600 /etc/nginx/ssl/key.pem
+chmod 644 /etc/nginx/ssl/cert.pem
 
 # Get the main.js file path from the build directory
 MAIN_JS=$(find /usr/share/nginx/html/static/js -name "main.*.js" | head -1)
 
 if [ -z "$MAIN_JS" ]; then
-  echo "Error: Could not find main.js file"
-  exit 1
+    echo "Error: Could not find main.js file"
+    exit 1
 fi
 
 echo "Found main.js at $MAIN_JS"
 
-# Create or update the runtime environment configuration
-echo "window.runtimeEnvironment = {" > /usr/share/nginx/html/runtime-config.js
-echo "  API_URL: \"${API_URL:-https://api.bhavyabazaar.com}\"," >> /usr/share/nginx/html/runtime-config.js
-echo "  SOCKET_URL: \"${SOCKET_URL:-wss://bhavyabazaar.com:3003}\"," >> /usr/share/nginx/html/runtime-config.js
-echo "  ENV: \"${NODE_ENV:-production}\"," >> /usr/share/nginx/html/runtime-config.js
-echo "  SERVER_TIMESTAMP: \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"" >> /usr/share/nginx/html/runtime-config.js
-echo "};" >> /usr/share/nginx/html/runtime-config.js
+# Create runtime environment configuration
+cat > /usr/share/nginx/html/runtime-config.js << EOF
+window.runtimeEnvironment = {
+    API_URL: "${API_URL:-https://api.bhavyabazaar.com}",
+    SOCKET_URL: "${SOCKET_URL:-wss://api.bhavyabazaar.com:3003}",
+    ENV: "${NODE_ENV:-production}",
+    SERVER_TIMESTAMP: "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+};
+EOF
 
-# Add runtime config script reference to index.html
-sed -i 's|</head>|<script src="/runtime-config.js"></script></head>|' /usr/share/nginx/html/index.html
+# Add runtime config script reference to index.html if not already present
+grep -q 'runtime-config.js' /usr/share/nginx/html/index.html || \
+    sed -i 's|</head>|<script src="/runtime-config.js"></script></head>|' /usr/share/nginx/html/index.html
 
-# Replace API URL and Socket URL placeholders with environment variables in main.js
+# Update main.js with environment variables
 if [ ! -z "$API_URL" ]; then
-  echo "Setting API_URL to $API_URL"
-  sed -i "s|https://api\.bhavyabazaar\.com|${API_URL}|g" $MAIN_JS
-else
-  echo "API_URL not set, using default"
+    echo "Setting API_URL to $API_URL"
+    sed -i "s|https://api\.bhavyabazaar\.com|${API_URL}|g" $MAIN_JS
 fi
 
 if [ ! -z "$SOCKET_URL" ]; then
-  echo "Setting SOCKET_URL to $SOCKET_URL"
-  sed -i "s|wss://bhavyabazaar\.com:3003|${SOCKET_URL}|g" $MAIN_JS
-else
-  echo "SOCKET_URL not set, using default"
+    echo "Setting SOCKET_URL to $SOCKET_URL"
+    sed -i "s|wss://api\.bhavyabazaar\.com:3003|${SOCKET_URL}|g" $MAIN_JS
 fi
 
-# Fix common issues with cookies
-echo "Adding cookie compatibility fix"
-sed -i "s|withCredentials:true|withCredentials:true,headers:{'Accept':'application/json','Content-Type':'application/json'}|g" $MAIN_JS
+# Add CORS and cookie handling improvements
+echo "Adding security and cookie handling improvements"
+sed -i 's|withCredentials:true|withCredentials:true,headers:{"Accept":"application/json","Content-Type":"application/json","X-Requested-With":"XMLHttpRequest"}|g' $MAIN_JS
 
-# Test API connectivity
+# Test connectivity
 echo "Testing API connectivity..."
-curl -s -o /dev/null -w "%{http_code}" -m 5 "https://api.bhavyabazaar.com/api/v2/user/getuser" || echo "Warning: API endpoint may not be accessible (code $?)"
+if curl -sf -k --max-time 5 "https://api.bhavyabazaar.com/api/v2/" > /dev/null; then
+    echo "API is accessible"
+else
+    echo "Warning: API endpoint may not be accessible"
+fi
 
-echo "Environment configuration complete."
-echo "Starting Nginx..."
+echo "Testing WebSocket connectivity..."
+if curl -sf -k --max-time 5 -H "Connection: Upgrade" -H "Upgrade: websocket" "https://api.bhavyabazaar.com:3003/" > /dev/null; then
+    echo "WebSocket endpoint is accessible"
+else
+    echo "Warning: WebSocket endpoint may not be accessible"
+fi
 
-# Execute the CMD
-exec "$@"
+echo "Environment configuration complete. Starting Nginx..."
+exec nginx -g 'daemon off;'
