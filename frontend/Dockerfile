@@ -13,12 +13,17 @@ RUN npm ci --legacy-peer-deps
 # Copy application code
 COPY . .
 
-# Build the application with environment variables
-RUN REACT_APP_API_URL=https://api.bhavyabazaar.com \
-    REACT_APP_SOCKET_URL=wss://api.bhavyabazaar.com:3003 \
-    REACT_APP_BACKEND_URL=https://api.bhavyabazaar.com \
-    NODE_ENV=production \
-    npm run build
+# Set environment variables and build
+ENV NODE_ENV=production
+ENV CI=false
+ENV SKIP_PREFLIGHT_CHECK=true
+ENV DISABLE_ESLINT_PLUGIN=true
+ENV REACT_APP_API_URL=https://api.bhavyabazaar.com/api/v2
+ENV REACT_APP_SOCKET_URL=wss://api.bhavyabazaar.com:3003
+ENV REACT_APP_BACKEND_URL=https://api.bhavyabazaar.com
+
+# Build the application
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
