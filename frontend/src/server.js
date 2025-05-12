@@ -1,7 +1,7 @@
 ﻿// Load configuration from environment variables with fallbacks
-const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.com/api/v2';
-const WEBSOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'wss://api.bhavyabazaar.com:3003';
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://api.bhavyabazaar.com';
+const API_DOMAIN = process.env.REACT_APP_API_URL || '/api/v2';
+const WEBSOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'wss://bhavyabazaar.com/socket.io';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second initial delay
 
