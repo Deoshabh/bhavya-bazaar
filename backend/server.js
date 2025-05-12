@@ -130,6 +130,17 @@ app.get("/test", (req, res) => {
   res.send("Hello World! Environment is properly configured.");
 });
 
+// API v2 health check endpoint
+app.get("/api/v2/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    version: "2.0",
+    env: process.env.NODE_ENV,
+    uptime: process.uptime()
+  });
+});
+
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
 // routes
