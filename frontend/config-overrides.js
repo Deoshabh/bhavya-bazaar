@@ -1,6 +1,6 @@
-import webpack from 'webpack';
+const webpack = require('webpack');
 
-export default function override(config) {
+module.exports = function override(config) {
   // Remove ModuleScopePlugin to allow imports outside of src/
   config.resolve.plugins = config.resolve.plugins.filter(plugin => 
     plugin.constructor.name !== 'ModuleScopePlugin'
