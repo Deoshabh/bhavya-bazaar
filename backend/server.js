@@ -40,32 +40,41 @@ const isProduction = process.env.NODE_ENV === 'production';
 console.log(`Running in ${isProduction ? 'production' : 'development'} mode`);
 
 // Create server with proper port from env
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 8000;
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`API server URL: ${isProduction ? 'https://api.bhavyabazaar.com' : `http://localhost:${PORT}`}`);
+  console.log(`API server URL: https://api.bhavyabazaar.com`);
 });
 
 // middlewares
 app.use(express.json());
 app.use(cookieParser());
 
+// Health check endpoint
+app.get('/api/v2/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    service: 'backend',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Define all allowed origins
 const allowedOrigins = [
-  "http://localhost:3000",
   "https://bhavyabazaar.com",
-  "https://www.bhavyabazaar.com", 
-  "http://bhavyabazaar.com",
-  "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
-  "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
-  "https://api.bhavyabazaar.com",
-  "http://api.bhavyabazaar.com"
+  "https://www.bhavyabazaar.com",
+  "https://api.bhavyabazaar.com"
 ];
 
 // Improved CORS setup with explicit allowed headers
 app.use(
   cors({
     origin: function(origin, callback) {
+      // Always allow health check requests
+      if (origin && origin.includes('bhavyabazaar.com')) {
+        return callback(null, true);
+      }
+      
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       
