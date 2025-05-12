@@ -21,7 +21,7 @@ const socketDomain = extractDomain(SOCKET_DOMAIN);
 
 // Export the server URLs with proper API paths
 export const server = `${httpProtocol}://${apiDomain}/api/v2`;
-export const backend_url = `${httpProtocol}://${apiDomain}/`;
+export const backend_url = `${httpProtocol}://${apiDomain}/uploads/`;
 export const socket_url = `${wsProtocol}://${socketDomain}`; 
 
 // Helper function to debug connection URLs
