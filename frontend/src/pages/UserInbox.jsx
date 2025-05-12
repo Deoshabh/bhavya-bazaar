@@ -1,79 +1,92 @@
 import React, { useEffect, useRef, useState } from "react";
 import Header from "../components/Layout/Header";
 import { useSelector } from "react-redux";
-import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-import { backend_url, socket_url, getSocketOptions } from "../server";
+import { backend_url } from "../server";
 import axios from "axios";
 import { server } from "../server";
 import { useNavigate } from "react-router-dom";
-import { AiOutlineArrowRight, AiOutlineSend, AiOutlineAudio } from "react-icons/ai";
+import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
 import styles from "../styles/styles";
 import { toast } from "react-toastify";
-import { GrEmoji } from "react-icons/gr";
-
-// Initialize socket with better connection handling
-let socket;
+import { initializeSocket, getSocket, disconnectSocket } from '../WebSocketClient';
 
 const UserInbox = () => {
-  const { user, loading } = useSelector((state) => state.user);
+  const { user } = useSelector((state) => state.user);
   const [conversations, setConversations] = useState([]);
   const [arrivalMessage, setArrivalMessage] = useState(null);
   const [currentChat, setCurrentChat] = useState();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [userData, setUserData] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const [images, setImages] = useState();
   const [activeStatus, setActiveStatus] = useState(false);
   const [open, setOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [setImages] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    // Initialize socket connection with more robust connection options
-    try {
-      socket = socketIO(socket_url, getSocketOptions());
-      
-      console.log("Attempting to connect to socket server:", socket_url);
-      
-      // Socket connection handling
-      socket.on("connect", () => {
-        console.log("Socket connected successfully!");
-      });
-      
-      socket.on("connect_error", (err) => {
-        console.error("Socket connection error:", err.message);
-        toast.error("Chat service connection failed. Some features may not work properly.");
-      });
-      
-      socket.on("disconnect", (reason) => {
-        console.log("Socket disconnected:", reason);
-        if (reason === "io server disconnect") {
-          // Reconnect if server disconnected us
-          socket.connect();
+    const initChat = async () => {
+      try {
+        const socket = initializeSocket();
+        
+        if (socket && user) {
+          socket.emit("addUser", user._id);
+          
+          socket.on("getUsers", (data) => {
+            setOnlineUsers(data);
+          });
+          
+          socket.on("getMessage", (data) => {
+            setArrivalMessage({
+              sender: data.senderId,
+              text: data.text,
+              createdAt: Date.now(),
+            });
+          });
         }
-      });
-    } catch (error) {
-      console.error("Socket initialization error:", error);
+      } catch (error) {
+        console.error("Chat initialization error:", error);
+        toast.error("Failed to connect to chat service");
+      }
+    };
+
+    if (user) {
+      initChat();
     }
 
     return () => {
-      if (socket && socket.connected) {
-        socket.disconnect();
+      disconnectSocket();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (arrivalMessage && currentChat?.members.includes(arrivalMessage.sender)) {
+      setMessages((prev) => [...prev, arrivalMessage]);
+    }
+  }, [arrivalMessage, currentChat]);
+
+  useEffect(() => {
+    const getConversations = async () => {
+      try {
+        const response = await axios.get(
+          `${server}/conversation/get-all-conversation/${user?._id}`,
+          {
+            withCredentials: true,
+          }
+        );
+        setConversations(response.data.conversations);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        toast.error("Failed to load conversations");
       }
     };
-  }, []);
 
-  // Add user to online users when logged in
-  useEffect(() => {
-    if (socket && user) {
-      socket.emit("addUser", user._id);
-      socket.on("getUsers", (data) => {
-        setOnlineUsers(data);
-      });
+    if (user) {
+      getConversations();
     }
-  }, [user, socket]);
+  }, [user]);
 
   const onlineCheck = (chat) => {
     const chatMembers = chat.members.find((member) => member !== user?._id);
@@ -110,6 +123,7 @@ const UserInbox = () => {
       (member) => member !== user?._id
     );
 
+    const socket = getSocket();
     socket.emit("sendMessage", {
       senderId: user?._id,
       receiverId,
@@ -134,6 +148,7 @@ const UserInbox = () => {
   };
 
   const updateLastMessage = async () => {
+    const socket = getSocket();
     socket.emit("updateLastMessage", {
       lastMessage: newMessage,
       lastMessageId: user._id,
@@ -170,6 +185,7 @@ const UserInbox = () => {
       (member) => member !== user._id
     );
 
+    const socket = getSocket();
     socket.emit("sendMessage", {
       senderId: user._id,
       receiverId,
@@ -284,7 +300,7 @@ const MessageList = ({
       }
     };
     getUser();
-  }, [me, data]);
+  }, [me, data, online, setActiveStatus]);
 
   return (
     <div
@@ -363,6 +379,7 @@ const SellerInbox = ({
         {messages &&
           messages.map((item, index) => (
             <div
+              key={index}
               className={`flex w-full my-2 ${
                 item.sender === sellerId ? "justify-end" : "justify-start"
               }`}
@@ -379,6 +396,7 @@ const SellerInbox = ({
                 <img
                   src={`${backend_url}${item.images}`}
                   className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
+                  alt="Message attachment"
                 />
               )}
               {item.text !== "" && (
@@ -399,10 +417,7 @@ const SellerInbox = ({
             </div>
           ))}
       </div>
-
-      {/* send message input */}
       <form
-        aria-required={true}
         className="p-3 relative w-full flex justify-between items-center"
         onSubmit={sendMessageHandler}
       >

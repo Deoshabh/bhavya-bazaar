@@ -1,65 +1,64 @@
 ﻿// Backend URLs configuration with environment variables support
-const SOCKET_DOMAIN = process.env.REACT_APP_SOCKET_URL || 'wss://bhavyabazaar.com:3003';
-const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.com';
+const getApiDomain = () => {
+  const url = process.env.REACT_APP_API_URL;
+  const defaultProdUrl = 'https://api.bhavyabazaar.com/api/v2';
+  const defaultDevUrl = 'http://localhost:8000/api/v2';
 
-// Environment detection
-export const isDevelopment = process.env.NODE_ENV !== 'production';
+  if (!url) {
+    return process.env.NODE_ENV === 'production' ? defaultProdUrl : defaultDevUrl;
+  }
 
-// Protocol configuration
-const forceSecure = process.env.REACT_APP_SECURE === 'true';
-const useSecureProtocol = forceSecure || process.env.NODE_ENV === 'production';
-const httpProtocol = useSecureProtocol ? 'https' : 'http';
-const wsProtocol = useSecureProtocol ? 'wss' : 'ws';
-
-// Allow insecure requests in development
-if (isDevelopment) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
-// Extract domain without protocol from API URL for flexible configuration
-const extractDomain = (url) => {
-  if (!url) return '';
-  return url.replace(/^(https?:\/\/|wss?:\/\/)/, '').split('/')[0];
+  // Force HTTPS in production
+  return process.env.NODE_ENV === 'production'
+    ? url.replace(/^http:/, 'https:')
+    : url;
 };
 
-const apiDomain = extractDomain(API_DOMAIN);
-const socketDomain = extractDomain(SOCKET_DOMAIN);
+const getWebsocketUrl = () => {
+  const wsUrl = process.env.REACT_APP_WS_URL;
+  const defaultProdWs = 'wss://socket.bhavyabazaar.com';
+  const defaultDevWs = 'ws://localhost:3003';
 
-// Export the server URLs with proper API paths
-export const server = `${httpProtocol}://${apiDomain}/api/v2`;
-export const backend_url = `${httpProtocol}://${apiDomain}/uploads/`;
-export const socket_url = `${wsProtocol}://${socketDomain}`; 
-
-// Helper function to debug connection URLs
-export function debugConnection(url) {
-  console.log(`Connecting to: ${url}`);
-  return url;
-}
-
-// Helper function to get fallback URL (HTTP when HTTPS fails)
-export function getFallbackUrl(url) {
-  // In production, don't fall back to insecure connections
-  if (isDevelopment) {
-    if (url.startsWith('https://')) {
-      return url.replace('https://', 'http://');
-    } else if (url.startsWith('wss://')) {
-      return url.replace('wss://', 'ws://');
-    }
+  if (!wsUrl) {
+    return process.env.NODE_ENV === 'production' ? defaultProdWs : defaultDevWs;
   }
-  return url;
-}
 
-// Socket.IO connection options
-export function getSocketOptions() {
-  return {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: 10,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 20000,
-    autoConnect: true,
-    forceNew: true,
-    path: '/socket.io',
-  };
-}
+  // Force WSS in production
+  return process.env.NODE_ENV === 'production'
+    ? wsUrl.replace(/^ws:/, 'wss:')
+    : wsUrl;
+};
+
+const getBackendUrl = () => {
+  const url = process.env.REACT_APP_BACKEND_URL;
+  const defaultProdUrl = 'https://api.bhavyabazaar.com';
+  const defaultDevUrl = 'http://localhost:8000';
+
+  if (!url) {
+    return process.env.NODE_ENV === 'production' ? defaultProdUrl : defaultDevUrl;
+  }
+
+  // Force HTTPS in production
+  return process.env.NODE_ENV === 'production'
+    ? url.replace(/^http:/, 'https:')
+    : url;
+};
+
+// Debug helper to log connection details
+export const debugConnection = (url) => {
+  console.log(`Connection URL: ${url}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  return url;
+};
+
+// Helper to get fallback URL (HTTP version for HTTPS URLs)
+export const getFallbackUrl = (url) => {
+  if (process.env.NODE_ENV === 'development') {
+    return url;
+  }
+  return url.replace(/^https:/, 'http:');
+};
+
+export const server = getApiDomain();
+export const backend_url = getBackendUrl();
+export const SOCKET_URL = getWebsocketUrl();
