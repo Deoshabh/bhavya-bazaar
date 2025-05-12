@@ -53,7 +53,8 @@ app.use(cookieParser());
 // Define all allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://bhavyabazaar.com", 
+  "https://bhavyabazaar.com",
+  "https://www.bhavyabazaar.com", 
   "http://bhavyabazaar.com",
   "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
   "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
