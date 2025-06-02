@@ -9,13 +9,13 @@ const initializeSocket = (server) => {
     allowedOriginsEnv.split(',') : 
     [
       "http://localhost:3000",
-      "https://bhavyabazar.com", 
-      "http://bhavyabazar.com",
-      "https://www.bhavyabazar.com",
+      "https://bhavyabazaar.com", 
+      "http://bhavyabazaar.com",
+      "https://www.bhavyabazaar.com",
       "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
       "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
-      "https://api.bhavyabazar.com",
-      "http://api.bhavyabazar.com"
+      "https://api.bhavyabazaar.com",
+      "http://api.bhavyabazaar.com"
     ];
 
   console.log("Allowed origins for socket connections:", allowedOrigins);
