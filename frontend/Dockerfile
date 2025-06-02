@@ -1,47 +1,35 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:18-alpine AS build
 
 # Set working directory
 WORKDIR /app
 
-# Install dependencies first (for better caching)
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production --legacy-peer-deps
+
+# Install dependencies
+RUN yarn install
 
 # Copy source files
 COPY . .
 
-# Set build environment variables
-ENV NODE_ENV=production
-ENV CI=false
-ENV GENERATE_SOURCEMAP=false
-ENV REACT_APP_API_URL=https://api.bhavyabazaar.com/api/v2
-ENV REACT_APP_SOCKET_URL=wss://api.bhavyabazaar.com:3003
-ENV REACT_APP_BACKEND_URL=https://api.bhavyabazaar.com
-
 # Build the application
-RUN npm run build
+RUN yarn build
 
 # Production stage
-FROM nginx:alpine
+FROM nginx:stable-alpine
 
-# Install only the minimal required packages
-RUN apk add --no-cache curl
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy the build output from builder stage
-COPY --from=builder /app/build /usr/share/nginx/html
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy build output from build stage
+COPY --from=build /app/build /usr/share/nginx/html
 
-# Create simple health check file
-RUN echo "OK" > /usr/share/nginx/html/health.txt
-
-# Expose HTTP port (SSL termination is handled by Coolify)
+# Expose port 80
 EXPOSE 80
 
-# Simple health check
-HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost/health.txt || exit 1
-
-# Start nginx with daemon off
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
