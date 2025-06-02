@@ -6,7 +6,6 @@ import { RxPerson } from "react-icons/rx";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MdOutlineAdminPanelSettings,
-  MdOutlinePassword,
   MdOutlineTrackChanges,
 } from "react-icons/md";
 import { TbAddressBook } from "react-icons/tb";

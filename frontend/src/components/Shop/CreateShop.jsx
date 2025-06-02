@@ -62,7 +62,7 @@ const CreateShop = () => {
     setLoading(true);
     try {
       // Create shop directly without verification
-      const { data } = await axios.post(`${server}/shop/create-shop`, newForm, config);
+      await axios.post(`${server}/shop/create-shop`, newForm, config);
 
       toast.success("Shop created successfully!");
       setLoading(false);

@@ -30,7 +30,7 @@ const ProductCard = ({ data, isEvent }) => {
         } else {
             setClick(false);
         }
-    }, [wishlist]);
+    }, [wishlist, data._id]);
 
     // Remove from wish list 
     const removeFromWishlistHandler = (data) => {

@@ -30,7 +30,7 @@ const ShopLogin = () => {
       const apiUrl = debugConnection(`${server}/shop/login-shop`);
       
       try {
-        const { data } = await axios.post(
+        await axios.post(
           apiUrl,
           {
             phoneNumber,
@@ -56,7 +56,7 @@ const ShopLogin = () => {
           console.log(`Certificate/network error detected, trying fallback URL: ${fallbackUrl}`);
           
           try {
-            const { data } = await axios.post(
+            await axios.post(
               fallbackUrl,
               {
                 phoneNumber,

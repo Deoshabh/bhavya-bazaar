@@ -30,7 +30,7 @@ const CreateProduct = () => {
             navigate("/dashboard");
             window.location.reload();
         }
-    }, [dispatch, error, success]);
+    }, [dispatch, error, success, navigate]);
 
     const handleImageChange = (e) => {
         e.preventDefault();

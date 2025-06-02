@@ -51,7 +51,7 @@ const CreateEvent = () => {
             navigate("/dashboard-events");
             window.location.reload();
         }
-    }, [dispatch, error, success]);
+    }, [dispatch, error, success, navigate]);
 
     const handleImageChange = (e) => {
         e.preventDefault();

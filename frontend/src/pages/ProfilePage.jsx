@@ -8,7 +8,7 @@ import Loader from "../components/Layout/Loader";
 import { Navigate } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { loading, isAuthenticated, user } = useSelector((state) => state.user);
+  const { loading, isAuthenticated } = useSelector((state) => state.user);
   const [active, setActive] = useState(1);
 
   if (loading) {

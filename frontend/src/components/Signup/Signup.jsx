@@ -4,7 +4,7 @@ import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
 import axios from "axios";
-import { server, backend_url, isDevelopment } from "../../server";
+import { backend_url } from "../../server";
 import { toast } from "react-toastify";
 
 const Signup = () => {

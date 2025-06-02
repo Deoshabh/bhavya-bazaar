@@ -21,7 +21,6 @@ const ProductDetailsCard = ({ setOpen, data }) => {
     const dispatch = useDispatch();
     const [count, setCount] = useState(1)
     const [click, setClick] = useState(false)
-    const [select, setSelect] = useState(false)
 
     const handleMessageSubmit = () => {
 
@@ -60,7 +59,7 @@ const ProductDetailsCard = ({ setOpen, data }) => {
         } else {
             setClick(false);
         }
-    }, [wishlist]);
+    }, [wishlist, data._id]);
 
     // Remove from wish list 
     const removeFromWishlistHandler = (data) => {

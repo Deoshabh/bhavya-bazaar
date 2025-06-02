@@ -34,7 +34,7 @@ const ProductDetailsPage = () => {
         the component is rendered. This ensures that when the user navigates to the
         `ProductDetailsPage`, the page starts at the top rather than at the previous scroll position. */
         window.scrollTo(0, 0)
-    }, [allProducts, allEvents]);
+    }, [allProducts, allEvents, eventData, id]);
 
 
 

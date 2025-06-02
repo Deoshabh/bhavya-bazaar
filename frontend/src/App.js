@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import "./App.css";
 import { Navigate } from 'react-router-dom';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -12,7 +12,6 @@ import {
   EventsPage,
   FAQPage,
   CheckoutPage,
-  PaymentPage,
   OrderSuccessPage,
   ProductDetailsPage,
   ProfilePage,
@@ -54,8 +53,6 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
-import axios from "axios";
-import { server } from "./server";
 import { loadUser, loadSeller } from "./redux/actions/user";
 import { useDispatch, useSelector } from "react-redux";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -94,8 +91,6 @@ const ShopCreateRoute = ({ children }) => {
 
 const App = () => {
   const dispatch = useDispatch();
-  const { user, isAuthenticated } = useSelector((state) => state.user);
-  const { seller, isLoading } = useSelector((state) => state.seller);
 
   useEffect(() => {
     dispatch(loadUser());

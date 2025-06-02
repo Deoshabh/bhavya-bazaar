@@ -133,7 +133,7 @@ const Header = ({ activeHeading }) => {
       {/*  2nd part of header start */}
       <div
         className={`${
-          active == true ? "shadow-sm fixed top-0 left-0 z-10" : null
+          active === true ? "shadow-sm fixed top-0 left-0 z-10" : null
         } transition hidden 800px:flex items-center justify-between w-full bg-[#3321c8] h-[70px]`}
       >
         <div
@@ -311,7 +311,6 @@ const Header = ({ activeHeading }) => {
               {searchData && (
                 <div className="absolute bg-[#fff] z-10 shadow w-full left-0 p-3">
                   {searchData.map((i) => {
-                    const product_name = i.name.replace(/\s+/g, "-");
                     return (
                       <Link to={`/product/${i._id}`} key={i._id}>
                         <div className="flex items-center">
