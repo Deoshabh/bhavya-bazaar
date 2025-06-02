@@ -18,11 +18,7 @@ const shopSchema = new mongoose.Schema({
       message: props => "Please enter a valid 10-digit phone number!"
     }
   },
-  email: {
-    type: String,
-    sparse: true, // This allows multiple null values while keeping unique constraint for non-null values
-    default: undefined // Don't set a default value
-  },
+
   password: {
     type: String,
     required: [true, "Please enter your password"],

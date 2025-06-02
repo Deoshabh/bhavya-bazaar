@@ -1,4 +1,3 @@
-import React from "react";
 import { RxCross1 } from "react-icons/rx";
 import { backend_url } from "../../server";
 
@@ -50,11 +49,10 @@ const SellerDetailsModal = ({ open, setOpen, seller }) => {
               <p className="text-[18px]">
                 {new Date(seller.createdAt).toLocaleString()}
               </p>
-            </div>
-            <div className="flex items-center justify-between pt-2">
+            </div>            <div className="flex items-center justify-between pt-2">
               <p className="text-[18px] font-[400]">Available Balance:</p>
               <p className="text-[18px]">
-                ${seller.availableBalance ? seller.availableBalance.toFixed(2) : "0.00"}
+                ₹{seller.availableBalance ? seller.availableBalance.toFixed(2) : "0.00"}
               </p>
             </div>
             {seller.description && (

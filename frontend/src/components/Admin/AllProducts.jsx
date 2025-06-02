@@ -1,15 +1,10 @@
 import { Button } from "@material-ui/core";
 import { DataGrid } from "@material-ui/data-grid";
-import React, { useEffect } from "react";
-import { AiOutlineDelete, AiOutlineEye } from "react-icons/ai";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { getAllProductsShop } from "../../redux/actions/product";
-import { deleteProduct } from "../../redux/actions/product";
-import Loader from "../Layout/Loader";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { AiOutlineEye } from "react-icons/ai";
+import { Link } from "react-router-dom";
 import { server } from "../../server";
-import { useState } from "react";
 
 const AllProducts = () => {
   const [data, setData] = useState([]);
@@ -79,7 +74,7 @@ const AllProducts = () => {
       row.push({
         id: item._id,
         name: item.name,
-        price: "US$ " + item.discountPrice,
+        price: "₹" + item.discountPrice,
         Stock: item.stock,
         sold: item?.sold_out,
       });

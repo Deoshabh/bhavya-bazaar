@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import styles from "../../styles/styles";
-import { AiOutlineArrowRight, AiOutlineMoneyCollect } from "react-icons/ai";
+import { DataGrid } from "@material-ui/data-grid";
+import { useEffect } from "react";
+import { AiOutlineMoneyCollect } from "react-icons/ai";
 import { MdBorderClear } from "react-icons/md";
-import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { getAllOrdersOfAdmin } from "../../redux/actions/order";
 import { getAllSellers } from "../../redux/actions/sellers";
 import { getAllUsers } from "../../redux/actions/user";
+import styles from "../../styles/styles";
 import Loader from "../Layout/Loader";
-import { DataGrid } from "@material-ui/data-grid";
 
 const AdminDashboardMain = () => {
   const dispatch = useDispatch();
@@ -97,7 +97,7 @@ const AdminDashboardMain = () => {
                   Total Earnings
                 </h3>
               </div>
-              <h5 className="pt-2 pl-[36px] text-[22px] font-[500]">US${adminBalance}</h5>
+              <h5 className="pt-2 pl-[36px] text-[22px] font-[500]">₹{adminBalance}</h5>
               <Link to="/admin-orders">
                 <h5 className="pt-4 pl-2 text-[#077f9c]">View Orders</h5>
               </Link>

@@ -1,23 +1,23 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import styles from "../../styles/styles";
 import {
-  AiFillHeart,
-  AiOutlineHeart,
-  AiOutlineMessage,
-  AiOutlineShoppingCart,
+    AiFillHeart,
+    AiOutlineHeart,
+    AiOutlineMessage,
+    AiOutlineShoppingCart,
 } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllProductsShop } from "../../redux/actions/product";
-import { backend_url, server } from "../../server";
-import {
-  addToWishlist,
-  removeFromWishlist,
-} from "../../redux/actions/wishlist";
-import { addTocart } from "../../redux/actions/cart";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { addTocart } from "../../redux/actions/cart";
+import { getAllProductsShop } from "../../redux/actions/product";
+import {
+    addToWishlist,
+    removeFromWishlist,
+} from "../../redux/actions/wishlist";
+import { backend_url, server } from "../../server";
+import styles from "../../styles/styles";
 import Ratings from "./Ratings";
-import axios from "axios";
 
 const ProductDetails = ({ data }) => {
   const { products } = useSelector((state) => state.products);
@@ -123,9 +123,8 @@ const ProductDetails = ({ data }) => {
         <div className={`${styles.section} w-[90%] 800px:w-[80%] `}>
           <div className="w-full py-5">
             <div className="block w-full 800px:flex">
-              <div className="w-full 800px:w-[50%]">
-                <img
-                  src={`${backend_url}${data && data.images[select]}`}
+              <div className="w-full 800px:w-[50%]">                <img
+                  src={`${backend_url}uploads/${data && data.images[select]}`}
                   alt=""
                   className="w-[80%]"
                 />
@@ -139,7 +138,7 @@ const ProductDetails = ({ data }) => {
                         } cursor-pointer`}
                       >
                         <img
-                          src={`${backend_url}${i}`}
+                          src={`${backend_url}uploads/${i}`}
                           alt=""
                           className="h-[200px] overflow-hidden mr-3 mt-3"
                           onClick={() => setSelect(index)}
@@ -152,13 +151,12 @@ const ProductDetails = ({ data }) => {
               {/* Rtght */}
               <div className="w-full 800px:w-[50%] pt-5 ">
                 <h1 className={`${styles.productTitle}`}>{data.name}</h1>
-                <p>{data.description}</p>
-                <div className="flex pt-3">
+                <p>{data.description}</p>                <div className="flex pt-3">
                   <h4 className={`${styles.productDiscountPrice}`}>
-                    {data.discountPrice}$
+                    ₹{data.discountPrice}
                   </h4>
                   <h3 className={`${styles.price}`}>
-                    {data.originalPrice ? data.originalPrice + "$" : null}
+                    {data.originalPrice ? "₹" + data.originalPrice : null}
                   </h3>
                 </div>
 
@@ -210,11 +208,10 @@ const ProductDetails = ({ data }) => {
                   <span className="text-white flex items-center">
                     Add to Cart <AiOutlineShoppingCart className="ml-1" />
                   </span>
-                </div>
-                <div className="flex items-center pt-8">
+                </div>                <div className="flex items-center pt-8">
                   <Link to={`/shop/preview/${data?.shop._id}`}>
                     <img
-                      src={`${backend_url}${data?.shop?.avatar}`}
+                      src={`${backend_url}uploads/${data?.shop?.avatar}`}
                       alt=""
                       className="w-[50px] h-[50px] rounded-full mr-2"
                     />
@@ -328,11 +325,10 @@ const ProductDetailsInfo = ({
       {/* Product Rev */}
       {active === 2 ? (
         <div className="w-full min-h-[40vh] flex flex-col items-center py-3 overflow-y-scroll">
-          {data &&
-            data.reviews.map((item, index) => (
+          {data &&            data.reviews.map((item, index) => (
               <div className="w-full flex my-2" key={index}>
                 <img
-                  src={`${backend_url}${item.user.avatar}`}
+                  src={`${backend_url}uploads/${item.user.avatar}`}
                   alt=""
                   className="w-[50px] h-[50px] rounded-full"
                 />
@@ -362,7 +358,7 @@ const ProductDetailsInfo = ({
                 <Link to={`/shop/preview/${data.shop._id}`}>
                   <div className="flex items-center">
                     <img
-                      src={`${backend_url}${data?.shop?.avatar}`}
+                      src={`${backend_url}uploads/${data?.shop?.avatar}`}
                       className="w-[50px] h-[50px] rounded-full"
                       alt=""
                     />

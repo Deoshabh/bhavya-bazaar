@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import styles from "../styles/styles";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 import { BsFillBagFill } from "react-icons/bs";
+import { RxCross1 } from "react-icons/rx";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
-import { backend_url, server } from "../server";
-import { RxCross1 } from "react-icons/rx";
 import { getAllOrdersOfUser } from "../redux/actions/order";
-import { useDispatch, useSelector } from "react-redux";
-import { AiFillStar, AiOutlineStar } from "react-icons/ai";
+import { backend_url, server } from "../server";
+import styles from "../styles/styles";
 
 const UserOrderDetails = () => {
   const { order } = useSelector((state) => state.order);
@@ -112,9 +112,8 @@ const UserOrderDetails = () => {
                 className="w-[80x] h-[80px]"
               />
               <div className="w-full">
-                <h5 className="pl-3 text-[20px]">{item.name}</h5>
-                <h5 className="pl-3 text-[20px] text-[#00000091]">
-                  US${item.discountPrice} x {item.qty}
+                <h5 className="pl-3 text-[20px]">{item.name}</h5>                <h5 className="pl-3 text-[20px] text-[#00000091]">
+                  ₹{item.discountPrice} x {item.qty}
                 </h5>
               </div>
               {!item.isReviewed && data?.status === "Delivered" ? (
@@ -151,9 +150,8 @@ const UserOrderDetails = () => {
                 className="w-[80px] h-[80px]"
               />
               <div>
-                <div className="pl-3 text-[20px]">{selectedItem?.name}</div>
-                <h4 className="pl-3 text-[20px]">
-                  US${selectedItem?.discountPrice} x {selectedItem?.qty}
+                <div className="pl-3 text-[20px]">{selectedItem?.name}</div>                <h4 className="pl-3 text-[20px]">
+                  ₹{selectedItem?.discountPrice} x {selectedItem?.qty}
                 </h4>
               </div>
             </div>
@@ -214,11 +212,9 @@ const UserOrderDetails = () => {
             </div>
           </div>
         </div>
-      )}
-
-      <div className="border-t w-full text-right">
+      )}      <div className="border-t w-full text-right">
         <h5>
-          Total Price: <strong>US${data?.totalPrice}</strong>
+          Total Price: <strong>₹{data?.totalPrice}</strong>
         </h5>
       </div>
       <br />

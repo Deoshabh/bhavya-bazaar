@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getAllOrdersOfShop } from "../../redux/actions/order";
-import styles from "../../styles/styles";
-import { RxCross1 } from "react-icons/rx";
 import axios from "axios";
-import { server } from "../../server";
-import { toast } from "react-toastify";
-import { loadSeller } from "../../redux/actions/user";
+import { useEffect, useState } from "react";
 import { AiOutlineDelete } from "react-icons/ai";
+import { RxCross1 } from "react-icons/rx";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { getAllOrdersOfShop } from "../../redux/actions/order";
+import { loadSeller } from "../../redux/actions/user";
+import { server } from "../../server";
+import styles from "../../styles/styles";
 
 const WithdrawMoney = () => {
   const [open, setOpen] = useState(false);
@@ -105,7 +105,7 @@ const WithdrawMoney = () => {
     <div className="w-full h-[90vh] p-8">
       <div className="w-full bg-white h-full rounded flex items-center justify-center flex-col">
         <h5 className="text-[20px] pb-4">
-          Available Balance: ${availableBalance}
+          Available Balance: ₹{availableBalance}
         </h5>
         <div
           className={`${styles.button} text-white !h-[42px] !rounded`}
@@ -291,7 +291,7 @@ const WithdrawMoney = () => {
                       </div>
                     </div>
                     <br />
-                    <h4>Available Balance: {availableBalance}$</h4>
+                    <h4>Available Balance: ₹{availableBalance}</h4>
                     <br />
                     <div className="800px:flex w-full items-center">
                       <input

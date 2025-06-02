@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import styles from "../../styles/styles";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { BsFillBagFill } from "react-icons/bs";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
-import { backend_url, server } from "../../server";
 import { getAllOrdersOfShop } from "../../redux/actions/order";
-import { useDispatch, useSelector } from "react-redux";
+import { backend_url, server } from "../../server";
+import styles from "../../styles/styles";
 
 const OrderDetails = () => {
   const { orders } = useSelector((state) => state.order);
@@ -88,25 +88,22 @@ const OrderDetails = () => {
       {/* Order Items */}
       <br />
       <br />
-      {data &&
-        data?.cart.map((item, index) => (
+      {data &&        data?.cart.map((item, index) => (
           <div className="w-full flex items-start mb-5">
             <img
-              src={`${backend_url}${item.images[0]}`}
+              src={`${backend_url}uploads/${item.images[0]}`}
               alt="Product item order img"
               className="w-[80x] h-[80px]"
-            />
-            <div className="w-full">
+            />            <div className="w-full">
               <h5 className="pl-3 text-[20px]">{item.name}</h5>
               <h5 className="pl-3 text-[20px] text-[#00000091]">
-                US${item.discountPrice} x {item.qty}
+                ₹{item.discountPrice} x {item.qty}
               </h5>
             </div>
           </div>
-        ))}
-      <div className="border-t w-full text-right">
+        ))}      <div className="border-t w-full text-right">
         <h5>
-          Total Price: <strong>US${data?.totalPrice}</strong>
+          Total Price: <strong>₹{data?.totalPrice}</strong>
         </h5>
       </div>
       <br />

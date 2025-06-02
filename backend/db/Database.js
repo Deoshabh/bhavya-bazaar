@@ -55,6 +55,15 @@ const connectDatabase = async () => {
     
   } catch (error) {
     console.error("MongoDB connection error:", error);
+    console.log("⚠️  Server starting without database connection for development");
+    console.log("📝 Please set up MongoDB to enable full functionality:");
+    console.log("   Option 1: Install MongoDB locally: https://www.mongodb.com/try/download/community");
+    console.log("   Option 2: Use MongoDB Atlas (free): https://www.mongodb.com/atlas");
+    console.log("   Option 3: Run MongoDB in Docker: docker run -d -p 27017:27017 mongo");
+    // Don't exit in development mode, allow server to start
+    if (process.env.NODE_ENV !== 'production') {
+      return;
+    }
     process.exit(1);
   }
 };

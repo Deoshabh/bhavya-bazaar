@@ -1,12 +1,11 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { server } from "../../server";
-import { Link } from "react-router-dom";
 import { DataGrid } from "@material-ui/data-grid";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { BsPencil } from "react-icons/bs";
 import { RxCross1 } from "react-icons/rx";
-import styles from "../../styles/styles";
 import { toast } from "react-toastify";
+import { server } from "../../server";
+import styles from "../../styles/styles";
 
 const AllWithdraw = () => {
   const [data, setData] = useState([]);
@@ -105,7 +104,7 @@ const AllWithdraw = () => {
         id: item._id,
         shopId: item.seller._id,
         name: item.seller.name,
-        amount: "US$ " + item.amount,
+        amount: "₹" + item.amount,
         status: item.status,
         createdAt: item.createdAt.slice(0, 10),
       });

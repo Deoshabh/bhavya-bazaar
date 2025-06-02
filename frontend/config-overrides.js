@@ -34,18 +34,39 @@ module.exports = function override(config) {
       'buffer': require.resolve('buffer')
     }
   };
-
-  // Exclude timeago.js from source-map-loader
+  // Fix source map warnings by properly configuring source-map-loader
   config.module.rules = config.module.rules.map(rule => {
-    if (rule.use && rule.use.some(use => use.loader === 'source-map-loader')) {
+    // Find the source-map-loader rule
+    if (rule.enforce === 'pre' && rule.use && rule.use.find(use => 
+        typeof use === 'object' && use.loader && use.loader.includes('source-map-loader'))) {
       return {
         ...rule,
-        exclude: /node_modules\/timeago\.js/
+        exclude: [
+          /node_modules\/timeago\.js/,
+          /node_modules\/@material-ui/,
+          /node_modules\/react-redux/
+        ]
       };
+    }
+    // Alternative check for different webpack configurations
+    if (rule.use && Array.isArray(rule.use)) {
+      const hasSourceMapLoader = rule.use.some(use => 
+        (typeof use === 'string' && use.includes('source-map-loader')) ||
+        (typeof use === 'object' && use.loader && use.loader.includes('source-map-loader'))
+      );
+      if (hasSourceMapLoader) {
+        return {
+          ...rule,
+          exclude: [
+            /node_modules\/timeago\.js/,
+            /node_modules\/@material-ui/,
+            /node_modules\/react-redux/
+          ]
+        };
+      }
     }
     return rule;
   });
-
   // Add plugins for browser polyfills and environment
   config.plugins = [
     ...config.plugins,
@@ -57,6 +78,28 @@ module.exports = function override(config) {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     })
   ];
+
+  // Suppress specific webpack warnings
+  config.ignoreWarnings = [
+    /Failed to parse source map.*timeago\.js/,
+    /Module Warning.*timeago\.js/,
+    /source-map-loader/
+  ];
+
+  // Alternative approach: configure webpack stats to hide warnings
+  if (config.stats) {
+    config.stats.warningsFilter = [
+      /timeago\.js/,
+      /source-map-loader/
+    ];
+  } else {
+    config.stats = {
+      warningsFilter: [
+        /timeago\.js/,
+        /source-map-loader/
+      ]
+    };
+  }
 
   return config;
 };

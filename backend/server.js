@@ -1,8 +1,12 @@
 require('dotenv').config();
 
 const express = require("express");
+const http = require("http");
+const https = require("https");
+const fs = require("fs");
 const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
+const { initializeSocket } = require("./socket/socketHandler");
 const app = express();
 
 const cookieParser = require("cookie-parser");
@@ -39,11 +43,44 @@ console.log('Uploads directory checked/created at:', uploadsPath);
 const isProduction = process.env.NODE_ENV === 'production';
 console.log(`Running in ${isProduction ? 'production' : 'development'} mode`);
 
+// Create HTTP/HTTPS server with SSL support
+let server;
+try {
+  // For production with SSL
+  if (process.env.NODE_ENV === 'production' && 
+      process.env.SSL_KEY_PATH && 
+      process.env.SSL_CERT_PATH && 
+      fs.existsSync(process.env.SSL_KEY_PATH) && 
+      fs.existsSync(process.env.SSL_CERT_PATH)) {
+    
+    console.log("Starting secure server (HTTPS)");
+    console.log("Using SSL certificates from:", process.env.SSL_KEY_PATH, process.env.SSL_CERT_PATH);
+    
+    const sslOptions = {
+      key: fs.readFileSync(process.env.SSL_KEY_PATH),
+      cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+    };
+    server = https.createServer(sslOptions, app);
+  } else {
+    // For development or if no SSL certs available
+    console.log("SSL certificates not found or not in production mode. Starting non-secure server (HTTP)");
+    server = http.createServer(app);
+  }
+} catch (error) {
+  console.error("Error in server setup:", error.message);
+  console.log("Falling back to non-secure server");
+  server = http.createServer(app);
+}
+
+// Initialize Socket.IO
+const { io, getSocketStatus } = initializeSocket(server);
+
 // Create server with proper port from env
 const PORT = process.env.PORT || 8000;
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`API server URL: https://api.bhavyabazaar.com`);
+  console.log(`Socket.IO integrated and ready for connections`);
 });
 
 // middlewares
@@ -59,11 +96,14 @@ app.get('/api/v2/health', (req, res) => {
   });
 });
 
-// Define all allowed origins
+// Define all allowed origins (including socket origins)
 const allowedOrigins = [
   "https://bhavyabazaar.com",
   "https://www.bhavyabazaar.com",
-  "https://api.bhavyabazaar.com"
+  "https://api.bhavyabazaar.com",
+  "http://localhost:3000",
+  "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+  "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io"
 ];
 
 // Improved CORS setup with explicit allowed headers
@@ -148,6 +188,11 @@ app.get("/api/v2/health", (req, res) => {
     env: process.env.NODE_ENV,
     uptime: process.uptime()
   });
+});
+
+// Socket status endpoint
+app.get("/socket/status", (req, res) => {
+  res.json(getSocketStatus());
 });
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));

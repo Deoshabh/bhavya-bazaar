@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from 'react'
-import { backend_url, server } from "../../server";
+import { Button } from "@material-ui/core";
+import { DataGrid } from "@material-ui/data-grid";
+import axios from 'axios';
+import { Country, State } from "country-state-city";
+import { useEffect, useState } from 'react';
+import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete } from 'react-icons/ai';
+import { MdTrackChanges } from "react-icons/md";
+import { RxCross1 } from 'react-icons/rx';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { toast } from "react-toastify";
+import { getAllOrdersOfUser } from '../../redux/actions/order';
 import {
     deleteUserAddress,
     loadUser,
-    updatUserAddress,
-    updateUserInformation,
+    updatUserAddress
 } from "../../redux/actions/user";
-import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete } from 'react-icons/ai';
-import { Link } from 'react-router-dom';
+import { backend_url, server } from "../../server";
 import styles from "../../styles/styles";
-import { DataGrid } from "@material-ui/data-grid";
-import { Button } from "@material-ui/core";
-import { RxCross1 } from 'react-icons/rx'
-import { MdTrackChanges } from "react-icons/md";
-import { toast } from "react-toastify";
-import axios from 'axios';
-import { Country, State } from "country-state-city";
-import { getAllOrdersOfUser } from '../../redux/actions/order';
 
 
 const ProfileContent = ({ active }) => {
@@ -35,7 +34,7 @@ const ProfileContent = ({ active }) => {
             toast.success(successMessage);
             dispatch({ type: "clearMessages" });
         }
-    }, [error, successMessage]);
+    }, [error, successMessage, dispatch]);
 
     return (
         <div className='w-full'>
@@ -94,14 +93,13 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
     const [name, setName] = useState(user?.name || "");
     const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
     const [password, setPassword] = useState("");
-    const [avatar, setAvatar] = useState(null);
     const [avatarError, setAvatarError] = useState(false);
     const dispatch = useDispatch();
 
     // Generate avatar URL with cache-busting
     const getAvatarUrl = () => {
         if (user?.avatar) {
-            return `${backend_url}${user.avatar}?t=${new Date().getTime()}`;
+            return `${backend_url}uploads/${user.avatar}?t=${new Date().getTime()}`;
         }
         return "";
     };
@@ -113,7 +111,6 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
 
     const handleImage = async (e) => {
         const file = e.target.files[0];
-        setAvatar(file);
 
         const formData = new FormData();
         formData.append("image", file);
@@ -122,7 +119,7 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
         
         try {
             // Upload the avatar
-            const { data } = await axios.put(
+            await axios.put(
                 `${server}/user/update-avatar`,
                 formData,
                 { withCredentials: true }
@@ -151,7 +148,7 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
 
         setLoading(true);
         try {
-            const { data } = await axios.put(
+            await axios.put(
                 `${server}/user/update-user-info`,
                 {
                     phoneNumber,
@@ -327,7 +324,7 @@ const AllOrders = () => {
             row.push({
                 id: item._id,
                 itemsQty: item.cart.length,
-                total: "US$ " + item.totalPrice,
+                total: "₹" + item.totalPrice,
                 status: item.status,
             });
         });
@@ -420,7 +417,7 @@ const AllRefundOrders = () => {
             row.push({
                 id: item._id,
                 itemsQty: item.cart.length,
-                total: "US$ " + item.totalPrice,
+                total: "₹" + item.totalPrice,
                 status: item.status,
             });
         });
@@ -508,7 +505,7 @@ const TrackOrder = () => {
             row.push({
                 id: item._id,
                 itemsQty: item.cart.length,
-                total: "US$ " + item.totalPrice,
+                total: "₹" + item.totalPrice,
                 status: item.status,
             });
         });
@@ -562,7 +559,6 @@ const ChangePassword = () => {
             </h1>
             <div className='w-full'>
                 <form
-                    aria-required
                     onSubmit={passwordChangeHandler}
                     className="flex flex-col items-center"
                 >
@@ -680,7 +676,7 @@ const Address = () => {
                                 Add New Address
                             </h1>
                             <div className='w-full'>
-                                <form aria-required onSubmit={handleSubmit} className="w-full">
+                                <form onSubmit={handleSubmit} className="w-full">
                                     <div className="w-full block p-4">
                                         <div className="w-full pb-2">
                                             <label className="block pb-2">Country</label>

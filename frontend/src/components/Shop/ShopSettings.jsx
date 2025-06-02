@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { backend_url, server } from "../../server";
-import { AiOutlineCamera } from "react-icons/ai";
-import styles from "../../styles/styles";
 import axios from "axios";
-import { loadSeller } from "../../redux/actions/user";
+import { useState } from "react";
+import { AiOutlineCamera } from "react-icons/ai";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { loadSeller } from "../../redux/actions/user";
+import { backend_url, server } from "../../server";
+import styles from "../../styles/styles";
 
 const ShopSettings = () => {
     const { seller } = useSelector((state) => state.seller);
@@ -66,10 +66,9 @@ const ShopSettings = () => {
         <div className="w-full min-h-screen flex flex-col items-center">
             <div className="flex w-full 800px:w-[80%] flex-col justify-center my-5">
                 <div className="w-full flex items-center justify-center">
-                    <div className="relative">
-                        <img
+                    <div className="relative">                        <img
                             src={
-                                avatar ? URL.createObjectURL(avatar) : `${backend_url}${seller.avatar}`
+                                avatar ? URL.createObjectURL(avatar) : `${backend_url}uploads/${seller.avatar}`
                             }
                             alt=""
                             className="w-[200px] h-[200px] rounded-full cursor-pointer"

@@ -1,12 +1,12 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { server } from "../../server";
+import { Button } from "@material-ui/core";
 import { DataGrid } from "@material-ui/data-grid";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { BsPencil } from "react-icons/bs";
 import { RxCross1 } from "react-icons/rx";
-import styles from "../../styles/styles";
 import { toast } from "react-toastify";
-import { Button } from "@material-ui/core";
+import { server } from "../../server";
+import styles from "../../styles/styles";
 
 const AllWithdraws = () => {
   const [withdraws, setWithdraws] = useState([]);
@@ -116,7 +116,7 @@ const AllWithdraws = () => {
         id: item._id,
         name: item?.seller?.name || "N/A",
         phone: item?.seller?.phoneNumber || "N/A",
-        amount: "US$ " + item?.amount,
+        amount: "₹" + item?.amount,
         status: item?.status,
         createdAt: new Date(item?.createdAt).toLocaleString(),
         withdraw: item,
@@ -157,7 +157,7 @@ const AllWithdraws = () => {
                   Seller: {withdrawData?.seller?.name}
                 </h4>
                 <h4 className="text-[20px] font-[400]">
-                  Amount: US${withdrawData?.amount}
+                  Amount: ₹{withdrawData?.amount}
                 </h4>
                 <h4 className="text-[20px] font-[400]">
                   Status: {withdrawData?.status}

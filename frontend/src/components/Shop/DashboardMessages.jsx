@@ -1,14 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
-import styles from "../../styles/styles";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { backend_url, server, SOCKET_URL } from "../../server";
-import axios from "axios";
-import { format } from "timeago.js";
-import socketIO from "socket.io-client";
 import { toast } from "react-toastify";
+import socketIO from "socket.io-client";
+import { format } from "timeago.js";
+import { backend_url, server, SOCKET_URL } from "../../server";
+import styles from "../../styles/styles";
 
 // Initialize socket with better connection handling
 let socket;
@@ -290,7 +289,6 @@ const MessageList = ({
   setActiveStatus,
 }) => {
   const [active, setActive] = useState(0);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const getUser = async () => {
@@ -325,7 +323,7 @@ const MessageList = ({
     >
       <div className="relative">
         <img
-          src={`${backend_url}${userData?.avatar}`}
+          src={`${backend_url}uploads/${userData?.avatar}`}
           alt={userData?.name || "User avatar"}
           className="w-[50px] h-[50px] rounded-full"
         />
@@ -366,7 +364,7 @@ const SellerInbox = ({
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
           <img
-            src={`${backend_url}${userData?.avatar}`}
+            src={`${backend_url}uploads/${userData?.avatar}`}
             alt={userData?.name || "User avatar"}
             className="w-[60px] h-[60px] rounded-full"
           />
@@ -394,14 +392,14 @@ const SellerInbox = ({
           >
             {item.sender !== sellerId && (
               <img
-                src={`${backend_url}${userData?.avatar}`}
+                src={`${backend_url}uploads/${userData?.avatar}`}
                 alt={userData?.name || "User avatar"}
                 className="w-[40px] h-[40px] rounded-full mr-3"
               />
             )}
             {item.images && (
               <img
-                src={`${backend_url}${item.images}`}
+                src={`${backend_url}uploads/${item.images}`}
                 alt="Message attachment"
                 className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
               />

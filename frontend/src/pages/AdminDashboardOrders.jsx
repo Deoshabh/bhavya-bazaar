@@ -1,20 +1,20 @@
-import React, { useEffect } from "react";
-import AdminHeader from "../components/Layout/AdminHeader";
-import AdminSideBar from "../components/Admin/Layout/AdminSideBar";
 import { DataGrid } from "@material-ui/data-grid";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import AdminSideBar from "../components/Admin/Layout/AdminSideBar";
+import AdminHeader from "../components/Layout/AdminHeader";
 import { getAllOrdersOfAdmin } from "../redux/actions/order";
 
 const AdminDashboardOrders = () => {
   const dispatch = useDispatch();
 
-  const { adminOrders, adminOrderLoading } = useSelector(
+  const { adminOrders } = useSelector(
     (state) => state.order
   );
 
   useEffect(() => {
     dispatch(getAllOrdersOfAdmin());
-  }, []);
+  }, [dispatch]);
 
   const columns = [
     { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
@@ -60,7 +60,7 @@ const AdminDashboardOrders = () => {
       row.push({
         id: item._id,
         itemsQty: item?.cart?.reduce((acc, item) => acc + item.qty, 0),
-        total: item?.totalPrice + " $",
+        total: "₹" + item?.totalPrice,
         status: item?.status,
         createdAt: item?.createdAt.slice(0, 10),
       });
