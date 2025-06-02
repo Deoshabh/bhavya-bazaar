@@ -21,7 +21,7 @@ COPY . .
 COPY .env.docker .env
 
 # Build the application
-RUN npm run build
+RUN CI=false npm run build
 
 # Production stage
 FROM nginx:alpine

@@ -37,10 +37,10 @@
     "timeago.js": "^4.0.2",
     "web-vitals": "^2.1.4",
     "cross-env": "^7.0.3"
-  },"scripts": {
+  },  "scripts": {
     "prestart": "node scripts/fix-source-maps.js",
     "start": "cross-env NODE_ENV=development react-app-rewired start",
-    "build": "cross-env GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
+    "build": "cross-env CI=false GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
     "build:prod": "cross-env NODE_ENV=production npm run build",
     "prebuild": "node scripts/fix-source-maps.js",
     "test": "react-app-rewired test",
