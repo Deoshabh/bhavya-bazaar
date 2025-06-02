@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    image: bhavya-bazaar-frontend:latest
+    container_name: bhavya-bazaar-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - bhavya-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.bhavyabazaar.service=frontend"
+      - "com.bhavyabazaar.version=1.0"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: bhavya-bazaar-backend:latest
+    container_name: bhavya-bazaar-backend-prod
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - DB_URL=mongodb://mongo:27017/bhavyabazaar
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - bhavya-network
+    volumes:
+      - backend-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mongo:
+    image: mongo:6.0
+    container_name: bhavya-bazaar-mongo-prod
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-secure_password_here}
+      MONGO_INITDB_DATABASE: bhavyabazaar
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    networks:
+      - bhavya-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: bhavya-bazaar-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-secure_redis_password}
+    volumes:
+      - redis-data:/data
+    networks:
+      - bhavya-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: bhavya-bazaar-nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - bhavya-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongo-data:
+    driver: local
+  mongo-config:
+    driver: local
+  redis-data:
+    driver: local
+  backend-uploads:
+    driver: local
+
+networks:
+  bhavya-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

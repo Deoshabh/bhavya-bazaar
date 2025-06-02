@@ -1,5 +1,5 @@
 ﻿// Load configuration from environment variables with fallbacks
-const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.com/api/v2';
+const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.com/api';
 const WEBSOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://api.bhavyabazaar.com';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://api.bhavyabazaar.com';
 const MAX_RETRIES = 3;

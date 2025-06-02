@@ -1,35 +1,55 @@
 # Build stage
-FROM node:18-alpine AS build
-
-# Set working directory
+FROM node:18-alpine AS builder
 WORKDIR /app
+
+# Configure npm for better network handling
+RUN npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retries 3 && \
+    npm config set registry https://registry.npmjs.org/
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN yarn install
+# Install all dependencies (including devDependencies needed for build)
+RUN npm ci --prefer-offline --no-audit
 
-# Copy source files
+# Copy source code
 COPY . .
 
+# Copy Docker environment file for build
+COPY .env.docker .env
+
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Production stage
-FROM nginx:stable-alpine
+FROM nginx:alpine
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+# Add curl for health checks
+RUN apk add --no-cache curl
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/
+# Copy built application
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy build output from build stage
-COPY --from=build /app/build /usr/share/nginx/html
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 80
+# Create nginx directories with proper permissions
+RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run/nginx && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Health check configuration
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:80/ || exit 1
+
+# Expose port
 EXPOSE 80
+
+# Add labels for better container management
+LABEL maintainer="Bhavya Bazaar Team" \
+      version="1.0" \
+      description="Bhavya Bazaar Frontend Production Container"
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
