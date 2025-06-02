@@ -34,6 +34,7 @@ module.exports = function override(config) {
       'buffer': require.resolve('buffer')
     }
   };
+
   // Fix source map warnings by properly configuring source-map-loader
   config.module.rules = config.module.rules.map(rule => {
     // Find the source-map-loader rule
@@ -43,7 +44,7 @@ module.exports = function override(config) {
         ...rule,
         exclude: [
           /node_modules\/timeago\.js/,
-          /node_modules\/@material-ui/,
+          /node_modules\/@mui/,
           /node_modules\/react-redux/
         ]
       };
@@ -59,7 +60,7 @@ module.exports = function override(config) {
           ...rule,
           exclude: [
             /node_modules\/timeago\.js/,
-            /node_modules\/@material-ui/,
+            /node_modules\/@mui/,
             /node_modules\/react-redux/
           ]
         };
@@ -67,6 +68,7 @@ module.exports = function override(config) {
     }
     return rule;
   });
+
   // Add plugins for browser polyfills and environment
   config.plugins = [
     ...config.plugins,
