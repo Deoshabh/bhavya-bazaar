@@ -1,22 +1,78 @@
-// Load configuration from environment variables with fallbacks
-const API_DOMAIN = process.env.REACT_APP_API_URL || 'https://api.bhavyabazaar.com/api';
-const WEBSOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://api.bhavyabazaar.com';
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://api.bhavyabazaar.com';
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second initial delay
-
-// Configuration getters with retry logic
+// Load configuration from environment variables with smart defaults
 const getApiDomain = () => {
-  return API_DOMAIN;
+  // Check for runtime environment variables first (for Coolify deployments)
+  if (window.runtimeConfig?.API_URL) {
+    return window.runtimeConfig.API_URL;
+  }
+  
+  // Check for build-time environment variables
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Smart default for bhavyabazaar.com deployment
+  if (process.env.NODE_ENV === 'production') {
+    const currentDomain = window.location.hostname;
+    // If deployed on bhavyabazaar.com or related domains
+    if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
+      return 'https://api.bhavyabazaar.com/api/v2';
+    }
+    // For other custom domains, try to infer backend URL
+    if (currentDomain !== 'localhost' && currentDomain !== '127.0.0.1') {
+      // Common Coolify patterns: if frontend is on subdomain.domain.com, backend might be on api-subdomain.domain.com
+      if (currentDomain.includes('.')) {
+        const parts = currentDomain.split('.');
+        const baseDomain = parts.slice(-2).join('.');
+        return `https://api-${parts[0]}.${baseDomain}/api/v2`;
+      }
+      // Or try api.domain.com
+      return `https://api.${currentDomain}/api/v2`;
+    }
+  }
+  
+  // Final fallback for bhavyabazaar.com
+  return 'https://api.bhavyabazaar.com/api/v2';
 };
 
 const getWebsocketUrl = () => {
-  return WEBSOCKET_URL;
+  // Check for runtime environment variables first
+  if (window.runtimeConfig?.SOCKET_URL) {
+    return window.runtimeConfig.SOCKET_URL;
+  }
+  
+  if (process.env.REACT_APP_SOCKET_URL) {
+    return process.env.REACT_APP_SOCKET_URL;
+  }
+  
+  // Default for bhavyabazaar.com
+  if (process.env.NODE_ENV === 'production') {
+    const currentDomain = window.location.hostname;
+    if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
+      return 'https://api.bhavyabazaar.com';
+    }
+  }
+  
+  // Use same logic as API domain but without /api/v2 suffix
+  const apiDomain = getApiDomain();
+  return apiDomain.replace('/api/v2', '');
 };
 
 const getBackendUrl = () => {
-  return BACKEND_URL;
+  // Check for runtime environment variables first
+  if (window.runtimeConfig?.BACKEND_URL) {
+    return window.runtimeConfig.BACKEND_URL;
+  }
+  
+  if (process.env.REACT_APP_BACKEND_URL) {
+    return process.env.REACT_APP_BACKEND_URL;
+  }
+  
+  // Use same as WebSocket URL
+  return getWebsocketUrl();
 };
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second initial delay
 
 // Sleep function for retry delays
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -25,8 +81,8 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 export const debugConnection = (url) => {
   console.log(`Connection attempt to: ${url}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`API Domain: ${API_DOMAIN}`);
-  console.log(`WebSocket URL: ${WEBSOCKET_URL}`);
+  console.log(`API Domain: ${getApiDomain()}`);
+  console.log(`WebSocket URL: ${getWebsocketUrl()}`);
   return url;
 };
 

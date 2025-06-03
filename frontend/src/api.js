@@ -10,9 +10,11 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  // Force HTTPS
-  httpsAgent: require('https').Agent({
-    rejectUnauthorized: process.env.NODE_ENV === 'production',
+  // Force HTTPS in production
+  ...(process.env.NODE_ENV === 'production' && {
+    httpsAgent: require('https').Agent({
+      rejectUnauthorized: true,
+    })
   })
 });
 
