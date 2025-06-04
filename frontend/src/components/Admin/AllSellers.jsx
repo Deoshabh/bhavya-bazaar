@@ -6,9 +6,10 @@ import { AiOutlineDelete, AiOutlineEye } from "react-icons/ai";
 import { Button } from "@mui/material";
 import styles from "../../styles/styles";
 import axios from "axios";
-import { server } from "../../server";
 import { toast } from "react-toastify";
 import SellerDetailsModal from "./SellerDetailsModal";
+
+const BASE_URL = window.RUNTIME_CONFIG.API_URL;
 
 const AllSellers = () => {
   const dispatch = useDispatch();
@@ -22,7 +23,7 @@ const AllSellers = () => {
 
   const handleDelete = async (id) => {
     try {
-      const { data } = await axios.delete(`${server}/shop/delete-seller/${id}`, {
+      const { data } = await axios.delete(`${BASE_URL}/shop/delete-seller/${id}`, {
         withCredentials: true,
       });
       toast.success(data.message);

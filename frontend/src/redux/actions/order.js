@@ -1,5 +1,7 @@
 import axios from "axios";
-import { server } from "../../server";
+
+const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
+// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
 
 // get all orders of user
 export const getAllOrdersOfUser = (userId) => async (dispatch) => {
@@ -19,7 +21,7 @@ export const getAllOrdersOfUser = (userId) => async (dispatch) => {
     });
 
     const { data } = await axios.get(
-      `${server}/order/get-all-orders/${userId}`
+      `${BASE_URL}/order/get-all-orders/${userId}`
     );
 
     dispatch({
@@ -42,7 +44,7 @@ export const getAllOrdersOfShop = (shopId) => async (dispatch) => {
     });
 
     const { data } = await axios.get(
-      `${server}/order/get-seller-all-orders/${shopId}`
+      `${BASE_URL}/order/get-seller-all-orders/${shopId}`
     );
 
     dispatch({
@@ -64,7 +66,7 @@ export const getAllOrdersOfAdmin = () => async (dispatch) => {
       type: "adminAllOrdersRequest",
     });
 
-    const { data } = await axios.get(`${server}/order/admin-all-orders`, {
+    const { data } = await axios.get(`${BASE_URL}/order/admin-all-orders`, {
       withCredentials: true,
     });
 

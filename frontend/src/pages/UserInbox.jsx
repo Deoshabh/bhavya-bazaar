@@ -7,9 +7,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { format } from "timeago.js";
 import Header from "../components/Layout/Header";
-import { backend_url, server } from "../server";
+import { backend_url } from "../server";
 import styles from "../styles/styles";
 import { disconnectSocket, getSocket, initializeSocket } from '../WebSocketClient';
+
+const BASE_URL = window.RUNTIME_CONFIG.API_URL;
 
 const UserInbox = () => {
   const { user } = useSelector((state) => state.user);

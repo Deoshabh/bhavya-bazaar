@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
+const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
+// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
 
 // load user
 export const loadUser = () => async (dispatch) => {

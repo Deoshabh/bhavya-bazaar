@@ -1,5 +1,7 @@
 import axios from "axios";
-import { server } from "../../server";
+
+const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
+// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
 
 // get all sellers for admin
 export const getAllSellers = () => async (dispatch) => {
@@ -8,7 +10,7 @@ export const getAllSellers = () => async (dispatch) => {
       type: "getAllSellersRequest",
     });
 
-    const { data } = await axios.get(`${server}/shop/admin-all-sellers`, {
+    const { data } = await axios.get(`${BASE_URL}/shop/admin-all-sellers`, {
       withCredentials: true,
     });
 
@@ -32,7 +34,7 @@ export const updateSellerStatus = (sellerId, status) => async (dispatch) => {
     });
 
     const { data } = await axios.put(
-      `${server}/shop/update-seller-status/${sellerId}`,
+      `${BASE_URL}/shop/update-seller-status/${sellerId}`,
       { status },
       { withCredentials: true }
     );

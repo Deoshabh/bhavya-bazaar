@@ -1,5 +1,7 @@
 import axios from "axios";
-import { server } from "../../server";
+
+const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
+// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
 
 // create event
 export const createevent = (newForm) => async (dispatch) => {
@@ -11,7 +13,7 @@ export const createevent = (newForm) => async (dispatch) => {
     const config = { headers: { "Content-Type": "multipart/form-data" } };
 
     const { data } = await axios.post(
-      `${server}/event/create-event`,
+      `${BASE_URL}/event/create-event`,
       newForm,
       config
     );
@@ -34,7 +36,7 @@ export const getAllEventsShop = (id) => async (dispatch) => {
       type: "getAlleventsShopRequest",
     });
 
-    const { data } = await axios.get(`${server}/event/get-all-events/${id}`);
+    const { data } = await axios.get(`${BASE_URL}/event/get-all-events/${id}`);
     dispatch({
       type: "getAlleventsShopSuccess",
       payload: data.events,
@@ -55,7 +57,7 @@ export const deleteEvent = (id) => async (dispatch) => {
     });
 
     const { data } = await axios.delete(
-      `${server}/event/delete-shop-event/${id}`,
+      `${BASE_URL}/event/delete-shop-event/${id}`,
       {
         withCredentials: true,
       }
@@ -80,7 +82,7 @@ export const getAllEvents = () => async (dispatch) => {
       type: "getAlleventsRequest",
     });
 
-    const { data } = await axios.get(`${server}/event/get-all-events`);
+    const { data } = await axios.get(`${BASE_URL}/event/get-all-events`);
     dispatch({
       type: "getAlleventsSuccess",
       payload: data.events,

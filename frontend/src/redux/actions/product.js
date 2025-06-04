@@ -1,5 +1,7 @@
 import axios from "axios";
-import { server } from "../../server";
+
+const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
+// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
 
 // create product
 export const createProduct = (newForm) => async (dispatch) => {
@@ -11,7 +13,7 @@ export const createProduct = (newForm) => async (dispatch) => {
     const config = { headers: { "Content-Type": "multipart/form-data" } };
 
     const { data } = await axios.post(
-      `${server}/product/create-product`,
+      `${BASE_URL}/product/create-product`,
       newForm,
       config
     );
@@ -35,7 +37,7 @@ export const getAllProductsShop = (id) => async (dispatch) => {
     });
 
     const { data } = await axios.get(
-      `${server}/product/get-all-products-shop/${id}`
+      `${BASE_URL}/product/get-all-products-shop/${id}`
     );
     dispatch({
       type: "getAllProductsShopSuccess",
@@ -57,7 +59,7 @@ export const deleteProduct = (id) => async (dispatch) => {
     });
 
     const { data } = await axios.delete(
-      `${server}/product/delete-shop-product/${id}`,
+      `${BASE_URL}/product/delete-shop-product/${id}`,
       {
         withCredentials: true,
       }
@@ -82,7 +84,7 @@ export const getAllProducts = () => async (dispatch) => {
       type: "getAllProductsRequest",
     });
 
-    const { data } = await axios.get(`${server}/product/get-all-products`);
+    const { data } = await axios.get(`${BASE_URL}/product/get-all-products`);
     dispatch({
       type: "getAllProductsSuccess",
       payload: data.products,
