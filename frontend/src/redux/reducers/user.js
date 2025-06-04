@@ -76,6 +76,21 @@ export const userReducer = createReducer(initialState, {
   clearErrors: (state) => {
     state.error = null;
   },
+
+  // load seller
+  LoadSellerRequest: (state) => {
+    state.loading = true;
+  },
+  LoadSellerSuccess: (state, action) => {
+    state.isAuthenticated = true;
+    state.loading = false;
+    state.seller = action.payload;
+  },
+  LoadSellerFail: (state, action) => {
+    state.loading = false;
+    state.error = action.payload;
+    state.isAuthenticated = false;
+  },
 });
 
 // reducer -> logic (state change)

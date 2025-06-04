@@ -98,7 +98,7 @@ export const updateUserInformation =
   };
 
 // update user address
-export const updatUserAddress =
+export const updateUserAddress =
   (country, city, address1, address2, zipCode, addressType) =>
   async (dispatch) => {
     try {
@@ -122,7 +122,7 @@ export const updatUserAddress =
       dispatch({
         type: "updateUserAddressSuccess",
         payload: {
-          successMessage: "User address updated succesfully!",
+          successMessage: "User address updated successfully!",
           user: data.user,
         },
       });
@@ -182,6 +182,11 @@ export const getAllUsers = () => async (dispatch) => {
       payload: error.response?.data?.message || "Error fetching users",
     });
   }
+};
+
+// clear errors action
+export const clearErrors = () => (dispatch) => {
+  dispatch({ type: "clearErrors" });
 };
 
 // what is action in redux ?
