@@ -1,12 +1,12 @@
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const fs = require("fs");
+const path = require("path");
+
 const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
 const { initializeSocket } = require("./socket/socketHandler");
@@ -14,61 +14,41 @@ const { ensureDirectoryExists } = require("./utils/fileSystem");
 
 const app = express();
 
-// Load .env again with custom path (if needed)
+// Load additional .env if you have a custom file path (optional):
 require("dotenv").config({
   path: path.join(__dirname, "config", ".env"),
 });
 
-// Check critical environment variables
+// Verify critical environment vars
 if (!process.env.JWT_SECRET_KEY || !process.env.ACTIVATION_SECRET) {
-  console.error("Required environment variables are missing!");
+  console.error("❌ Required environment variables are missing!");
   process.exit(1);
 }
 
-// Connect to MongoDB and ensure uploads folder exists
+// Connect to MongoDB and create uploads folder
 connectDatabase();
 const uploadsPath = path.join(__dirname, "uploads");
 ensureDirectoryExists(uploadsPath);
-console.log("Uploads directory ready:", uploadsPath);
+console.log("✅ Uploads directory ready:", uploadsPath);
 
 const isProduction = process.env.NODE_ENV === "production";
-console.log(`Environment mode: ${isProduction ? "production" : "development"}`);
+console.log(`⚙️ Environment mode: ${isProduction ? "production" : "development"}`);
 
-// HTTPS / HTTP server setup
-let server;
-try {
-  if (
-    isProduction &&
-    process.env.SSL_KEY_PATH &&
-    process.env.SSL_CERT_PATH &&
-    fs.existsSync(process.env.SSL_KEY_PATH) &&
-    fs.existsSync(process.env.SSL_CERT_PATH)
-  ) {
-    const sslOptions = {
-      key: fs.readFileSync(process.env.SSL_KEY_PATH),
-      cert: fs.readFileSync(process.env.SSL_CERT_PATH),
-    };
-    server = https.createServer(sslOptions, app);
-    console.log("Using HTTPS with SSL certs.");
-  } else {
-    server = http.createServer(app);
-    console.log("SSL not found or not in production. Using HTTP.");
-  }
-} catch (err) {
-  console.error("Error during HTTPS setup:", err.message);
-  server = http.createServer(app);
-}
+// —————————— Server Setup ——————————
+// **Use a plain HTTP server; Coolify’s external proxy will handle TLS/WSS**
+const server = http.createServer(app);
+console.log("⚙️ Using HTTP server; Coolify will handle TLS/WSS for you.");
 
-// Allowed frontend origins - focused on bhavyabazaar.com
-const allowedOrigins = [
-  "https://bhavyabazaar.com",
-  "https://www.bhavyabazaar.com",
-];
+// —————————— CORS Setup ——————————
+const rawCors = process.env.CORS_ORIGIN || "";
+const allowedOrigins = rawCors
+  .split(",")
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0);
 
-// CORS middleware
 app.use(
   cors({
-    origin: ['https://bhavyabazaar.com', 'https://www.bhavyabazaar.com'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -83,21 +63,17 @@ app.use(
   })
 );
 
-// Global request logger
+// —————————— Logging, Parsing, Static ——————————
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
-
-// Enable JSON and cookie parsing
 app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
-
-// Serve static uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// API Health Check
+// —————————— Health & Root Routes ——————————
 app.get("/api/v2/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
@@ -105,8 +81,6 @@ app.get("/api/v2/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-// Root route
 app.get("/", (req, res) => {
   res.json({
     message: "Bhavya Bazaar API Server",
@@ -125,10 +99,10 @@ app.get("/", (req, res) => {
   });
 });
 
-// Pre-flight OPTIONS handling
+// Pre-flight OPTIONS handling (enables CORS pre-flight for all routes)
 app.options("*", cors());
 
-// Routes
+// —————————— API Routes ——————————
 app.use("/api/v2/user", require("./controller/user"));
 app.use("/api/v2/shop", require("./controller/shop"));
 app.use("/api/v2/product", require("./controller/product"));
@@ -140,50 +114,47 @@ app.use("/api/v2/coupon", require("./controller/coupounCode"));
 app.use("/api/v2/payment", require("./controller/payment"));
 app.use("/api/v2/withdraw", require("./controller/withdraw"));
 
-// Native WebSocket Server on /ws path
-const { WebSocketServer } = require('ws');
+// —————————— WebSocketServer on /ws ——————————
+const { WebSocketServer } = require("ws");
 const wss = new WebSocketServer({
   server,
-  path: '/ws'
+  path: "/ws",
 });
 
-wss.on('connection', (ws, req) => {
-  console.log('🟢 WebSocket client connected:', req.socket.remoteAddress);
+wss.on("connection", (ws, req) => {
+  console.log("🟢 WebSocket client connected:", req.socket.remoteAddress);
 
-  ws.on('message', (message) => {
-    console.log('📨 Received WebSocket message:', message.toString());
-    ws.send(JSON.stringify({ reply: 'Echo: ' + message.toString() }));
+  ws.on("message", (message) => {
+    console.log("📨 Received WebSocket message:", message.toString());
+    ws.send(JSON.stringify({ reply: "Echo: " + message.toString() }));
   });
 
-  ws.on('close', () => {
-    console.log('🔴 WebSocket client disconnected');
+  ws.on("close", () => {
+    console.log("🔴 WebSocket client disconnected");
   });
 });
 
-// Socket.IO integration (existing)
+// —————————— Socket.IO (if you still need it) ——————————
 const { io, getSocketStatus } = initializeSocket(server);
 app.get("/socket/status", (req, res) => {
   res.json(getSocketStatus());
 });
 
-// Error handler middleware
+// —————————— Error Handling & Unhandled Exceptions ——————————
 app.use(ErrorHandler);
 
-// Uncaught Exception Handling
 process.on("uncaughtException", (err) => {
-  console.log("UNCAUGHT EXCEPTION:", err.message);
+  console.error("❌ UNCAUGHT EXCEPTION:", err.message);
   process.exit(1);
 });
-
-// Unhandled Promise Rejection
 process.on("unhandledRejection", (err) => {
-  console.log("UNHANDLED PROMISE REJECTION:", err.message);
+  console.error("❌ UNHANDLED PROMISE REJECTION:", err.message);
   server.close(() => process.exit(1));
 });
 
-// Start Server
+// —————————— Start Listening on PORT=443 ——————————
 const PORT = process.env.PORT || 443;
 server.listen(PORT, () => {
-  console.log(`🚀 HTTPS & WSS server listening on port ${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
   console.log(`🌐 API base: https://api.bhavyabazaar.com`);
 });
