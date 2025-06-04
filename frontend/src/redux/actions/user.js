@@ -1,7 +1,6 @@
 import axios from "axios";
-import { server } from "../../server";
 
-const BASE_URL = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL || server;
+const BASE_URL = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
 
 // load user
 export const loadUser = () => async (dispatch) => {
