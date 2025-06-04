@@ -2,8 +2,8 @@ import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "react-toastify";
+import apiService from "../../services/api.js";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -11,9 +11,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Get API URL from runtime config
-  const apiUrl = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,25 +29,8 @@ const Login = () => {
     try {
       setLoading(true);
       
-      // Use the configured API instance for secure requests
-      await axios.post(
-        `${apiUrl}/user/login-user`,
-        {
-          phoneNumber,
-          password,
-        },
-        { 
-          withCredentials: true, 
-          timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          httpsAgent: new (require('https').Agent)({
-            rejectUnauthorized: process.env.NODE_ENV === 'production'
-          })
-        }
-      );
+      // Use our centralized API service
+      await apiService.loginUser(phoneNumber, password);
       toast.success("Login successful!");
       setPhoneNumber("");
       setPassword("");

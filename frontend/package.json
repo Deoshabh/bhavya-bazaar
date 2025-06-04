@@ -16,11 +16,13 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.4.0",
+    "axios": "^1.9.0",
     "caniuse-lite": "^1.0.30001717",
     "compression": "^1.8.0",
     "country-state-city": "^3.1.2",
+    "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.1",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "js-cookie": "^3.0.1",
     "lottie-react": "^2.4.1",
@@ -32,12 +34,13 @@
     "react-scripts": "5.0.1",
     "react-toastify": "^9.1.1",
     "redux": "^4.2.1",
-    "redux-thunk": "^2.4.2",    "redux-toolkit": "^1.1.2",
+    "redux-thunk": "^2.4.2",
+    "redux-toolkit": "^1.1.2",
     "socket.io-client": "^4.6.1",
     "timeago.js": "^4.0.2",
-    "web-vitals": "^2.1.4",
-    "cross-env": "^7.0.3"
-  },  "scripts": {
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
     "prestart": "node scripts/fix-source-maps.js",
     "start": "cross-env NODE_ENV=development react-app-rewired start",
     "build": "cross-env CI=false GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
@@ -70,7 +73,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },  "devDependencies": {
+  },
+  "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "assert": "^2.1.0",
     "autoprefixer": "^10.4.14",
