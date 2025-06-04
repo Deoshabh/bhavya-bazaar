@@ -36,9 +36,50 @@ function testInputFiltering() {
     });
 }
 
+// New tests for WebSocket and API configurations
+function testRuntimeConfig() {
+    console.log("\n=== Runtime Configuration Tests ===");
+    
+    // Test 1: Check if runtime config is loaded
+    if (typeof window !== 'undefined' && window.RUNTIME_CONFIG) {
+        console.log('✅ Runtime config loaded:', window.RUNTIME_CONFIG);
+    } else {
+        console.log('❌ Runtime config not found');
+    }
+
+    // Test 2: Check environment variables fallback
+    const API_URL = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
+    const WS_URL = window.RUNTIME_CONFIG?.SOCKET_URL || process.env.REACT_APP_WS_URL;
+
+    console.log('🔗 API URL:', API_URL);
+    console.log('🛰️  WebSocket URL:', WS_URL);
+
+    // Test 3: Test WebSocket connection (if in browser)
+    if (typeof WebSocket !== 'undefined' && WS_URL) {
+        console.log('🧪 Testing WebSocket connection...');
+        const testSocket = new WebSocket(WS_URL);
+        
+        testSocket.onopen = () => {
+            console.log('✅ WebSocket test connection successful');
+            testSocket.close();
+        };
+        
+        testSocket.onerror = (error) => {
+            console.log('❌ WebSocket test connection failed:', error);
+        };
+        
+        testSocket.onclose = () => {
+            console.log('🔌 WebSocket test connection closed');
+        };
+    } else {
+        console.log('⚠️  WebSocket test skipped (not in browser environment)');
+    }
+}
+
 // Run tests
 testPhoneValidation();
 testInputFiltering();
+testRuntimeConfig();
 
 console.log("=== Tests completed ===");
 console.log("To test the form:");

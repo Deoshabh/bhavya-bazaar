@@ -71,8 +71,16 @@ const Signup = () => {
             formData.append("file", avatar);
         }
 
-        // Define apiUrl outside try/catch so it's accessible in both blocks
-        const apiUrl = `${backend_url}api/v2/user/create-user`;
+        // Use runtime config for API URL with fallback
+        const BASE_URL = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL || backend_url;
+        if (!BASE_URL) {
+            console.error('❌ API_URL is not defined.');
+            toast.error("Configuration error. Please contact support.");
+            return;
+        }
+        
+        // Ensure proper URL format with slash
+        const apiUrl = `${BASE_URL}/api/v2/user/create-user`;
         
         try {
             setLoading(true);
@@ -84,8 +92,6 @@ const Signup = () => {
                 hasAvatar: !!avatar
             });
             
-            // Use the full API URL from backend_url rather than relying on server variable
-            // which might have the wrong path
             console.log("Sending request to:", apiUrl);
             
             const response = await axios.post(apiUrl, formData, {
@@ -129,33 +135,6 @@ const Signup = () => {
                     toast.error("The request timed out. Please check your internet connection and try again.");
                 } else {
                     toast.error("Unable to reach the server. Please check your internet connection.");
-                }
-                
-                // Try with HTTP fallback if HTTPS fails
-                if (apiUrl.startsWith('https://')) {
-                    try {
-                        console.log("Attempting HTTP fallback...");
-                        const httpUrl = apiUrl.replace('https://', 'http://');
-                        
-                        const fallbackResponse = await axios.post(httpUrl, formData, {
-                            ...config,
-                            timeout: 30000,
-                        });
-                        
-                        if (fallbackResponse.data) {
-                            toast.success("Account created successfully!");
-                            setName("");
-                            setPhoneNumber("");
-                            setPassword("");
-                            setAvatar(null);
-                            setLoading(false);
-                            
-                            navigate("/login");
-                        }
-                    } catch (fallbackError) {
-                        console.error("HTTP fallback failed:", fallbackError);
-                        toast.error("Registration failed. Please try again later.");
-                    }
                 }
             } else {
                 console.error("Error:", error.message);

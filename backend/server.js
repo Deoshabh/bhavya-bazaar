@@ -59,31 +59,16 @@ try {
   server = http.createServer(app);
 }
 
-// Allowed frontend origins
+// Allowed frontend origins - focused on bhavyabazaar.com
 const allowedOrigins = [
   "https://bhavyabazaar.com",
   "https://www.bhavyabazaar.com",
-  "https://api.bhavyabazaar.com",
-  "http://localhost:3000",
-  "http://localhost:3005",
 ];
 
 // CORS middleware
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow server-to-server, Postman, curl
-
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.includes("bhavyabazaar.com")
-      ) {
-        return callback(null, true);
-      }
-
-      console.warn(`Blocked CORS request from origin: ${origin}`);
-      return callback(new Error("CORS policy: Origin not allowed"));
-    },
+    origin: ['https://bhavyabazaar.com', 'https://www.bhavyabazaar.com'],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -155,7 +140,27 @@ app.use("/api/v2/coupon", require("./controller/coupounCode"));
 app.use("/api/v2/payment", require("./controller/payment"));
 app.use("/api/v2/withdraw", require("./controller/withdraw"));
 
-// Socket.IO integration
+// Native WebSocket Server on /ws path
+const { WebSocketServer } = require('ws');
+const wss = new WebSocketServer({
+  server,
+  path: '/ws'
+});
+
+wss.on('connection', (ws, req) => {
+  console.log('🟢 WebSocket client connected:', req.socket.remoteAddress);
+
+  ws.on('message', (message) => {
+    console.log('📨 Received WebSocket message:', message.toString());
+    ws.send(JSON.stringify({ reply: 'Echo: ' + message.toString() }));
+  });
+
+  ws.on('close', () => {
+    console.log('🔴 WebSocket client disconnected');
+  });
+});
+
+// Socket.IO integration (existing)
 const { io, getSocketStatus } = initializeSocket(server);
 app.get("/socket/status", (req, res) => {
   res.json(getSocketStatus());
@@ -177,8 +182,8 @@ process.on("unhandledRejection", (err) => {
 });
 
 // Start Server
-const PORT = process.env.PORT || 8005;
+const PORT = process.env.PORT || 443;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 HTTPS & WSS server listening on port ${PORT}`);
   console.log(`🌐 API base: https://api.bhavyabazaar.com`);
 });
