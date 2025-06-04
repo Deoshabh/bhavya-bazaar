@@ -1,8 +1,8 @@
 // Load configuration from environment variables with smart defaults
 const getApiDomain = () => {
   // Check for runtime environment variables first (for Coolify deployments)
-  if (window.runtimeConfig?.API_URL) {
-    return window.runtimeConfig.API_URL;
+  if (window.RUNTIME_CONFIG?.API_URL) {
+    return window.RUNTIME_CONFIG.API_URL;
   }
   
   // Check for build-time environment variables
@@ -36,8 +36,8 @@ const getApiDomain = () => {
 
 const getWebsocketUrl = () => {
   // Check for runtime environment variables first
-  if (window.runtimeConfig?.SOCKET_URL) {
-    return window.runtimeConfig.SOCKET_URL;
+  if (window.RUNTIME_CONFIG?.SOCKET_URL) {
+    return window.RUNTIME_CONFIG.SOCKET_URL;
   }
   
   if (process.env.REACT_APP_SOCKET_URL) {
@@ -59,8 +59,8 @@ const getWebsocketUrl = () => {
 
 const getBackendUrl = () => {
   // Check for runtime environment variables first
-  if (window.runtimeConfig?.BACKEND_URL) {
-    return window.runtimeConfig.BACKEND_URL;
+  if (window.RUNTIME_CONFIG?.BACKEND_URL) {
+    return window.RUNTIME_CONFIG.BACKEND_URL;
   }
   
   if (process.env.REACT_APP_BACKEND_URL) {

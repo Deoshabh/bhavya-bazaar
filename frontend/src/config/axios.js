@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { server } from '../server';
 
 // Create a custom axios instance for production
 const instance = axios.create({
-  baseURL: server,
+  baseURL: window.RUNTIME_CONFIG.API_URL,
   withCredentials: true,
   timeout: 30000,
   headers: {

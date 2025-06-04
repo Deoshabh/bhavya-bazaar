@@ -1,9 +1,30 @@
 import axios from 'axios';
-import { server, getFallbackUrl } from './server';
+
+// Helper to get fallback URL with retry logic
+const getFallbackUrl = (url, attempt = 0) => {
+  if (process.env.NODE_ENV === 'development') {
+    return url;
+  }
+
+  // If HTTPS fails, try HTTP as fallback
+  if (url.startsWith('https://') && attempt === 0) {
+    console.log('Trying HTTP fallback...');
+    return url.replace('https://', 'http://');
+  }
+
+  // If both HTTPS and HTTP fail, try alternative domains
+  if (attempt === 1) {
+    console.log('Trying alternative domain...');
+    return url.replace('api.bhavyabazaar.com', 'bhavyabazaar.com');
+  }
+
+  // Return original URL if all fallbacks fail
+  return url;
+};
 
 // Create a custom instance for API requests
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || server,
+  baseURL: window.RUNTIME_CONFIG.API_URL,
   timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
   withCredentials: true, // Important for cookies
   headers: {

@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-import { backend_url, server, SOCKET_URL } from "../../server";
+import { backend_url, SOCKET_URL } from "../../server";
 import styles from "../../styles/styles";
 
 // Initialize socket with better connection handling
@@ -98,9 +98,9 @@ const DashboardMessages = () => {
 
   useEffect(() => {
     const getConversations = async () => {
-      try {
+            try {
         const response = await axios.get(
-          `${server}/conversation/get-all-conversations/${seller?._id}`,
+          `${window.RUNTIME_CONFIG.API_URL}/conversation/get-all-conversations/${seller?._id}`,
           {
             withCredentials: true,
           }
@@ -149,8 +149,8 @@ const DashboardMessages = () => {
         images: file,
       });
 
-      const { data } = await axios.post(
-        `${server}/message/create-new-message`,
+            const { data } = await axios.post(
+        `${window.RUNTIME_CONFIG.API_URL}/message/create-new-message`,
         formData,
         {
           headers: {
@@ -184,7 +184,7 @@ const DashboardMessages = () => {
         text: newMessage,
       });
 
-      const { data } = await axios.post(`${server}/message/create-new-message`, {
+            const { data } = await axios.post(`${window.RUNTIME_CONFIG.API_URL}/message/create-new-message`, {
         sender: seller._id,
         text: newMessage,
         conversationId: currentChat._id,

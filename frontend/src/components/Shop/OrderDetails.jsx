@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getAllOrdersOfShop } from "../../redux/actions/order";
-import { backend_url, server } from "../../server";
+import { backend_url } from "../../server";
 import styles from "../../styles/styles";
 
 const OrderDetails = () => {
@@ -23,11 +23,10 @@ const OrderDetails = () => {
   }, [dispatch, seller._id]);
 
   const data = orders && orders.find((item) => item._id === id);
-
   const orderUpdateHandler = async (e) => {
     await axios
       .put(
-        `${server}/order/update-order-status/${id}`,
+        `${window.RUNTIME_CONFIG.API_URL}/order/update-order-status/${id}`,
         {
           status,
         },
@@ -41,11 +40,10 @@ const OrderDetails = () => {
         toast.error(error.response.data.message);
       });
   };
-
   const refundOrderUpdateHandler = async (e) => {
     await axios
       .put(
-        `${server}/order/order-refund-success/${id}`,
+        `${window.RUNTIME_CONFIG.API_URL}/order/order-refund-success/${id}`,
         {
           status,
         },

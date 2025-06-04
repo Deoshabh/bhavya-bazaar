@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getAllOrdersOfUser } from "../redux/actions/order";
-import { backend_url, server } from "../server";
+import { backend_url } from "../server";
 import styles from "../styles/styles";
 
 const UserOrderDetails = () => {
@@ -33,11 +33,11 @@ const UserOrderDetails = () => {
     try {
       const endpoint =
         type === "product"
-          ? "/product/create-new-review"
+                  ? "/product/create-new-review"
           : "/event/create-new-review-event";
 
       const res = await axios.put(
-        `${server}${endpoint}`,
+        `${window.RUNTIME_CONFIG.API_URL}${endpoint}`,
         {
           user,
           rating,
@@ -65,11 +65,10 @@ const UserOrderDetails = () => {
       await reviewHandler("event");
     }
   };
-
   // Refund
   const refundHandler = async () => {
     await axios
-      .put(`${server}/order/order-refund/${id}`, {
+      .put(`${window.RUNTIME_CONFIG.API_URL}/order/order-refund/${id}`, {
         status: "Processing refund",
       })
       .then((res) => {

@@ -3,7 +3,6 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { server, debugConnection, getFallbackUrl } from "../../server";
 import { toast } from "react-toastify";
 
 const Login = () => {
@@ -29,12 +28,11 @@ const Login = () => {
 
     try {
       setLoading(true);
-      const apiUrl = debugConnection(`${server}/user/login-user`);
       
       try {
         // Use the configured API instance for secure requests
         await axios.post(
-          apiUrl,
+          `${window.RUNTIME_CONFIG.API_URL}/user/login-user`,
           {
             phoneNumber,
             password,
