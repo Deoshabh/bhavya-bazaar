@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { format } from "timeago.js";
 import Header from "../components/Layout/Header";
-import { backend_url } from "../server";
 import styles from "../styles/styles";
 import { disconnectSocket, getSocket, initializeSocket } from '../WebSocketClient';
 
@@ -72,7 +71,7 @@ const UserInbox = () => {
     const getConversations = async () => {
       try {
         const response = await axios.get(
-          `${server}/conversation/get-all-conversation/${user?._id}`,
+          `${BASE_URL}/conversation/get-all-conversation/${user?._id}`,
           {
             withCredentials: true,
           }
@@ -101,7 +100,7 @@ const UserInbox = () => {
     const getMessage = async () => {
       try {
         const response = await axios.get(
-          `${server}/message/get-all-messages/${currentChat?._id}`
+          `${BASE_URL}/message/get-all-messages/${currentChat?._id}`
         );
         setMessages(response.data.messages);
       } catch (error) {
@@ -134,7 +133,7 @@ const UserInbox = () => {
     try {
       if (newMessage !== "") {
         await axios
-          .post(`${server}/message/create-new-message`, message)
+          .post(`${BASE_URL}/message/create-new-message`, message)
           .then((res) => {
             setMessages([...messages, res.data.message]);
             updateLastMessage();
@@ -156,7 +155,7 @@ const UserInbox = () => {
     });
 
     await axios
-      .put(`${server}/conversation/update-last-message/${currentChat._id}`, {
+      .put(`${BASE_URL}/conversation/update-last-message/${currentChat._id}`, {
         lastMessage: newMessage,
         lastMessageId: user._id,
       })
@@ -195,7 +194,7 @@ const UserInbox = () => {
 
     try {
       await axios
-        .post(`${server}/message/create-new-message`, formData, {
+        .post(`${BASE_URL}/message/create-new-message`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -212,7 +211,7 @@ const UserInbox = () => {
 
   const updateLastMessageForImage = async () => {
     await axios.put(
-      `${server}/conversation/update-last-message/${currentChat._id}`,
+      `${BASE_URL}/conversation/update-last-message/${currentChat._id}`,
       {
         lastMessage: "Photo",
         lastMessageId: user._id,
@@ -293,7 +292,7 @@ const MessageList = ({
     const userId = data.members.find((user) => user !== me);
     const getUser = async () => {
       try {
-        const res = await axios.get(`${server}/shop/get-shop-info/${userId}`);
+        const res = await axios.get(`${BASE_URL}/shop/get-shop-info/${userId}`);
 
         setUser(res.data.shop);
       } catch (error) {
@@ -318,7 +317,7 @@ const MessageList = ({
     >
       <div className="relative">
         <img
-          src={`${backend_url}uploads/${userData?.avatar}`}
+          src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
           alt=""
           className="w-[50px] h-[50px] rounded-full"
         />
@@ -359,7 +358,7 @@ const SellerInbox = ({
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
           <img
-            src={`${backend_url}uploads/${userData?.avatar}`}
+            src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
             alt=""
             className="w-[60px] h-[60px] rounded-full"
           />
@@ -388,14 +387,14 @@ const SellerInbox = ({
             >
               {item.sender !== sellerId && (
                 <img
-                  src={`${backend_url}uploads/${userData?.avatar}`}
+                  src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
                   className="w-[40px] h-[40px] rounded-full mr-3"
                   alt=""
                 />
               )}
               {item.images && (
                 <img
-                  src={`${backend_url}uploads/${item.images}`}
+                  src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${item.images}`}
                   className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
                   alt="Message attachment"
                 />

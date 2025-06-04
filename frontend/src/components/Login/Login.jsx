@@ -12,6 +12,9 @@ const Login = () => {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Get API URL from runtime config
+  const apiUrl = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -29,67 +32,31 @@ const Login = () => {
     try {
       setLoading(true);
       
-      try {
-        // Use the configured API instance for secure requests
-        await axios.post(
-          `${window.RUNTIME_CONFIG.API_URL}/user/login-user`,
-          {
-            phoneNumber,
-            password,
+      // Use the configured API instance for secure requests
+      await axios.post(
+        `${apiUrl}/user/login-user`,
+        {
+          phoneNumber,
+          password,
+        },
+        { 
+          withCredentials: true, 
+          timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
-          { 
-            withCredentials: true, 
-            timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            httpsAgent: new (require('https').Agent)({
-              rejectUnauthorized: process.env.NODE_ENV === 'production'
-            })
-          }
-        );
-        toast.success("Login successful!");
-        setPhoneNumber("");
-        setPassword("");
-        setLoading(false);
-        navigate("/");
-        window.location.reload(true); 
-      } catch (mainError) {
-        console.error("Main login error:", mainError.message);
-        
-        // If there's a certificate error or network error, try fallback URL
-        if (mainError.message.includes("certificate") || 
-            mainError.message.includes("network") ||
-            mainError.message.includes("SSL") ||
-            !mainError.response) {
-            
-          const fallbackUrl = debugConnection(getFallbackUrl(apiUrl));
-          console.log(`Certificate/network error detected, trying fallback URL: ${fallbackUrl}`);
-          
-          try {
-            await axios.post(
-              fallbackUrl,
-              {
-                phoneNumber,
-                password,
-              },
-              { withCredentials: true }
-            );
-            toast.success("Login successful (using fallback connection)!");
-            setPhoneNumber("");
-            setPassword("");
-            setLoading(false);
-            navigate("/");
-            window.location.reload(true);
-            return;
-          } catch (fallbackError) {
-            console.error("Fallback login error:", fallbackError);
-            throw fallbackError;
-          }
+          httpsAgent: new (require('https').Agent)({
+            rejectUnauthorized: process.env.NODE_ENV === 'production'
+          })
         }
-        throw mainError;
-      }
+      );
+      toast.success("Login successful!");
+      setPhoneNumber("");
+      setPassword("");
+      setLoading(false);
+      navigate("/");
+      window.location.reload(true); 
     } catch (err) {
       setLoading(false);
       if (err.response && err.response.data) {

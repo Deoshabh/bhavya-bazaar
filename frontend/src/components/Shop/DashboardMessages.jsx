@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-import { backend_url, SOCKET_URL } from "../../server";
+import { SOCKET_URL } from "../../server";
 import styles from "../../styles/styles";
 
 // Initialize socket with better connection handling
@@ -25,6 +25,9 @@ const DashboardMessages = () => {
   const [open, setOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const scrollRef = useRef(null);
+
+  // Get API URL from runtime config
+  const apiUrl = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     // Initialize socket connection with more robust connection options
@@ -207,7 +210,7 @@ const DashboardMessages = () => {
       });
 
       await axios.put(
-        `${server}/conversation/update-last-message/${currentChat._id}`,
+        `${apiUrl}/conversation/update-last-message/${currentChat._id}`,
         {
           lastMessage: newMessage,
           lastMessageId: seller._id,
@@ -221,7 +224,7 @@ const DashboardMessages = () => {
   const updateLastMessageForImage = async () => {
     try {
       await axios.put(
-        `${server}/conversation/update-last-message/${currentChat._id}`,
+        `${apiUrl}/conversation/update-last-message/${currentChat._id}`,
         {
           lastMessage: "Photo",
           lastMessageId: seller._id,
@@ -295,7 +298,7 @@ const MessageList = ({
       try {
         const userId = data.members.find((user) => user !== me);
         const { data: response } = await axios.get(
-          `${server}/shop/get-shop-info/${userId}`
+          `${window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL}/shop/get-shop-info/${userId}`
         );
         setUserData(response.shop);
       } catch (error) {
@@ -323,7 +326,7 @@ const MessageList = ({
     >
       <div className="relative">
         <img
-          src={`${backend_url}uploads/${userData?.avatar}`}
+          src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
           alt={userData?.name || "User avatar"}
           className="w-[50px] h-[50px] rounded-full"
         />
@@ -364,7 +367,7 @@ const SellerInbox = ({
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
           <img
-            src={`${backend_url}uploads/${userData?.avatar}`}
+            src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
             alt={userData?.name || "User avatar"}
             className="w-[60px] h-[60px] rounded-full"
           />
@@ -392,14 +395,14 @@ const SellerInbox = ({
           >
             {item.sender !== sellerId && (
               <img
-                src={`${backend_url}uploads/${userData?.avatar}`}
+                src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
                 alt={userData?.name || "User avatar"}
                 className="w-[40px] h-[40px] rounded-full mr-3"
               />
             )}
             {item.images && (
               <img
-                src={`${backend_url}uploads/${item.images}`}
+                src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${item.images}`}
                 alt="Message attachment"
                 className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
               />
