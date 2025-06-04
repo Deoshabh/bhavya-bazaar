@@ -13,7 +13,7 @@ import { getAllOrdersOfUser } from '../../redux/actions/order';
 import {
     deleteUserAddress,
     loadUser,
-    updatUserAddress
+    updateUserAddress
 } from "../../redux/actions/user";
 import { backend_url, server } from "../../server";
 import styles from "../../styles/styles";
@@ -635,7 +635,7 @@ const Address = () => {
             toast.error("Please fill all the fields!");
         } else {
             dispatch(
-                updatUserAddress(
+                updateUserAddress(
                     country,
                     city,
                     address1,
