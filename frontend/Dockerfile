@@ -35,6 +35,10 @@ COPY --from=builder /app/build /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Copy docker entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Create nginx directories with proper permissions
 RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run/nginx && \
     chmod -R 755 /usr/share/nginx/html
@@ -51,5 +55,5 @@ LABEL maintainer="Bhavya Bazaar Team" \
       version="1.0" \
       description="Bhavya Bazaar Frontend Production Container"
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Use custom entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]
