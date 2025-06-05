@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addTocart } from "../../../redux/actions/cart";
 import { addToWishlist, removeFromWishlist } from '../../../redux/actions/wishlist';
-import { backend_url, getImageUrl } from "../../../server";
+import { getImageUrl } from "../../../server";
 import styles from "../../../styles/styles";
 
 

@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getAllOrdersOfUser } from "../redux/actions/order";
-import { backend_url } from "../server";
+import { getImageUrl } from "../server";
 import styles from "../styles/styles";
 
 const UserOrderDetails = () => {
@@ -104,9 +104,8 @@ const UserOrderDetails = () => {
       {data &&
         data?.cart.map((item, index) => {
           return (
-            <div className="w-full flex items-start mb-5">
-              <img
-                src={`${backend_url}/${item.images[0]}`}
+            <div className="w-full flex items-start mb-5">              <img
+                src={getImageUrl(item.images[0])}
                 alt="Product item order img"
                 className="w-[80x] h-[80px]"
               />
@@ -141,10 +140,9 @@ const UserOrderDetails = () => {
             <h2 className="text-[30px] font-[500] font-Poppins text-center">
               Give a Review
             </h2>
-            <br />
-            <div className="w-full flex">
+            <br />            <div className="w-full flex">
               <img
-                src={`${backend_url}/${selectedItem?.images[0]}`}
+                src={getImageUrl(selectedItem?.images[0])}
                 alt=""
                 className="w-[80px] h-[80px]"
               />

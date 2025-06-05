@@ -4,7 +4,7 @@ import { AiOutlineCamera } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { loadSeller } from "../../redux/actions/user";
-import { backend_url, server, getImageUrl } from "../../server";
+import { server, getImageUrl } from "../../server";
 import styles from "../../styles/styles";
 
 const ShopSettings = () => {

@@ -15,7 +15,7 @@ import {
     loadUser,
     updateUserAddress
 } from "../../redux/actions/user";
-import { backend_url, server, getImageUrl } from "../../server";
+import { server, getImageUrl } from "../../server";
 import styles from "../../styles/styles";
 
 

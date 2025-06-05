@@ -1,5 +1,5 @@
 import { RxCross1 } from "react-icons/rx";
-import { backend_url } from "../../server";
+import { getImageUrl } from "../../server";
 
 const SellerDetailsModal = ({ open, setOpen, seller }) => {
   if (!seller) return null;
@@ -15,10 +15,9 @@ const SellerDetailsModal = ({ open, setOpen, seller }) => {
           />
         </div>
         <div className="flex flex-col items-center">
-          <h3 className="text-[20px] font-Poppins pb-4">Seller Details</h3>
-          {seller.avatar && (
+          <h3 className="text-[20px] font-Poppins pb-4">Seller Details</h3>          {seller.avatar && (
             <img
-              src={`${backend_url}${seller.avatar}`}
+              src={getImageUrl(seller.avatar)}
               alt="Seller Avatar"
               className="w-[150px] h-[150px] object-cover rounded-full"
               onError={(e) => {

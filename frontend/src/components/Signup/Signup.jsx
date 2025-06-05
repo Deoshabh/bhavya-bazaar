@@ -4,7 +4,7 @@ import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
 import axios from "axios";
-import { backend_url } from "../../server";
+import { server } from "../../server";
 import { toast } from "react-toastify";
 
 const Signup = () => {
@@ -71,8 +71,11 @@ const Signup = () => {
             formData.append("file", avatar);
         }
 
-        // Use runtime config for API URL with fallback
-        const BASE_URL = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL || backend_url;
+        // Use runtime config for API URL with proper fallback chain
+        const BASE_URL = window.__RUNTIME_CONFIG__?.API_URL || 
+                        window.RUNTIME_CONFIG?.API_URL || 
+                        server || 
+                        'https://api.bhavyabazaar.com/api/v2';
         if (!BASE_URL) {
             console.error('❌ API_URL is not defined.');
             toast.error("Configuration error. Please contact support.");
