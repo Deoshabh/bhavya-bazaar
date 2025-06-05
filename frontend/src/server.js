@@ -1,6 +1,9 @@
 // Load configuration from environment variables with smart defaults
 const getApiDomain = () => {
   // Check for runtime environment variables first (for Coolify deployments)
+  if (window.__RUNTIME_CONFIG__?.API_URL) {
+    return window.__RUNTIME_CONFIG__.API_URL;
+  }
   if (window.RUNTIME_CONFIG?.API_URL) {
     return window.RUNTIME_CONFIG.API_URL;
   }
@@ -36,6 +39,9 @@ const getApiDomain = () => {
 
 const getWebsocketUrl = () => {
   // Check for runtime environment variables first
+  if (window.__RUNTIME_CONFIG__?.SOCKET_URL) {
+    return window.__RUNTIME_CONFIG__.SOCKET_URL;
+  }
   if (window.RUNTIME_CONFIG?.SOCKET_URL) {
     return window.RUNTIME_CONFIG.SOCKET_URL;
   }
@@ -78,8 +84,10 @@ const getBackendUrl = () => {
 export const getImageUrl = (filename) => {
   if (!filename) return '';
   
-  // Get base URL
-  const baseUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 
+  // Get base URL with proper fallback chain
+  const baseUrl = window.__RUNTIME_CONFIG__?.BACKEND_URL || 
+                  window.RUNTIME_CONFIG?.BACKEND_URL || 
+                  window.__RUNTIME_CONFIG__?.API_URL?.replace('/api/v2', '') || 
                   window.RUNTIME_CONFIG?.API_URL?.replace('/api/v2', '') || 
                   process.env.REACT_APP_BACKEND_URL || 
                   'https://api.bhavyabazaar.com';
