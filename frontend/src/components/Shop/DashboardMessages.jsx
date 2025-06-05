@@ -27,7 +27,7 @@ const DashboardMessages = () => {
   const scrollRef = useRef(null);
 
   // Get API URL from runtime config
-  const apiUrl = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
+  const apiUrl = window.RUNTIME_CONFIG?.API_URL;
 
   useEffect(() => {
     // Initialize socket connection with more robust connection options
