@@ -14,8 +14,8 @@ const AdminHeader = () => {
       <div>
         <Link to="/">
           <img
-            src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-            alt=""
+            src="/main.png"
+            alt="Bhavya Bazaar"
           />
         </Link>
       </div>
@@ -43,7 +43,7 @@ const AdminHeader = () => {
             />
           </Link>
           <img
-            src={`${backend_url}${user?.avatar}`}
+            src={user?.avatar ? `${backend_url}uploads/${user.avatar}` : "/user-placeholder.png"}
             alt=""
             className="w-[50px] h-[50px] rounded-full object-cover"
           />

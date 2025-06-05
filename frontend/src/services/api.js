@@ -4,8 +4,8 @@ import axios from 'axios';
 
 class ApiService {
   constructor() {
-    // Get base API URL from the runtime config (new format or legacy format)
-    this.apiBase = window.__RUNTIME_CONFIG__?.API_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
+    // Get base API URL from the runtime config
+    this.apiBase = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
     
     // If we still don't have a URL, use production default
     if (!this.apiBase) {
@@ -87,16 +87,14 @@ class ApiService {
   async getAllProducts() {
     return this.api.get('/product/get-all-products');
   }
-  
-  // Event endpoints
+    // Event endpoints
   async getAllEvents() {
     return this.api.get('/event/get-all-events');
   }
-    // Build complete URL (for image references etc.)
+  
+  // Build complete URL (for image references etc.)
   getFullUrl(path) {
     const baseUrl = 
-      window.__RUNTIME_CONFIG__?.BACKEND_URL || 
-      window.__RUNTIME_CONFIG__?.API_URL || 
       window.RUNTIME_CONFIG?.BACKEND_URL || 
       window.RUNTIME_CONFIG?.API_URL || 
       process.env.REACT_APP_BACKEND_URL;
@@ -108,4 +106,6 @@ class ApiService {
   }
 }
 
-export default new ApiService();
+// Create instance first, then export
+const apiService = new ApiService();
+export default apiService;

@@ -9,52 +9,53 @@ const initialState = {
   sellers: [],
 };
 
-export const sellerReducer = createReducer(initialState, {
-  // existing actions
-  LoadSellerRequest: (state) => {
-    state.isLoading = true;
-  },
-  LoadSellerSuccess: (state, action) => {
-    state.isSeller = true;
-    state.isLoading = false;
-    state.seller = action.payload;
-  },
-  LoadSellerFail: (state, action) => {
-    state.isLoading = false;
-    state.error = action.payload;
-    state.isSeller = false;
-  },
-  
-  // Admin get all sellers
-  getAllSellersRequest: (state) => {
-    state.isLoading = true;
-  },
-  getAllSellersSuccess: (state, action) => {
-    state.isLoading = false;
-    state.sellers = action.payload;
-  },
-  getAllSellersFailed: (state, action) => {
-    state.isLoading = false;
-    state.error = action.payload;
-  },
-  
-  // Update seller status
-  updateSellerStatusRequest: (state) => {
-    state.isLoading = true;
-  },
-  updateSellerStatusSuccess: (state, action) => {
-    state.isLoading = false;
-    const { sellerId, status } = action.payload;
-    state.sellers = state.sellers.map(seller => 
-      seller._id === sellerId ? {...seller, status} : seller
-    );
-  },
-  updateSellerStatusFailed: (state, action) => {
-    state.isLoading = false;
-    state.error = action.payload;
-  },
+export const sellerReducer = createReducer(initialState, (builder) => {
+  builder
+    // existing actions
+    .addCase("LoadSellerRequest", (state) => {
+      state.isLoading = true;
+    })
+    .addCase("LoadSellerSuccess", (state, action) => {
+      state.isSeller = true;
+      state.isLoading = false;
+      state.seller = action.payload;
+    })
+    .addCase("LoadSellerFail", (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+      state.isSeller = false;
+    })
+    
+    // Admin get all sellers
+    .addCase("getAllSellersRequest", (state) => {
+      state.isLoading = true;
+    })
+    .addCase("getAllSellersSuccess", (state, action) => {
+      state.isLoading = false;
+      state.sellers = action.payload;
+    })
+    .addCase("getAllSellersFailed", (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    })
+    
+    // Update seller status
+    .addCase("updateSellerStatusRequest", (state) => {
+      state.isLoading = true;
+    })
+    .addCase("updateSellerStatusSuccess", (state, action) => {
+      state.isLoading = false;
+      const { sellerId, status } = action.payload;
+      state.sellers = state.sellers.map(seller => 
+        seller._id === sellerId ? {...seller, status} : seller
+      );
+    })
+    .addCase("updateSellerStatusFailed", (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    })
 
-  clearErrors: (state) => {
-    state.error = null;
-  },
+    .addCase("clearErrors", (state) => {
+      state.error = null;
+    });
 });

@@ -13,8 +13,8 @@ const DashboardHeader = () => {
             <div>
                 <Link to="/dashboard">
                     <img
-                        src="https://shopo.quomodothemes.website/assets/images/logo.svg"
-                        alt=""
+                        src="/main.png"
+                        alt="Bhavya Bazaar"
                     />
                 </Link>
             </div>
@@ -53,7 +53,7 @@ const DashboardHeader = () => {
                     </Link>
                     <Link to={`/shop/${seller._id}`}>
                         <img
-                            src={`${backend_url}uploads/${seller.avatar}`}
+                            src={seller?.avatar ? `${backend_url}uploads/${seller.avatar}` : "/user-placeholder.png"}
                             alt=""
                             className="w-[50px] h-[50px] rounded-full object-cover"
                         />
