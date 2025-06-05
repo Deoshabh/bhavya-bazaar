@@ -1,44 +1,25 @@
-﻿/**
+/**
  * Runtime configuration for Bhavya Bazaar (Production)
  * This file provides runtime configuration values that can be changed without rebuilding the application
  * Values will be available as window.__RUNTIME_CONFIG__ in the browser
  * CRITICAL: NO process.env references - pure browser JavaScript only!
- * Last updated: 2025-06-06 - CRITICAL WHITE SCREEN FIX
+ * Encoding: UTF-8 without BOM - Fixed June 6, 2025
  */
 
-// Define runtime configuration with static production values
 window.__RUNTIME_CONFIG__ = {
-  // API URL - Production values
   API_URL: "https://api.bhavyabazaar.com/api/v2",
-  
-  // Socket URL for real-time communication
   SOCKET_URL: "wss://api.bhavyabazaar.com/ws",
-  
-  // Base URL for assets and uploads
   BACKEND_URL: "https://api.bhavyabazaar.com",
-  
-  // Environment indicator
   NODE_ENV: "production",
-  
-  // Feature flags
   FEATURES: {
     ENABLE_CHAT: true,
     ENABLE_NOTIFICATIONS: true,
     ENABLE_ANALYTICS: true
   },
-  
-  // Version info for debugging
-  VERSION: "2.0.0",
-  
-  // Build timestamp - Updated June 6, 2025 (Fixed White Screen)
-  BUILD_TIME: "2025-06-06T12:00:00.000Z",
-  
-  // Debug mode (disabled in production)
+  VERSION: "2.0.1",
+  BUILD_TIME: "2025-06-06T15:30:00.000Z",
   DEBUG: false
 };
 
-// Backward compatibility for code still using RUNTIME_CONFIG without underscore
 window.RUNTIME_CONFIG = window.__RUNTIME_CONFIG__;
-
-// Log successful configuration load for debugging
-console.log(" Runtime configuration loaded successfully - Version 2.0.0:", window.__RUNTIME_CONFIG__);
+console.log("Runtime config loaded successfully - v2.0.1:", window.__RUNTIME_CONFIG__);
