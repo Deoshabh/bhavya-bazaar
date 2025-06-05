@@ -74,12 +74,11 @@ const getBackendUrl = () => {  // Check for runtime environment variables first
 export const getImageUrl = (filename) => {
   if (!filename) return '';
   
-  // Get base URL with proper fallback chain
+  // Get base URL with proper fallback chain (NO process.env for browser compatibility!)
   const baseUrl = window.__RUNTIME_CONFIG__?.BACKEND_URL || 
                   window.RUNTIME_CONFIG?.BACKEND_URL || 
                   window.__RUNTIME_CONFIG__?.API_URL?.replace('/api/v2', '') || 
                   window.RUNTIME_CONFIG?.API_URL?.replace('/api/v2', '') || 
-                  process.env.REACT_APP_BACKEND_URL || 
                   'https://api.bhavyabazaar.com';
   
   // Clean up the filename (remove leading slash if any)
