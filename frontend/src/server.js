@@ -60,15 +60,37 @@ const getWebsocketUrl = () => {
 const getBackendUrl = () => {
   // Check for runtime environment variables first
   if (window.RUNTIME_CONFIG?.BACKEND_URL) {
-    return window.RUNTIME_CONFIG.BACKEND_URL;
+    const url = window.RUNTIME_CONFIG.BACKEND_URL;
+    return url.endsWith('/') ? url : `${url}/`;
   }
   
   if (process.env.REACT_APP_BACKEND_URL) {
-    return process.env.REACT_APP_BACKEND_URL;
+    const url = process.env.REACT_APP_BACKEND_URL;
+    return url.endsWith('/') ? url : `${url}/`;
   }
   
-  // Use same as WebSocket URL
-  return getWebsocketUrl();
+  // Use same as WebSocket URL but ensure trailing slash
+  const wsUrl = getWebsocketUrl();
+  return wsUrl.endsWith('/') ? wsUrl : `${wsUrl}/`;
+};
+
+// Utility function to safely construct image URLs
+export const getImageUrl = (filename) => {
+  if (!filename) return '';
+  
+  // Get base URL
+  const baseUrl = window.RUNTIME_CONFIG?.BACKEND_URL || 
+                  window.RUNTIME_CONFIG?.API_URL?.replace('/api/v2', '') || 
+                  process.env.REACT_APP_BACKEND_URL || 
+                  'https://api.bhavyabazaar.com';
+  
+  // Clean up the filename (remove leading slash if any)
+  const cleanFilename = filename.startsWith('/') ? filename.substring(1) : filename;
+  
+  // Ensure proper URL construction
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  
+  return `${cleanBaseUrl}/uploads/${cleanFilename}`;
 };
 
 const MAX_RETRIES = 3;

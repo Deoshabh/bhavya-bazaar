@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { format } from "timeago.js";
 import Header from "../components/Layout/Header";
+import { getImageUrl } from "../server";
 import styles from "../styles/styles";
 import { disconnectSocket, getSocket, initializeSocket } from '../WebSocketClient';
 
@@ -317,7 +318,7 @@ const MessageList = ({
     >
       <div className="relative">
         <img
-          src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
+          src={getImageUrl(userData?.avatar)}
           alt=""
           className="w-[50px] h-[50px] rounded-full"
         />
@@ -358,7 +359,7 @@ const SellerInbox = ({
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
           <img
-            src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
+            src={getImageUrl(userData?.avatar)}
             alt=""
             className="w-[60px] h-[60px] rounded-full"
           />
@@ -387,14 +388,14 @@ const SellerInbox = ({
             >
               {item.sender !== sellerId && (
                 <img
-                  src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${userData?.avatar}`}
+                  src={getImageUrl(userData?.avatar)}
                   className="w-[40px] h-[40px] rounded-full mr-3"
                   alt=""
                 />
               )}
               {item.images && (
                 <img
-                  src={`${window.RUNTIME_CONFIG?.BACKEND_URL || window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_BACKEND_URL}/uploads/${item.images}`}
+                  src={getImageUrl(item.images)}
                   className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
                   alt="Message attachment"
                 />

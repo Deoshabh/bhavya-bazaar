@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { addTocart } from '../../../redux/actions/cart';
 import { addToWishlist, removeFromWishlist } from '../../../redux/actions/wishlist';
-import { backend_url } from "../../../server";
+import { getImageUrl } from "../../../server";
 import styles from "../../../styles/styles";
 import Ratings from "../../Products/Ratings";
 import ProductDetailsCard from "../ProductDetailsCard/ProductDetailsCard.jsx";
@@ -70,7 +70,7 @@ const ProductCard = ({ data, isEvent }) => {
 
                 <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>
                     <img
-                        src={`${backend_url}uploads/${data.images && data.images[0]}`}
+                        src={getImageUrl(data.images && data.images[0])}
                         alt="prd"
                         className='w-full h-[170px] object-contain'
                     />

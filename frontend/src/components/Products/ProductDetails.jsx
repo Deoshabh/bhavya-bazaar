@@ -15,7 +15,7 @@ import {
     addToWishlist,
     removeFromWishlist,
 } from "../../redux/actions/wishlist";
-import { backend_url, server } from "../../server";
+import { server, getImageUrl } from "../../server";
 import styles from "../../styles/styles";
 import Ratings from "./Ratings";
 
@@ -122,9 +122,8 @@ const ProductDetails = ({ data }) => {
       {data ? (
         <div className={`${styles.section} w-[90%] 800px:w-[80%] `}>
           <div className="w-full py-5">
-            <div className="block w-full 800px:flex">
-              <div className="w-full 800px:w-[50%]">                <img
-                  src={`${backend_url}uploads/${data && data.images[select]}`}
+            <div className="block w-full 800px:flex">              <div className="w-full 800px:w-[50%]">                <img
+                  src={getImageUrl(data && data.images[select])}
                   alt=""
                   className="w-[80%]"
                 />
@@ -138,7 +137,7 @@ const ProductDetails = ({ data }) => {
                         } cursor-pointer`}
                       >
                         <img
-                          src={`${backend_url}uploads/${i}`}
+                          src={getImageUrl(i)}
                           alt=""
                           className="h-[200px] overflow-hidden mr-3 mt-3"
                           onClick={() => setSelect(index)}
@@ -208,10 +207,9 @@ const ProductDetails = ({ data }) => {
                   <span className="text-white flex items-center">
                     Add to Cart <AiOutlineShoppingCart className="ml-1" />
                   </span>
-                </div>                <div className="flex items-center pt-8">
-                  <Link to={`/shop/preview/${data?.shop._id}`}>
+                </div>                <div className="flex items-center pt-8">                <Link to={`/shop/preview/${data?.shop._id}`}>
                     <img
-                      src={`${backend_url}uploads/${data?.shop?.avatar}`}
+                      src={getImageUrl(data?.shop?.avatar)}
                       alt=""
                       className="w-[50px] h-[50px] rounded-full mr-2"
                     />
@@ -328,7 +326,7 @@ const ProductDetailsInfo = ({
           {data &&            data.reviews.map((item, index) => (
               <div className="w-full flex my-2" key={index}>
                 <img
-                  src={`${backend_url}uploads/${item.user.avatar}`}
+                  src={getImageUrl(item.user.avatar)}
                   alt=""
                   className="w-[50px] h-[50px] rounded-full"
                 />
@@ -354,11 +352,10 @@ const ProductDetailsInfo = ({
         <>
           <div className="w-full block 800px:flex p-5 ">
             <div className="w-full 800px:w-[50%]">
-              <div className="flex items-center">
-                <Link to={`/shop/preview/${data.shop._id}`}>
+              <div className="flex items-center">                <Link to={`/shop/preview/${data.shop._id}`}>
                   <div className="flex items-center">
                     <img
-                      src={`${backend_url}uploads/${data?.shop?.avatar}`}
+                      src={getImageUrl(data?.shop?.avatar)}
                       className="w-[50px] h-[50px] rounded-full"
                       alt=""
                     />

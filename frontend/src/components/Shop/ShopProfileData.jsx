@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { getAllEventsShop } from "../../redux/actions/event";
 import { getAllProductsShop } from "../../redux/actions/product";
-import { backend_url } from "../../server";
+import { getImageUrl } from "../../server";
 import styles from "../../styles/styles";
 import Ratings from "../Products/Ratings";
 import ProductCard from "../Route/ProductCard/ProductCard";
@@ -107,11 +107,10 @@ const ShopProfileData = ({ isOwner }) => {
 
             {/* Shop reviews */}
             {active === 3 && (
-                <div className="w-full">
-                    {allReviews &&                        allReviews.map((item, index) => (
+                <div className="w-full">                    {allReviews &&                        allReviews.map((item, index) => (
                             <div className="w-full flex my-4">
                                 <img
-                                    src={`${backend_url}uploads/${item.user.avatar}`}
+                                    src={getImageUrl(item.user.avatar)}
                                     className="w-[50px] h-[50px] rounded-full"
                                     alt=""
                                 />

@@ -4,7 +4,7 @@ import { FiPackage, FiShoppingBag } from "react-icons/fi";
 import { MdOutlineLocalOffer } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { backend_url } from "../../../server";
+import { getImageUrl } from "../../../server";
 
 const DashboardHeader = () => {
     const { seller } = useSelector((state) => state.seller);
@@ -53,7 +53,7 @@ const DashboardHeader = () => {
                     </Link>
                     <Link to={`/shop/${seller._id}`}>
                         <img
-                            src={seller?.avatar ? `${backend_url}uploads/${seller.avatar}` : "/user-placeholder.png"}
+                            src={seller?.avatar ? getImageUrl(seller.avatar) : "/user-placeholder.png"}
                             alt=""
                             className="w-[50px] h-[50px] rounded-full object-cover"
                         />

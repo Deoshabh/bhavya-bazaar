@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getAllOrdersOfShop } from "../../redux/actions/order";
-import { backend_url } from "../../server";
+import { getImageUrl } from "../../server";
 import styles from "../../styles/styles";
 
 const OrderDetails = () => {
@@ -89,7 +89,7 @@ const OrderDetails = () => {
       {data &&        data?.cart.map((item, index) => (
           <div className="w-full flex items-start mb-5">
             <img
-              src={`${backend_url}uploads/${item.images[0]}`}
+              src={getImageUrl(item.images[0])}
               alt="Product item order img"
               className="w-[80x] h-[80px]"
             />            <div className="w-full">

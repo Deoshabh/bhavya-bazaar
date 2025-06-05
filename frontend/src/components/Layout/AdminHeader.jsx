@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CiMoneyBill } from "react-icons/ci";
 import { GrWorkshop } from "react-icons/gr";
-import { backend_url } from "../../server";
+import { getImageUrl } from "../../server";
 
 const AdminHeader = () => {
   const { user } = useSelector((state) => state.user);
@@ -43,7 +43,7 @@ const AdminHeader = () => {
             />
           </Link>
           <img
-            src={user?.avatar ? `${backend_url}uploads/${user.avatar}` : "/user-placeholder.png"}
+            src={user?.avatar ? getImageUrl(user.avatar) : "/user-placeholder.png"}
             alt=""
             className="w-[50px] h-[50px] rounded-full object-cover"
           />

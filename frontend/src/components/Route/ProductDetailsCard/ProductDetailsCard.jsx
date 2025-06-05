@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addTocart } from "../../../redux/actions/cart";
 import { addToWishlist, removeFromWishlist } from '../../../redux/actions/wishlist';
-import { backend_url } from "../../../server";
+import { backend_url, getImageUrl } from "../../../server";
 import styles from "../../../styles/styles";
 
 
@@ -89,12 +89,12 @@ const ProductDetailsCard = ({ setOpen, data }) => {
 
                                 <div className="block w-full 800px:flex">
                                     <div className='w-full 800px:w-[50%]'>
-                                        <img src={`${backend_url}uploads/${data.images && data.images[0]}`} alt="img" />
+                                        <img src={getImageUrl(data.images && data.images[0])} alt="img" />
                                         <div className='flex' >
                                             <Link to={`/shop/preview/${data.shop._id}`} className="flex">
 
                                                 <img
-                                                    src={`${backend_url}uploads/${data?.shop?.avatar}`}
+                                                    src={getImageUrl(data?.shop?.avatar)}
                                                     alt=""
                                                     className='w-[50px] h-[50px] rounded-full mr-2'
                                                 />

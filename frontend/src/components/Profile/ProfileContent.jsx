@@ -15,7 +15,7 @@ import {
     loadUser,
     updateUserAddress
 } from "../../redux/actions/user";
-import { backend_url, server } from "../../server";
+import { backend_url, server, getImageUrl } from "../../server";
 import styles from "../../styles/styles";
 
 
@@ -99,7 +99,7 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
     // Generate avatar URL with cache-busting
     const getAvatarUrl = () => {
         if (user?.avatar) {
-            return `${backend_url}uploads/${user.avatar}?t=${new Date().getTime()}`;
+            return `${getImageUrl(user.avatar)}?t=${new Date().getTime()}`;
         }
         return "";
     };
