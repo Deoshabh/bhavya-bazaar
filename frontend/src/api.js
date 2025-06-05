@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Helper to get fallback URL with retry logic
 const getFallbackUrl = (url, attempt = 0) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (window.__RUNTIME_CONFIG__?.NODE_ENV === 'development' || window.RUNTIME_CONFIG?.NODE_ENV === 'development') {
     return url;
   }
 

@@ -7,14 +7,8 @@ const getApiDomain = () => {
   if (window.RUNTIME_CONFIG?.API_URL) {
     return window.RUNTIME_CONFIG.API_URL;
   }
-  
-  // Check for build-time environment variables
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-  
-  // Smart default for bhavyabazaar.com deployment
-  if (process.env.NODE_ENV === 'production') {
+    // Smart default for bhavyabazaar.com deployment
+  if (window.__RUNTIME_CONFIG__?.NODE_ENV === 'production' || window.RUNTIME_CONFIG?.NODE_ENV === 'production') {
     const currentDomain = window.location.hostname;
     // If deployed on bhavyabazaar.com or related domains
     if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
@@ -46,12 +40,8 @@ const getWebsocketUrl = () => {
     return window.RUNTIME_CONFIG.SOCKET_URL;
   }
   
-  if (process.env.REACT_APP_SOCKET_URL) {
-    return process.env.REACT_APP_SOCKET_URL;
-  }
-  
-  // Default for bhavyabazaar.com
-  if (process.env.NODE_ENV === 'production') {
+  // Default for bhavyabazaar.com production
+  if (window.__RUNTIME_CONFIG__?.NODE_ENV === 'production' || window.RUNTIME_CONFIG?.NODE_ENV === 'production') {
     const currentDomain = window.location.hostname;
     if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
       return 'https://api.bhavyabazaar.com';
@@ -63,15 +53,15 @@ const getWebsocketUrl = () => {
   return apiDomain.replace('/api/v2', '');
 };
 
-const getBackendUrl = () => {
-  // Check for runtime environment variables first
+const getBackendUrl = () => {  // Check for runtime environment variables first
   if (window.RUNTIME_CONFIG?.BACKEND_URL) {
     const url = window.RUNTIME_CONFIG.BACKEND_URL;
     return url.endsWith('/') ? url : `${url}/`;
   }
   
-  if (process.env.REACT_APP_BACKEND_URL) {
-    const url = process.env.REACT_APP_BACKEND_URL;
+  // Check for enhanced runtime config
+  if (window.__RUNTIME_CONFIG__?.BACKEND_URL) {
+    const url = window.__RUNTIME_CONFIG__.BACKEND_URL;
     return url.endsWith('/') ? url : `${url}/`;
   }
   
@@ -110,7 +100,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Debug helper to log connection details
 export const debugConnection = (url) => {
   console.log(`Connection attempt to: ${url}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Environment: ${window.__RUNTIME_CONFIG__?.NODE_ENV || window.RUNTIME_CONFIG?.NODE_ENV || 'development'}`);
   console.log(`API Domain: ${getApiDomain()}`);
   console.log(`WebSocket URL: ${getWebsocketUrl()}`);
   return url;
@@ -118,7 +108,7 @@ export const debugConnection = (url) => {
 
 // Helper to get fallback URL with retry logic
 export const getFallbackUrl = (url, attempt = 0) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (window.__RUNTIME_CONFIG__?.NODE_ENV === 'development' || window.RUNTIME_CONFIG?.NODE_ENV === 'development') {
     return url;
   }
 
