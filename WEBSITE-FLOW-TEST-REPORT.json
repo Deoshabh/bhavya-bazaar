@@ -1,0 +1,70 @@
+{
+  "timestamp": "2025-06-06T18:04:32.949Z",
+  "testResults": {
+    "publicPages": [
+      {
+        "test": "Homepage Products Load",
+        "status": "PASS",
+        "httpStatus": 201,
+        "dataCount": 0,
+        "responseTime": "N/A"
+      },
+      {
+        "test": "Events Load",
+        "status": "PASS",
+        "httpStatus": 201,
+        "dataCount": 0,
+        "responseTime": "N/A"
+      },
+      {
+        "test": "Shop Info Access",
+        "status": "PASS",
+        "httpStatus": 201,
+        "dataCount": 0,
+        "responseTime": "N/A"
+      }
+    ],
+    "userRegistration": {
+      "status": "PASS",
+      "message": "User registration endpoint working (user exists)"
+    },
+    "sellerRegistration": {
+      "status": "PASS",
+      "message": "Seller registration endpoint working (validation working)"
+    },
+    "userLogin": {
+      "status": "PASS",
+      "message": "Login validation working"
+    },
+    "sellerLogin": {
+      "status": "PASS",
+      "message": "Login validation working"
+    },
+    "assetLoading": [
+      {
+        "url": "http://localhost:3000/brand-logos/apple-logo.svg",
+        "status": "ACCESSIBLE",
+        "httpStatus": 200
+      },
+      {
+        "url": "http://localhost:3000/brand-logos/samsung-logo.svg",
+        "status": "ACCESSIBLE",
+        "httpStatus": 200
+      },
+      {
+        "url": "http://localhost:3000/brand-logos/google-logo.svg",
+        "status": "ACCESSIBLE",
+        "httpStatus": 200
+      },
+      {
+        "url": "https://api.bhavyabazaar.com/uploads/Screenshot 2025-04-14 151652-1745997470400-149669290.png",
+        "status": "FAILED",
+        "httpStatus": 404
+      }
+    ],
+    "orderFlow": {
+      "status": "UNEXPECTED_SUCCESS",
+      "message": "Order created without authentication"
+    }
+  }
+}

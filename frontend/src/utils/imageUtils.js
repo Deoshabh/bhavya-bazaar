@@ -22,13 +22,13 @@ const FALLBACK_IMAGES = {
   'default': '/user-placeholder.png'
 };
 
-// Brand logos available locally
+// Brand logos available locally (matching actual files in public/brand-logos/)
 const BRAND_LOGOS = {
-  'apple': '/brand-logos/apple-logo.png',
-  'dell': '/brand-logos/dell-logo.png',
-  'lg': '/brand-logos/lg-logo.png',
-  'microsoft': '/brand-logos/microsoft-logo.png',
-  'sony': '/brand-logos/sony-logo.png',
+  'apple': '/brand-logos/apple-logo.svg',
+  'dell': '/brand-logos/dell_logo.svg',
+  'lg': '/brand-logos/lg-logo.svg',
+  'microsoft': '/brand-logos/microsoft-logo.svg',
+  'sony': '/brand-logos/sony_  logo.svg',
   'google': '/brand-logos/google-logo.svg',
   'amazon': '/brand-logos/amazon-logo.svg',
   'samsung': '/brand-logos/samsung-logo.svg',
@@ -36,7 +36,11 @@ const BRAND_LOGOS = {
   'nvidia': '/brand-logos/nvidia-logo.svg',
   'amd': '/brand-logos/amd-logo.svg',
   'hp': '/brand-logos/hp-logo.svg',
-  'lenovo': '/brand-logos/lenovo-logo.svg'
+  'lenovo': '/brand-logos/lenovo-logo.svg',
+  'adidas': '/brand-logos/adidas_logo.svg',
+  'philips': '/brand-logos/philips_logo.svg',
+  'h&m': '/brand-logos/h_& m logo.svg',
+  'h_m': '/brand-logos/h_& m logo.svg'
 };
 
 /**

@@ -9,35 +9,35 @@ const Sponsored = () => {
             <div className="flex justify-between w-full">
                 <div className="flex items-start">
                     <img
-                        src="/brand-logos/sony-logo.png"
+                        src="/brand-logos/sony_  logo.svg"
                         alt="Sony"
                         style={{ width: "150px", objectFit: "contain" }}
                     />
                 </div>
                 <div className="flex items-start">
                     <img
-                        src="/brand-logos/dell-logo.png"
+                        src="/brand-logos/dell_logo.svg"
                         style={{ width: "150px", objectFit: "contain" }}
                         alt="Dell"
                     />
                 </div>
                 <div className="flex items-start">
                     <img
-                        src="/brand-logos/lg-logo.png"
+                        src="/brand-logos/lg-logo.svg"
                         style={{ width: "150px", objectFit: "contain" }}
                         alt="LG"
                     />
                 </div>
                 <div className="flex items-start">
                     <img
-                        src="/brand-logos/apple-logo.png"
+                        src="/brand-logos/apple-logo.svg"
                         style={{ width: "150px", objectFit: "contain" }}
                         alt="Apple"
                     />
                 </div>
                 <div className="flex items-start">
                     <img
-                        src="/brand-logos/microsoft-logo.png"
+                        src="/brand-logos/microsoft-logo.svg"
                         style={{ width: "150px", objectFit: "contain" }}
                         alt="Microsoft"
                     />
