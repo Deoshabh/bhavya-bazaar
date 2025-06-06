@@ -5,7 +5,7 @@ import { RxCross1 } from "react-icons/rx";
 import { useDispatch, useSelector } from "react-redux";
 import { addTocart } from "../../redux/actions/cart";
 import { removeFromWishlist } from "../../redux/actions/wishlist";
-import { getImageUrl } from "../../server";
+import { ProductImage } from "../common/EnhancedImage";
 
 const Wishlist = ({ setOpenWishlist }) => {
   const { wishlist } = useSelector((state) => state.wishlist);
@@ -101,10 +101,10 @@ const WishlistItem = ({ data, removeFromWishlistHandler, addToCartHandler }) => 
       <div className="flex items-center space-x-4">
         {/* Product Image */}
         <div className="relative overflow-hidden rounded-lg bg-gray-50">
-          <img
-            src={getImageUrl(data?.images[0])}
-            alt={data.name}
+          <ProductImage
+            product={data}
             className="w-20 h-20 object-cover transition-transform duration-300 hover:scale-105"
+            alt={data.name}
           />
         </div>
 

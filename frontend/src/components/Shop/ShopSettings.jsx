@@ -4,7 +4,8 @@ import { AiOutlineCamera } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { loadSeller } from "../../redux/actions/user";
-import { server, getImageUrl } from "../../server";
+import { server } from "../../server";
+import { ShopAvatar } from "../common/EnhancedImage";
 import styles from "../../styles/styles";
 
 const ShopSettings = () => {
@@ -64,14 +65,22 @@ const ShopSettings = () => {
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center">
-            <div className="flex w-full 800px:w-[80%] flex-col justify-center my-5">
-                <div className="w-full flex items-center justify-center">                    <div className="relative">                        <img
-                            src={
-                                avatar ? URL.createObjectURL(avatar) : getImageUrl(seller.avatar)
-                            }
-                            alt=""
-                            className="w-[200px] h-[200px] rounded-full cursor-pointer"
-                        />
+            <div className="flex w-full 800px:w-[80%] flex-col justify-center my-5">                <div className="w-full flex items-center justify-center">
+                    <div className="relative">
+                        {avatar ? (
+                            <img
+                                src={URL.createObjectURL(avatar)}
+                                alt=""
+                                className="w-[200px] h-[200px] rounded-full cursor-pointer"
+                            />
+                        ) : (
+                            <ShopAvatar
+                                src={seller.avatar}
+                                shopName={seller.name}
+                                className="w-[200px] h-[200px] rounded-full cursor-pointer"
+                                size="200"
+                            />
+                        )}
                         <div className="w-[30px] h-[30px] bg-[#E3E9EE] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[10px] right-[15px]">
                             <input
                                 type="file"

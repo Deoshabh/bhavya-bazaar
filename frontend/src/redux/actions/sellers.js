@@ -1,7 +1,16 @@
 import axios from "axios";
 
-const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
-// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
+// Get base URL and ensure proper endpoint construction
+const getBaseUrl = () => {
+  const configUrl = window.RUNTIME_CONFIG?.API_URL || window.__RUNTIME_CONFIG__?.API_URL;
+  if (configUrl) {
+    // Remove /api/v2 suffix if present to avoid duplication
+    return configUrl.replace('/api/v2', '');
+  }
+  return 'https://api.bhavyabazaar.com';
+};
+
+const BASE_URL = getBaseUrl();
 
 // get all sellers for admin
 export const getAllSellers = () => async (dispatch) => {
@@ -10,7 +19,7 @@ export const getAllSellers = () => async (dispatch) => {
       type: "getAllSellersRequest",
     });
 
-    const { data } = await axios.get(`${BASE_URL}/shop/admin-all-sellers`, {
+    const { data } = await axios.get(`${BASE_URL}/api/v2/shop/admin-all-sellers`, {
       withCredentials: true,
     });
 
@@ -34,7 +43,7 @@ export const updateSellerStatus = (sellerId, status) => async (dispatch) => {
     });
 
     const { data } = await axios.put(
-      `${BASE_URL}/shop/update-seller-status/${sellerId}`,
+      `${BASE_URL}/api/v2/shop/update-seller-status/${sellerId}`,
       { status },
       { withCredentials: true }
     );

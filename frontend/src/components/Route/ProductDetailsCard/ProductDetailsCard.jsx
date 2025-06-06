@@ -11,8 +11,8 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addTocart } from "../../../redux/actions/cart";
 import { addToWishlist, removeFromWishlist } from '../../../redux/actions/wishlist';
-import { getImageUrl } from "../../../server";
 import styles from "../../../styles/styles";
+import { ProductImage, ShopAvatar } from "../../common/EnhancedImage";
 
 
 const ProductDetailsCard = ({ setOpen, data }) => {
@@ -89,14 +89,18 @@ const ProductDetailsCard = ({ setOpen, data }) => {
 
                                 <div className="block w-full 800px:flex">
                                     <div className='w-full 800px:w-[50%]'>
-                                        <img src={getImageUrl(data.images && data.images[0])} alt="img" />
+                                        <ProductImage
+                                          product={data}
+                                          className=""
+                                          alt="Product image"
+                                        />
                                         <div className='flex' >
                                             <Link to={`/shop/preview/${data.shop._id}`} className="flex">
 
-                                                <img
-                                                    src={getImageUrl(data?.shop?.avatar)}
-                                                    alt=""
+                                                <ShopAvatar
+                                                    shop={data?.shop}
                                                     className='w-[50px] h-[50px] rounded-full mr-2'
+                                                    alt="Shop avatar"
                                                 />
                                                 <div>
                                                     <h3 className={`${styles.shop_name}`}>

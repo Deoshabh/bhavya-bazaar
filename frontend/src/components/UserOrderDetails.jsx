@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getAllOrdersOfUser } from "../redux/actions/order";
-import { getImageUrl } from "../server";
+import { ProductImage } from "./common/EnhancedImage";
 import styles from "../styles/styles";
 
 const UserOrderDetails = () => {
@@ -104,13 +104,16 @@ const UserOrderDetails = () => {
       {data &&
         data?.cart.map((item, index) => {
           return (
-            <div className="w-full flex items-start mb-5">              <img
-                src={getImageUrl(item.images[0])}
+            <div className="w-full flex items-start mb-5">
+              <ProductImage
+                src={item.images[0]}
                 alt="Product item order img"
-                className="w-[80x] h-[80px]"
+                className="w-[80px] h-[80px]"
+                productName={item.name}
               />
               <div className="w-full">
-                <h5 className="pl-3 text-[20px]">{item.name}</h5>                <h5 className="pl-3 text-[20px] text-[#00000091]">
+                <h5 className="pl-3 text-[20px]">{item.name}</h5>
+                <h5 className="pl-3 text-[20px] text-[#00000091]">
                   ₹{item.discountPrice} x {item.qty}
                 </h5>
               </div>
@@ -137,17 +140,19 @@ const UserOrderDetails = () => {
                 className="cursor-pointer"
               />
             </div>
-            <h2 className="text-[30px] font-[500] font-Poppins text-center">
-              Give a Review
+            <h2 className="text-[30px] font-[500] font-Poppins text-center">            Give a Review
             </h2>
-            <br />            <div className="w-full flex">
-              <img
-                src={getImageUrl(selectedItem?.images[0])}
+            <br />
+            <div className="w-full flex">
+              <ProductImage
+                src={selectedItem?.images[0]}
                 alt=""
                 className="w-[80px] h-[80px]"
+                productName={selectedItem?.name}
               />
               <div>
-                <div className="pl-3 text-[20px]">{selectedItem?.name}</div>                <h4 className="pl-3 text-[20px]">
+                <div className="pl-3 text-[20px]">{selectedItem?.name}</div>
+                <h4 className="pl-3 text-[20px]">
                   ₹{selectedItem?.discountPrice} x {selectedItem?.qty}
                 </h4>
               </div>

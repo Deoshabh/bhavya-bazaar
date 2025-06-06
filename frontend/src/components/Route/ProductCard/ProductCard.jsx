@@ -10,10 +10,10 @@ import { Link } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { addTocart } from '../../../redux/actions/cart';
 import { addToWishlist, removeFromWishlist } from '../../../redux/actions/wishlist';
-import { getImageUrl } from "../../../server";
 import styles from "../../../styles/styles";
 import Ratings from "../../Products/Ratings";
 import ProductDetailsCard from "../ProductDetailsCard/ProductDetailsCard.jsx";
+import { ProductImage } from "../../common/EnhancedImage";
 
 const ProductCard = ({ data, isEvent }) => {
     const { wishlist } = useSelector((state) => state.wishlist);
@@ -69,10 +69,10 @@ const ProductCard = ({ data, isEvent }) => {
                 </div>
 
                 <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>
-                    <img
-                        src={getImageUrl(data.images && data.images[0])}
-                        alt="prd"
+                    <ProductImage
+                        product={data}
                         className='w-full h-[170px] object-contain'
+                        alt="Product image"
                     />
                 </Link>
                 <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>

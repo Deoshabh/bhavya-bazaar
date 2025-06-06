@@ -11,11 +11,13 @@ const sendToken = (user, statusCode, res) => {
   try {
     const token = user.getJwtToken();
     
-    // Options for cookie
+    // Options for cookie with cross-domain support
     const options = {
       expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       httpOnly: true,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // Only secure in production
+      domain: process.env.COOKIE_DOMAIN || undefined // Cross-domain cookie support
     };
 
     res.status(statusCode).cookie("token", token, options).json({

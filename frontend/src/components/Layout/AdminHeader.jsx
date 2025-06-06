@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { CiMoneyBill } from "react-icons/ci";
 import { GrWorkshop } from "react-icons/gr";
-import { getImageUrl } from "../../server";
+import { UserAvatar } from "../common/EnhancedImage";
 
 const AdminHeader = () => {
   const { user } = useSelector((state) => state.user);
@@ -42,10 +42,10 @@ const AdminHeader = () => {
               className="mx-5 cursor-pointer"
             />
           </Link>
-          <img
-            src={user?.avatar ? getImageUrl(user.avatar) : "/user-placeholder.png"}
-            alt=""
+          <UserAvatar
+            user={user}
             className="w-[50px] h-[50px] rounded-full object-cover"
+            alt="Admin avatar"
           />
         </div>
       </div>

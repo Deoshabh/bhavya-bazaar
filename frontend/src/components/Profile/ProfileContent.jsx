@@ -15,7 +15,8 @@ import {
     loadUser,
     updateUserAddress
 } from "../../redux/actions/user";
-import { server, getImageUrl } from "../../server";
+import { server } from "../../server";
+import { UserAvatar } from "../common/EnhancedImage";
 import styles from "../../styles/styles";
 
 
@@ -93,21 +94,7 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
     const [name, setName] = useState(user?.name || "");
     const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
     const [password, setPassword] = useState("");
-    const [avatarError, setAvatarError] = useState(false);
     const dispatch = useDispatch();
-
-    // Generate avatar URL with cache-busting
-    const getAvatarUrl = () => {
-        if (user?.avatar) {
-            return `${getImageUrl(user.avatar)}?t=${new Date().getTime()}`;
-        }
-        return "";
-    };
-
-    // Reset avatar error state when user changes
-    useEffect(() => {
-        setAvatarError(false);
-    }, [user]);
 
     const handleImage = async (e) => {
         const file = e.target.files[0];
@@ -170,19 +157,13 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
     return (
         <div className="w-full flex justify-center">
             <div className="relative">
-                {/* Avatar with placeholder fallback */}
-                {avatarError || !user?.avatar ? (
-                    <div className="w-[150px] h-[150px] rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-4xl font-bold border-[3px] border-[#3ad132]">
-                        {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                    </div>
-                ) : (
-                    <img
-                        src={getAvatarUrl()}
-                        className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
-                        alt="User"
-                        onError={() => setAvatarError(true)}
-                    />
-                )}
+                {/* Avatar with enhanced UserAvatar component */}
+                <UserAvatar
+                    src={user?.avatar}
+                    userName={user?.name}
+                    className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
+                    size="150"
+                />
                 <div className="w-[30px] h-[30px] bg-[#E3E9EE] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[5px] right-[5px]">
                     <input
                         type="file"

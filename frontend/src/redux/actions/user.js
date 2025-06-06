@@ -1,7 +1,16 @@
 import axios from "axios";
 
-const BASE_URL = window.RUNTIME_CONFIG.API_URL; 
-// RUNTIME_CONFIG.API_URL === "https://api.bhavyabazaar.com/api/v2"
+// Get base URL and ensure proper endpoint construction
+const getBaseUrl = () => {
+  const configUrl = window.RUNTIME_CONFIG?.API_URL || window.__RUNTIME_CONFIG__?.API_URL;
+  if (configUrl) {
+    // Remove /api/v2 suffix if present to avoid duplication
+    return configUrl.replace('/api/v2', '');
+  }
+  return 'https://api.bhavyabazaar.com';
+};
+
+const BASE_URL = getBaseUrl();
 
 // load user
 export const loadUser = () => async (dispatch) => {
@@ -10,7 +19,7 @@ export const loadUser = () => async (dispatch) => {
       type: "LoadUserRequest",
     });
 
-    const { data } = await axios.get(`${BASE_URL}/user/getuser`, {
+    const { data } = await axios.get(`${BASE_URL}/api/v2/user/getuser`, {
       withCredentials: true,
       headers: {
         "Content-Type": "application/json",
@@ -41,7 +50,7 @@ export const loadSeller = () => async (dispatch) => {
       type: "LoadSellerRequest",
     });
 
-    const { data } = await axios.get(`${BASE_URL}/shop/getSeller`, {
+    const { data } = await axios.get(`${BASE_URL}/api/v2/shop/getSeller`, {
       withCredentials: true,
       headers: {
         "Content-Type": "application/json",
@@ -74,7 +83,7 @@ export const updateUserInformation =
       });
 
       const { data } = await axios.put(
-        `${BASE_URL}/user/update-user-info`,
+        `${BASE_URL}/api/v2/user/update-user-info`,
         {
           name,
           email,
@@ -107,7 +116,7 @@ export const updateUserAddress =
       });
 
       const { data } = await axios.put(
-        `${BASE_URL}/user/update-user-addresses`,
+        `${BASE_URL}/api/v2/user/update-user-addresses`,
         {
           country,
           city,
@@ -142,7 +151,7 @@ export const deleteUserAddress = (id) => async (dispatch) => {
     });
 
     const { data } = await axios.delete(
-      `${BASE_URL}/user/delete-user-address/${id}`,
+      `${BASE_URL}/api/v2/user/delete-user-address/${id}`,
       { withCredentials: true }
     );
 
@@ -168,7 +177,7 @@ export const getAllUsers = () => async (dispatch) => {
       type: "getAllUsersRequest",
     });
 
-    const { data } = await axios.get(`${BASE_URL}/user/admin-all-users`, {
+    const { data } = await axios.get(`${BASE_URL}/api/v2/user/admin-all-users`, {
       withCredentials: true,
     });
 

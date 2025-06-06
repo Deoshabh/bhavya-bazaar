@@ -76,14 +76,18 @@ const Signup = () => {
                         window.RUNTIME_CONFIG?.API_URL || 
                         server || 
                         'https://api.bhavyabazaar.com/api/v2';
-        if (!BASE_URL) {
+                        
+        // Extract base URL without /api/v2 to avoid duplication
+        const API_BASE = BASE_URL.replace('/api/v2', '');
+        
+        if (!API_BASE) {
             console.error('❌ API_URL is not defined.');
             toast.error("Configuration error. Please contact support.");
             return;
         }
         
-        // Ensure proper URL format with slash
-        const apiUrl = `${BASE_URL}/api/v2/user/create-user`;
+        // Construct proper URL with /api/v2 prefix
+        const apiUrl = `${API_BASE}/api/v2/user/create-user`;
         
         try {
             setLoading(true);

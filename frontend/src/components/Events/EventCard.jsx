@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { getImageUrl } from "../../server";
+import { ProductImage } from "../common/EnhancedImage";
 import styles from "../../styles/styles";
 import CountDown from "./CountDown";
 import { Link } from "react-router-dom";
@@ -37,7 +37,11 @@ const EventCard = ({ active, data }) => {
       } lg:flex p-2`}
     >
       <div className="w-full lg:w-[50%] m-auto">
-        <img src={getImageUrl(data.images[0])} alt="" />
+        <ProductImage 
+          src={data.images[0]} 
+          alt="" 
+          productName={data.name}
+        />
       </div>
 
       <div className="w-full lg:[w-50%] flex flex-col justify-center">

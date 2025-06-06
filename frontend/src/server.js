@@ -31,6 +31,12 @@ const getApiDomain = () => {
   return 'https://api.bhavyabazaar.com/api/v2';
 };
 
+// Get base API URL without the /api/v2 suffix for manual endpoint construction
+const getApiBaseUrl = () => {
+  const fullUrl = getApiDomain();
+  return fullUrl.replace('/api/v2', '');
+};
+
 const getWebsocketUrl = () => {
   // Check for runtime environment variables first
   if (window.__RUNTIME_CONFIG__?.SOCKET_URL) {
@@ -71,8 +77,30 @@ const getBackendUrl = () => {  // Check for runtime environment variables first
 };
 
 // Utility function to safely construct image URLs
-export const getImageUrl = (filename) => {
-  if (!filename) return '';
+export const getImageUrl = (filename, fallbackType = 'product') => {
+  // If no filename provided, return appropriate fallback
+  if (!filename) {
+    const fallbacks = {
+      product: '/user-placeholder.png',
+      shop: '/user-placeholder.png',
+      user: '/user-placeholder.png',
+      laptop: '/laptop-placeholder.svg',
+      shoes: '/shoes-placeholder.svg',
+      cosmetics: '/cosmetics-placeholder.svg',
+      gifts: '/gifts-placeholder.svg'
+    };
+    return fallbacks[fallbackType] || fallbacks.product;
+  }
+  
+  // If it's already a full URL, return as-is
+  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+    return filename;
+  }
+  
+  // If it's a local static file (starts with /), return relative to frontend
+  if (filename.startsWith('/')) {
+    return filename;
+  }
   
   // Get base URL with proper fallback chain (NO process.env for browser compatibility!)
   const baseUrl = window.__RUNTIME_CONFIG__?.BACKEND_URL || 
@@ -158,5 +186,6 @@ export const testConnection = async (url, options = {}) => {
 
 // Export configurations
 export const server = getApiDomain();
+export const apiBase = getApiBaseUrl(); // Base URL without /api/v2 for manual endpoint construction
 export const backend_url = getBackendUrl();
 export const SOCKET_URL = getWebsocketUrl();

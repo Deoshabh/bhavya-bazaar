@@ -6,7 +6,8 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import socketIO from "socket.io-client";
 import { format } from "timeago.js";
-import { SOCKET_URL, getImageUrl } from "../../server";
+import { SOCKET_URL } from "../../server";
+import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 import styles from "../../styles/styles";
 
 // Initialize socket with better connection handling
@@ -325,10 +326,11 @@ const MessageList = ({
       }}
     >
       <div className="relative">
-        <img
-          src={getImageUrl(userData?.avatar)}
-          alt={userData?.name || "User avatar"}
+        <UserAvatar
+          src={userData?.avatar}
+          userName={userData?.name}
           className="w-[50px] h-[50px] rounded-full"
+          size="50"
         />
         <div
           className={`w-[12px] h-[12px] rounded-full absolute top-[2px] right-[2px] ${
@@ -366,10 +368,11 @@ const SellerInbox = ({
       {/* message header */}
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
-          <img
-            src={getImageUrl(userData?.avatar)}
-            alt={userData?.name || "User avatar"}
+          <UserAvatar
+            src={userData?.avatar}
+            userName={userData?.name}
             className="w-[60px] h-[60px] rounded-full"
+            size="60"
           />
           <div className="pl-3">
             <h1 className="text-[18px] font-[600]">{userData?.name}</h1>
@@ -394,15 +397,16 @@ const SellerInbox = ({
             ref={scrollRef}
           >
             {item.sender !== sellerId && (
-              <img
-                src={getImageUrl(userData?.avatar)}
-                alt={userData?.name || "User avatar"}
+              <UserAvatar
+                src={userData?.avatar}
+                userName={userData?.name}
                 className="w-[40px] h-[40px] rounded-full mr-3"
+                size="40"
               />
             )}
             {item.images && (
-              <img
-                src={getImageUrl(item.images)}
+              <ProductImage
+                src={item.images}
                 alt="Message attachment"
                 className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
               />

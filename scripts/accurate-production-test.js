@@ -76,7 +76,7 @@ async function testUserEndpoints() {
     
     const userEndpoints = [
         { path: '/api/v2/user', method: 'GET', name: 'Get Users' },
-        { path: '/api/v2/user/get-user', method: 'GET', name: 'Get User Profile' }
+        { path: '/api/v2/user/getuser', method: 'GET', name: 'Get User Profile' }
     ];
     
     for (const endpoint of userEndpoints) {

@@ -1,5 +1,5 @@
 import { RxCross1 } from "react-icons/rx";
-import { getImageUrl } from "../../server";
+import { ShopAvatar } from "../common/EnhancedImage";
 
 const SellerDetailsModal = ({ open, setOpen, seller }) => {
   if (!seller) return null;
@@ -15,15 +15,10 @@ const SellerDetailsModal = ({ open, setOpen, seller }) => {
           />
         </div>
         <div className="flex flex-col items-center">
-          <h3 className="text-[20px] font-Poppins pb-4">Seller Details</h3>          {seller.avatar && (
-            <img
-              src={getImageUrl(seller.avatar)}
-              alt="Seller Avatar"
+          <h3 className="text-[20px] font-Poppins pb-4">Seller Details</h3>          {seller.avatar && (            <ShopAvatar
+              shop={seller}
               className="w-[150px] h-[150px] object-cover rounded-full"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/150?text=No+Image";
-              }}
+              alt="Seller Avatar"
             />
           )}
           <div className="w-full mt-5 p-2 border-t">

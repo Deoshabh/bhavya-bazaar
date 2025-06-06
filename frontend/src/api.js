@@ -24,7 +24,7 @@ const getFallbackUrl = (url, attempt = 0) => {
 
 // Create a custom instance for API requests
 const api = axios.create({
-  baseURL: window.RUNTIME_CONFIG.API_URL,
+  baseURL: window.RUNTIME_CONFIG?.API_URL || window.__RUNTIME_CONFIG__?.API_URL || 'https://api.bhavyabazaar.com/api/v2',
   timeout: parseInt(process.env.REACT_APP_API_TIMEOUT) || 15000,
   withCredentials: true, // Important for cookies
   headers: {

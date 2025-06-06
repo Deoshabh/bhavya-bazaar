@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { format } from "timeago.js";
 import Header from "../components/Layout/Header";
-import { getImageUrl } from "../server";
+import { UserAvatar, ProductImage } from "../components/common/EnhancedImage";
 import styles from "../styles/styles";
 import { disconnectSocket, getSocket, initializeSocket } from '../WebSocketClient';
 
@@ -317,10 +317,11 @@ const MessageList = ({
       }
     >
       <div className="relative">
-        <img
-          src={getImageUrl(userData?.avatar)}
-          alt=""
+        <UserAvatar
+          src={userData?.avatar}
+          userName={userData?.name}
           className="w-[50px] h-[50px] rounded-full"
+          size="50"
         />
         {online ? (
           <div className="w-[12px] h-[12px] bg-green-400 rounded-full absolute top-[2px] right-[2px]" />
@@ -358,10 +359,11 @@ const SellerInbox = ({
       {/* message header */}
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
-          <img
-            src={getImageUrl(userData?.avatar)}
-            alt=""
+          <UserAvatar
+            src={userData?.avatar}
+            userName={userData?.name}
             className="w-[60px] h-[60px] rounded-full"
+            size="60"
           />
           <div className="pl-3">
             <h1 className="text-[18px] font-[600]">{userData?.name}</h1>
@@ -387,15 +389,16 @@ const SellerInbox = ({
               ref={scrollRef}
             >
               {item.sender !== sellerId && (
-                <img
-                  src={getImageUrl(userData?.avatar)}
+                <UserAvatar
+                  src={userData?.avatar}
+                  userName={userData?.name}
                   className="w-[40px] h-[40px] rounded-full mr-3"
-                  alt=""
+                  size="40"
                 />
               )}
               {item.images && (
-                <img
-                  src={getImageUrl(item.images)}
+                <ProductImage
+                  src={item.images}
                   className="w-[300px] h-[300px] object-cover rounded-[10px] ml-2 mb-2"
                   alt="Message attachment"
                 />

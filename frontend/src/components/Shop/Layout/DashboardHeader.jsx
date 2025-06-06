@@ -4,7 +4,7 @@ import { FiPackage, FiShoppingBag } from "react-icons/fi";
 import { MdOutlineLocalOffer } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getImageUrl } from "../../../server";
+import { ShopAvatar } from "../../common/EnhancedImage";
 
 const DashboardHeader = () => {
     const { seller } = useSelector((state) => state.seller);
@@ -52,10 +52,10 @@ const DashboardHeader = () => {
                         />
                     </Link>
                     <Link to={`/shop/${seller._id}`}>
-                        <img
-                            src={seller?.avatar ? getImageUrl(seller.avatar) : "/user-placeholder.png"}
-                            alt=""
+                        <ShopAvatar
+                            shop={seller}
                             className="w-[50px] h-[50px] rounded-full object-cover"
+                            alt="Seller avatar"
                         />
                     </Link>
                 </div>

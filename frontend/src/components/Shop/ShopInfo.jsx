@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import { getAllProductsShop } from "../../redux/actions/product";
-import { getImageUrl, server } from "../../server";
+import { server } from "../../server";
+import { ShopAvatar } from "../common/EnhancedImage";
 import styles from "../../styles/styles";
 import Loader from "../Layout/Loader";
 
@@ -58,10 +59,11 @@ const ShopInfo = ({ isOwner }) => {
                     <div>
                         <div className="w-full py-5">
                             <div className="w-full flex item-center justify-center">
-                                <img
-                                    src={getImageUrl(data.avatar)}
-                                    alt=""
+                                <ShopAvatar
+                                    src={data.avatar}
+                                    shopName={data.name}
                                     className="w-[150px] h-[150px] object-cover rounded-full"
+                                    size="150"
                                 />
                             </div>
                             <h3 className="text-center py-2 text-[20px]">{data.name}</h3>

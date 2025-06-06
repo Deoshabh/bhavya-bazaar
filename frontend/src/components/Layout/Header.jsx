@@ -13,10 +13,10 @@ import { CgProfile } from "react-icons/cg";
 import DropDown from "./DropDown";
 import Navbar from "./Navbar";
 import { useSelector } from "react-redux";
-import { getImageUrl } from "../../server";
 import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 import { RxCross1 } from "react-icons/rx";
+import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 
 const Header = ({ activeHeading }) => {
   const { isSeller } = useSelector((state) => state.seller);
@@ -92,10 +92,10 @@ const Header = ({ activeHeading }) => {
                       return (
                         <Link to={`/product/${i._id}`}>
                           <div className="w-full flex items-start-py-3">
-                            <img
-                              src={getImageUrl(i.images[0])}
-                              alt="img"
+                            <ProductImage
+                              product={i}
                               className="w-[40px] h-[40px] mr-[10px]"
+                              alt="Product image"
                             />
                             <h1>{i.name}</h1>
                           </div>
@@ -200,10 +200,10 @@ const Header = ({ activeHeading }) => {
               <div className="relative cursor-pointer mr-[15px]">
                 {isAuthenticated ? (
                   <Link to="/profile">
-                    <img
-                      src={getImageUrl(user.avatar)}
+                    <UserAvatar
+                      user={user}
                       className="w-[35px] h-[35px] rounded-full"
-                      alt=""
+                      alt="User avatar"
                     />
                   </Link>
                 ) : (
@@ -314,10 +314,10 @@ const Header = ({ activeHeading }) => {
                     return (
                       <Link to={`/product/${i._id}`} key={i._id}>
                         <div className="flex items-center">
-                          <img
-                            src={getImageUrl(i.images[0])}
-                            alt=""
+                          <ProductImage
+                            product={i}
                             className="w-[50px] mr-2"
+                            alt="Product image"
                           />
                           <h5>{i.name}</h5>
                         </div>
@@ -341,10 +341,10 @@ const Header = ({ activeHeading }) => {
               {isAuthenticated ? (
                 <div>
                   <Link to="/profile">
-                    <img
-                      src={getImageUrl(user.avatar)}
-                      alt="Profile img"
+                    <UserAvatar
+                      user={user}
                       className="w-[60px] h-[60px] rounded-full border-[3px] border-[#0eae88]"
+                      alt="Profile img"
                     />
                   </Link>
                 </div>

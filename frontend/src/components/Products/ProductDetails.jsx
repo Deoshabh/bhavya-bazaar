@@ -15,8 +15,9 @@ import {
     addToWishlist,
     removeFromWishlist,
 } from "../../redux/actions/wishlist";
-import { server, getImageUrl } from "../../server";
+import { server } from "../../server";
 import styles from "../../styles/styles";
+import { ProductImage, ShopAvatar } from "../common/EnhancedImage";
 import Ratings from "./Ratings";
 
 const ProductDetails = ({ data }) => {
@@ -122,10 +123,10 @@ const ProductDetails = ({ data }) => {
       {data ? (
         <div className={`${styles.section} w-[90%] 800px:w-[80%] `}>
           <div className="w-full py-5">
-            <div className="block w-full 800px:flex">              <div className="w-full 800px:w-[50%]">                <img
-                  src={getImageUrl(data && data.images[select])}
-                  alt=""
+            <div className="block w-full 800px:flex">              <div className="w-full 800px:w-[50%]">                <ProductImage
+                  product={{ ...data, images: [data.images[select]] }}
                   className="w-[80%]"
+                  alt="Product image"
                 />
                 <div className="w-full flex">
                   {data &&
@@ -135,11 +136,10 @@ const ProductDetails = ({ data }) => {
                         className={`${
                           select === index ? "border" : "null"
                         } cursor-pointer`}
-                      >
-                        <img
-                          src={getImageUrl(i)}
-                          alt=""
+                      >                        <ProductImage
+                          product={{ ...data, images: [i] }}
                           className="h-[200px] overflow-hidden mr-3 mt-3"
+                          alt="Product thumbnail"
                           onClick={() => setSelect(index)}
                         />
                       </div>
@@ -208,10 +208,10 @@ const ProductDetails = ({ data }) => {
                     Add to Cart <AiOutlineShoppingCart className="ml-1" />
                   </span>
                 </div>                <div className="flex items-center pt-8">                <Link to={`/shop/preview/${data?.shop._id}`}>
-                    <img
-                      src={getImageUrl(data?.shop?.avatar)}
-                      alt=""
+                    <ShopAvatar
+                      shop={data?.shop}
                       className="w-[50px] h-[50px] rounded-full mr-2"
+                      alt="Shop avatar"
                     />
                   </Link>
 
@@ -323,11 +323,10 @@ const ProductDetailsInfo = ({
       {/* Product Rev */}
       {active === 2 ? (
         <div className="w-full min-h-[40vh] flex flex-col items-center py-3 overflow-y-scroll">
-          {data &&            data.reviews.map((item, index) => (
-              <div className="w-full flex my-2" key={index}>
+          {data &&            data.reviews.map((item, index) => (              <div className="w-full flex my-2" key={index}>
                 <img
-                  src={getImageUrl(item.user.avatar)}
-                  alt=""
+                  src={item.user.avatar || "/user-placeholder.png"}
+                  alt="User avatar"
                   className="w-[50px] h-[50px] rounded-full"
                 />
                 <div className="pl-2 ">
@@ -353,11 +352,10 @@ const ProductDetailsInfo = ({
           <div className="w-full block 800px:flex p-5 ">
             <div className="w-full 800px:w-[50%]">
               <div className="flex items-center">                <Link to={`/shop/preview/${data.shop._id}`}>
-                  <div className="flex items-center">
-                    <img
-                      src={getImageUrl(data?.shop?.avatar)}
+                  <div className="flex items-center">                    <ShopAvatar
+                      shop={data?.shop}
                       className="w-[50px] h-[50px] rounded-full"
-                      alt=""
+                      alt="Shop avatar"
                     />
                     <div className="pl-3">
                       <h3 className={`${styles.shop_name}`}>

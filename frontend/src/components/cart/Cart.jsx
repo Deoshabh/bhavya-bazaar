@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addTocart, removeFromCart } from "../../redux/actions/cart";
-import { getImageUrl } from "../../server";
+import { ProductImage } from "../common/EnhancedImage";
 
 const Cart = ({ setOpenCart }) => {
   const { cart } = useSelector((state) => state.cart);
@@ -150,10 +150,11 @@ const CartItem = ({ data, quantityChangeHandler, removeFromCartHandler }) => {
       <div className="flex items-center space-x-4">
         {/* Product Image */}
         <div className="relative overflow-hidden rounded-lg bg-gray-50">
-          <img
-            src={getImageUrl(data?.images[0])}
-            className="w-20 h-20 object-cover transition-transform duration-300 hover:scale-105"
+          <ProductImage
+            src={data?.images[0]}
             alt={data.name}
+            className="w-20 h-20 object-cover transition-transform duration-300 hover:scale-105"
+            productName={data.name}
           />
         </div>
 
