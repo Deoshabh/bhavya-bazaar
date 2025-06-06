@@ -2,7 +2,8 @@
 // This centralizes all API URL handling logic in one place
 import axios from 'axios';
 
-class ApiService {  constructor() {
+class ApiService {
+  constructor() {
     // Get base API URL from the runtime config
     this.apiBase = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
     
@@ -11,8 +12,18 @@ class ApiService {  constructor() {
       this.apiBase = 'https://api.bhavyabazaar.com/api/v2';
     }
     
-    // The API URL should already include /api/v2, so no need to add it again
-    console.log('ApiService initialized with baseURL:', this.apiBase);
+    // Ensure API URL ends with /api/v2
+    if (!this.apiBase.includes('/api/v2')) {
+      // If it already has /api but not /api/v2, replace it
+      if (this.apiBase.includes('/api')) {
+        this.apiBase = this.apiBase.replace('/api', '/api/v2');
+      } else {
+        // Otherwise, append /api/v2
+        this.apiBase = this.apiBase.endsWith('/') 
+          ? `${this.apiBase}api/v2` 
+          : `${this.apiBase}/api/v2`;
+      }
+    }
     
     // Create axios instance
     this.api = axios.create({

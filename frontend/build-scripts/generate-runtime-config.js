@@ -42,6 +42,6 @@ window.RUNTIME_CONFIG = window.__RUNTIME_CONFIG__;
 console.log("✓ Runtime configuration loaded successfully:", window.__RUNTIME_CONFIG__);
 `.trimStart();
 
-fs.writeFileSync(path.join(__dirname, '../public/runtime-config.js'), contents);
-console.log('[generate-runtime-config] ✅ runtime-config.js written');
+fs.writeFileSync(path.join(__dirname, '../public/runtime-config.js'), contents, { encoding: 'utf8' });
+console.log('[generate-runtime-config] ✅ runtime-config.js written with UTF-8 encoding');
 console.log(contents);
