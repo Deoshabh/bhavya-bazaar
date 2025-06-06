@@ -16,6 +16,24 @@ router.post("/create-user", upload.single("file"), async (req, res, next) => {
     console.log("Processing user registration request");
     const { name, phoneNumber, password } = req.body;
     
+    // File type validation for security
+    if (req.file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      const maxSize = 5 * 1024 * 1024; // 5MB limit
+      
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        const filePath = path.join(__dirname, "..", "uploads", req.file.filename);
+        deleteFileIfExists(filePath);
+        return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+      }
+      
+      if (req.file.size > maxSize) {
+        const filePath = path.join(__dirname, "..", "uploads", req.file.filename);
+        deleteFileIfExists(filePath);
+        return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
+      }
+    }
+    
     // Enhanced validation
     if (!name || !phoneNumber || !password) {
       // Clean up file if uploaded

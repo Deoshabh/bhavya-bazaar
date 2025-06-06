@@ -19,21 +19,63 @@ router.post(
       const shop = await Shop.findById(shopId);
       if (!shop) {
         return next(new ErrorHandler("Shop Id is invalid!", 400));
-      } else {
-        const files = req.files;
-        const imageUrls = files.map((file) => `${file.filename}`);
-
-        const productData = req.body;
-        productData.images = imageUrls;
-        productData.shop = shop;
-
-        const product = await Product.create(productData);
-
-        res.status(201).json({
-          success: true,
-          product,
-        });
       }
+
+      // File validation for product images
+      if (req.files && req.files.length > 0) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const maxSize = 10 * 1024 * 1024; // 10MB for product images
+        const maxFiles = 10; // Maximum 10 images per product
+
+        if (req.files.length > maxFiles) {
+          // Clean up uploaded files
+          req.files.forEach(file => {
+            const filePath = `uploads/${file.filename}`;
+            fs.unlink(filePath, (err) => {
+              if (err) console.log("Error deleting file:", err);
+            });
+          });
+          return next(new ErrorHandler(`Too many files. Maximum ${maxFiles} images allowed.`, 400));
+        }
+
+        for (const file of req.files) {
+          if (!allowedTypes.includes(file.mimetype)) {
+            // Clean up all uploaded files
+            req.files.forEach(f => {
+              const filePath = `uploads/${f.filename}`;
+              fs.unlink(filePath, (err) => {
+                if (err) console.log("Error deleting file:", err);
+              });
+            });
+            return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+          }
+
+          if (file.size > maxSize) {
+            // Clean up all uploaded files
+            req.files.forEach(f => {
+              const filePath = `uploads/${f.filename}`;
+              fs.unlink(filePath, (err) => {
+                if (err) console.log("Error deleting file:", err);
+              });
+            });
+            return next(new ErrorHandler("File too large. Maximum size is 10MB per image.", 400));
+          }
+        }
+      }
+
+      const files = req.files;
+      const imageUrls = files.map((file) => `${file.filename}`);
+
+      const productData = req.body;
+      productData.images = imageUrls;
+      productData.shop = shop;
+
+      const product = await Product.create(productData);
+
+      res.status(201).json({
+        success: true,
+        product,
+      });
     } catch (error) {
       return next(new ErrorHandler(error, 400));
     }

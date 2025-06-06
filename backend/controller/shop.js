@@ -15,6 +15,30 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
   try {
     const { name, phoneNumber, password, address, zipCode } = req.body;
     
+    // File type validation for security
+    if (req.file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      const maxSize = 5 * 1024 * 1024; // 5MB limit
+      
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        const filename = req.file.filename;
+        const filePath = `uploads/${filename}`;
+        fs.unlink(filePath, (err) => {
+          if (err) console.log("Error deleting file:", err);
+        });
+        return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+      }
+      
+      if (req.file.size > maxSize) {
+        const filename = req.file.filename;
+        const filePath = `uploads/${filename}`;
+        fs.unlink(filePath, (err) => {
+          if (err) console.log("Error deleting file:", err);
+        });
+        return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
+      }
+    }
+    
     // Input validation
     if (!name || !phoneNumber || !password || !address || !zipCode) {
       // Clean up file if uploaded
