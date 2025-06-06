@@ -1,0 +1,10 @@
+{
+  "name": "bundle-analyzer",
+  "version": "1.0.0",
+  "scripts": {
+    "analyze": "npx webpack-bundle-analyzer build/static/js/*.js"
+  },
+  "devDependencies": {
+    "webpack-bundle-analyzer": "^4.7.0"
+  }
+}

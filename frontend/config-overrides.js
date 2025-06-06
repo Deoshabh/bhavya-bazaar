@@ -1,9 +1,55 @@
 const webpack = require('webpack');
 
-module.exports = function override(config) {  // Remove ModuleScopePlugin to allow imports outside of src/
+module.exports = function override(config) {  
+  // Remove ModuleScopePlugin to allow imports outside of src/
   config.resolve.plugins = config.resolve.plugins.filter(plugin => 
     plugin.constructor.name !== 'ModuleScopePlugin'
   );
+
+  // Performance optimizations for production builds
+  if (process.env.NODE_ENV === 'production') {
+    // Enable code splitting and chunk optimization
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        maxInitialRequests: 10,
+        maxAsyncRequests: 10,
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+            enforce: true
+          },
+          mui: {
+            test: /[\\/]node_modules[\\/]@mui[\\/]/,
+            name: 'mui',
+            chunks: 'all',
+            priority: 15,
+            enforce: true
+          },
+          redux: {
+            test: /[\\/]node_modules[\\/](react-redux|@reduxjs)[\\/]/,
+            name: 'redux',
+            chunks: 'all',
+            priority: 12,
+            enforce: true
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+            enforce: true
+          }
+        }
+      },
+      usedExports: true,
+      sideEffects: false
+    };
+  }
 
   // Configure resolve for Node.js polyfills and module resolution
   config.resolve = {
@@ -108,6 +154,51 @@ module.exports = function override(config) {  // Remove ModuleScopePlugin to all
         /timeago\.js/,
         /source-map-loader/
       ]
+    };
+  }
+
+  // Performance optimizations
+  if (process.env.NODE_ENV === 'production') {
+    // Enable code splitting and chunk optimization
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+            enforce: true
+          },
+          mui: {
+            test: /[\\/]node_modules[\\/]@mui[\\/]/,
+            name: 'mui',
+            chunks: 'all',
+            priority: 15,
+            enforce: true
+          },
+          redux: {
+            test: /[\\/]node_modules[\\/](react-redux|@reduxjs)[\\/]/,
+            name: 'redux',
+            chunks: 'all',
+            priority: 12,
+            enforce: true
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+            enforce: true
+          }
+        }
+      },
+      // Enable gzip compression
+      minimize: true,
+      usedExports: true,
+      sideEffects: false
     };
   }
 
