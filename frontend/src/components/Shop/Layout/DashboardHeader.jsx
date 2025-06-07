@@ -15,6 +15,7 @@ const DashboardHeader = () => {
                     <img
                         src="/main.png"
                         alt="Bhavya Bazaar"
+                        className="h-[50px] w-auto max-w-[200px] object-contain"
                     />
                 </Link>
             </div>

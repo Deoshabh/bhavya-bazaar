@@ -7,7 +7,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { getAllOrdersOfShop } from "../../redux/actions/order";
 import { getAllProductsShop } from "../../redux/actions/product";
-import styles from "../../styles/styles";
 
 const DashboardHero = () => {
     const dispatch = useDispatch();
@@ -86,73 +85,137 @@ const DashboardHero = () => {
         });
     });
     return (
-        <div className="w-full p-8">
-            <h3 className="text-[22px] font-Poppins pb-2">Overview</h3>
-            <div className="w-full block 800px:flex items-center justify-between">
-                <div className="w-full mb-4 800px:w-[30%] min-h-[20vh] bg-white shadow rounded px-2 py-5">
-                    <div className="flex items-center">
-                        <AiOutlineMoneyCollect
-                            size={30}
-                            className="mr-2"
-                            fill="#00000085"
-                        />
-                        <h3
-                            className={`${styles.productTitle} !text-[18px] leading-5 !font-[400] text-[#00000085]`}
-                        >
-                            Account Balance{" "}
-                            <span className="text-[16px]">(with 10% service charge)</span>
-                        </h3>
+        <div className="w-full p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+            {/* Welcome Section */}
+            <div className="mb-8">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                    Welcome back, {seller?.name || 'Seller'}! 👋
+                </h1>
+                <p className="text-gray-600">Here's what's happening with your store today.</p>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+                {/* Account Balance Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                            <div className="p-3 bg-green-100 rounded-lg">
+                                <AiOutlineMoneyCollect size={24} className="text-green-600" />
+                            </div>
+                        </div>
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            Available
+                        </span>
                     </div>
-                    <h5 className="pt-2 pl-[36px] text-[22px] font-[500]">₹{availableBalance}</h5>
-                    <Link to="/dashboard-withdraw-money">
-                        <h5 className="pt-4 pl-[2] text-[#077f9c]">Withdraw Money</h5>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Account Balance</h3>
+                    <p className="text-2xl font-bold text-gray-900 mb-1">₹{availableBalance}</p>
+                    <p className="text-xs text-gray-500 mb-4">(with 10% service charge)</p>
+                    <Link 
+                        to="/dashboard-withdraw-money"
+                        className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                        Withdraw Money →
                     </Link>
                 </div>
 
-                <div className="w-full mb-4 800px:w-[30%] min-h-[20vh] bg-white shadow rounded px-2 py-5">
-                    <div className="flex items-center">
-                        <MdBorderClear size={30} className="mr-2" fill="#00000085" />
-                        <h3
-                            className={`${styles.productTitle} !text-[18px] leading-5 !font-[400] text-[#00000085]`}
-                        >
-                            All Orders
-                        </h3>
+                {/* Orders Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                            <div className="p-3 bg-blue-100 rounded-lg">
+                                <MdBorderClear size={24} className="text-blue-600" />
+                            </div>
+                        </div>
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            Total
+                        </span>
                     </div>
-                    <h5 className="pt-2 pl-[36px] text-[22px] font-[500]">{orders && orders.length}</h5>
-                    <Link to="/dashboard-orders">
-                        <h5 className="pt-4 pl-2 text-[#077f9c]">View Orders</h5>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Total Orders</h3>
+                    <p className="text-2xl font-bold text-gray-900 mb-4">{orders && orders.length}</p>
+                    <Link 
+                        to="/dashboard-orders"
+                        className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                        View All Orders →
                     </Link>
                 </div>
 
-                <div className="w-full mb-4 800px:w-[30%] min-h-[20vh] bg-white shadow rounded px-2 py-5">
-                    <div className="flex items-center">
-                        <AiOutlineMoneyCollect
-                            size={30}
-                            className="mr-2"
-                            fill="#00000085"
-                        />
-                        <h3
-                            className={`${styles.productTitle} !text-[18px] leading-5 !font-[400] text-[#00000085]`}
-                        >
-                            All Products
-                        </h3>
+                {/* Products Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                            <div className="p-3 bg-purple-100 rounded-lg">
+                                <AiOutlineMoneyCollect size={24} className="text-purple-600" />
+                            </div>
+                        </div>
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                            Active
+                        </span>
                     </div>
-                    <h5 className="pt-2 pl-[36px] text-[22px] font-[500]">{products && products.length}</h5>
-                    <Link to="/dashboard-products">
-                        <h5 className="pt-4 pl-2 text-[#077f9c]">View Products</h5>
+                    <h3 className="text-sm font-medium text-gray-600 mb-2">Total Products</h3>
+                    <p className="text-2xl font-bold text-gray-900 mb-4">{products && products.length}</p>
+                    <Link 
+                        to="/dashboard-products"
+                        className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                        Manage Products →
                     </Link>
                 </div>
             </div>
-            <br />
-            <h3 className="text-[22px] font-Poppins pb-2">Latest Orders</h3>
-            <div className="w-full min-h-[45vh] bg-white rounded">
-                <DataGrid
-                    rows={row}
-                    columns={columns}
-                    pageSize={10}
-                    disableSelectionOnClick
-                    autoHeight
-                />
+
+            {/* Recent Orders Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
+                        <p className="text-sm text-gray-600">Latest customer orders from your store</p>
+                    </div>
+                    <Link 
+                        to="/dashboard-orders" 
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                        View All →
+                    </Link>
+                </div>
+                <div className="p-6">
+                    {row.length > 0 ? (
+                        <div className="overflow-hidden">
+                            <DataGrid
+                                rows={row}
+                                columns={columns}
+                                pageSize={10}
+                                disableSelectionOnClick
+                                autoHeight
+                                sx={{
+                                    border: 'none',
+                                    '& .MuiDataGrid-cell': {
+                                        borderBottom: '1px solid #f3f4f6',
+                                    },
+                                    '& .MuiDataGrid-columnHeaders': {
+                                        backgroundColor: '#f9fafb',
+                                        borderBottom: '1px solid #e5e7eb',
+                                    },
+                                    '& .MuiDataGrid-row:hover': {
+                                        backgroundColor: '#f9fafb',
+                                    },
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <MdBorderClear size={48} className="mx-auto text-gray-300 mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+                            <p className="text-gray-600 mb-6">When you get your first order, it will appear here.</p>
+                            <Link 
+                                to="/dashboard-create-product" 
+                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Create Your First Product
+                            </Link>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
