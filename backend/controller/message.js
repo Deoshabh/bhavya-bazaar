@@ -5,11 +5,14 @@ const express = require("express");
 const { upload } = require("../multer");
 const router = express.Router();
 const path = require("path");
+// Import caching middleware
+const { cacheMessages, invalidateMessageCache } = require("../middleware/cache");
 
 // create new message
 router.post(
   "/create-new-message",
   upload.single("images"),
+  invalidateMessageCache(), // Invalidate cache when new message is created
   catchAsyncErrors(async (req, res, next) => {
     try {
       const messageData = req.body;
@@ -46,6 +49,7 @@ router.post(
 // get all messages with conversation id
 router.get(
   "/get-all-messages/:id",
+  cacheMessages(300), // Cache for 5 minutes (messages change frequently)
   catchAsyncErrors(async (req, res, next) => {
     try {
       const messages = await Messages.find({

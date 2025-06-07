@@ -4,10 +4,13 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const express = require("express");
 const { isSeller, isAuthenticated } = require("../middleware/auth");
 const router = express.Router();
+// Import caching middleware
+const { cacheConversations, invalidateConversationCache } = require("../middleware/cache");
 
 // create a new conversation
 router.post(
   "/create-new-conversation",
+  invalidateConversationCache(), // Invalidate cache when new conversation is created
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { groupTitle, userId, sellerId } = req.body;
@@ -41,6 +44,7 @@ router.post(
 router.get(
   "/get-all-conversation-seller/:id",
   isSeller,
+  cacheConversations(600), // Cache for 10 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const conversations = await Conversation.find({
@@ -63,6 +67,7 @@ router.get(
 router.get(
   "/get-all-conversation-user/:id",
   isAuthenticated,
+  cacheConversations(600), // Cache for 10 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const conversations = await Conversation.find({
@@ -84,6 +89,7 @@ router.get(
 // update the last message
 router.put(
   "/update-last-message/:id",
+  invalidateConversationCache(), // Invalidate cache when conversation is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { lastMessage, lastMessageId } = req.body;

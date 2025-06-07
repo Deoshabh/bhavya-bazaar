@@ -3,6 +3,7 @@ const catchAsyncErrors = require("./catchAsyncErrors");
 const jwt = require("jsonwebtoken");
 const User = require("../model/user");
 const Shop = require("../model/shop");
+const sessionService = require("../utils/sessionService");
 
 // Check if user is authenticated or not
 exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
@@ -22,11 +23,20 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     console.log("Decoded token user:", decoded);
     
-    const user = await User.findById(decoded.id);
+    // Try to get user from cache first
+    let user = await sessionService.getUserSession(decoded.id);
     
     if (!user) {
-      console.error("User not found for id:", decoded.id);
-      return next(new ErrorHandler("User not found", 401));
+      // If not in cache, get from database and cache it
+      user = await User.findById(decoded.id);
+      
+      if (!user) {
+        console.error("User not found for id:", decoded.id);
+        return next(new ErrorHandler("User not found", 401));
+      }
+      
+      // Cache user session for 30 minutes
+      await sessionService.setUserSession(decoded.id, user, 1800);
     }
     
     req.user = user;
@@ -61,11 +71,20 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
     const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
     console.log("Decoded seller token:", decoded);
     
-    const seller = await Shop.findById(decoded.id);
+    // Try to get seller from cache first
+    let seller = await sessionService.getShopSession(decoded.id);
     
     if (!seller) {
-      console.error("Seller not found for id:", decoded.id);
-      return next(new ErrorHandler("Seller not found", 401));
+      // If not in cache, get from database and cache it
+      seller = await Shop.findById(decoded.id);
+      
+      if (!seller) {
+        console.error("Seller not found for id:", decoded.id);
+        return next(new ErrorHandler("Seller not found", 401));
+      }
+      
+      // Cache seller session for 30 minutes
+      await sessionService.setShopSession(decoded.id, seller, 1800);
     }
     
     req.seller = seller;

@@ -9,6 +9,7 @@ const { upload } = require("../multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
 const sendShopToken = require("../utils/shopToken");
+const { cacheShop, invalidateShopCache } = require("../middleware/cache");
 
 // Create shop without email verification
 router.post("/create-shop", upload.single("file"), async (req, res, next) => {
@@ -184,6 +185,7 @@ router.get(
 // Get shop info
 router.get(
   "/get-shop-info/:id",
+  cacheShop(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const shop = await Shop.findById(req.params.id);
@@ -202,6 +204,7 @@ router.put(
   "/update-shop-profile",
   isSeller,
   upload.single("file"),
+  invalidateShopCache(), // Invalidate cache when shop is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { name, description, address, phoneNumber, zipCode } = req.body;

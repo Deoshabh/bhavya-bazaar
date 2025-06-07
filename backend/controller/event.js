@@ -8,11 +8,14 @@ const ErrorHandler = require("../utils/ErrorHandler");
 const { isSeller, isAdmin, isAuthenticated } = require("../middleware/auth");
 const router = express.Router();
 const fs = require("fs");
+// Import caching middleware
+const { cacheEvents, invalidateEventCache } = require("../middleware/cache");
 
 // create event
 router.post(
   "/create-event",
   upload.array("images"),
+  invalidateEventCache(), // Invalidate cache when new event is created
   catchAsyncErrors(async (req, res, next) => {
     try {
       const shopId = req.body.shopId;
@@ -83,7 +86,9 @@ router.post(
 );
 
 // get all events
-router.get("/get-all-events", async (req, res, next) => {
+router.get("/get-all-events", 
+  cacheEvents(1800), // Cache for 30 minutes
+  async (req, res, next) => {
   try {
     const events = await Event.find();
     res.status(201).json({
@@ -98,6 +103,7 @@ router.get("/get-all-events", async (req, res, next) => {
 // get all events of a shop
 router.get(
   "/get-all-events/:id",
+  cacheEvents(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const events = await Event.find({ shopId: req.params.id });
@@ -116,6 +122,7 @@ router.get(
 router.delete(
   "/delete-shop-event/:id",
   isSeller,
+  invalidateEventCache(), // Invalidate cache when event is deleted
   catchAsyncErrors(async (req, res, next) => {
     try {
       const productId = req.params.id;
@@ -154,6 +161,7 @@ router.get(
   "/admin-all-events",
   isAuthenticated,
   isAdmin("Admin"),
+  cacheEvents(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const events = await Event.find().sort({
@@ -173,6 +181,7 @@ router.get(
 router.put(
   "/create-new-review-event",
   isAuthenticated,
+  invalidateEventCache(), // Invalidate cache when event review is added
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { user, rating, comment, productId, orderId } = req.body;

@@ -7,6 +7,8 @@ const path = require("path");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
+// Import caching middleware
+const { cacheUsers, invalidateUserCache } = require("../middleware/cache");
 
 const router = express.Router();
 
@@ -226,6 +228,7 @@ router.put(
   "/update-avatar",
   isAuthenticated,
   upload.single("image"),
+  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const existsUser = await User.findById(req.user.id);
@@ -267,6 +270,7 @@ router.put(
 router.put(
   "/update-user-addresses",
   isAuthenticated,
+  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const user = await User.findById(req.user.id);
@@ -307,6 +311,7 @@ router.put(
 router.delete(
   "/delete-user-address/:id",
   isAuthenticated,
+  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const userId = req.user._id;
@@ -332,6 +337,7 @@ router.delete(
 router.put(
   "/update-user-password",
   isAuthenticated,
+  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const user = await User.findById(req.user.id).select("+password");
@@ -385,6 +391,7 @@ router.get(
   "/admin-all-users",
   isAuthenticated,
   isAdmin("Admin"),
+  cacheUsers(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const users = await User.find().sort({

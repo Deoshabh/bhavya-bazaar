@@ -8,11 +8,13 @@ const Shop = require("../model/shop");
 const { upload } = require("../multer");
 const ErrorHandler = require("../utils/ErrorHandler");
 const fs = require("fs");
+const { cacheProducts, cacheShop, invalidateProductCache } = require("../middleware/cache");
 
 // create product
 router.post(
   "/create-product",
   upload.array("images"),
+  invalidateProductCache(), // Invalidate cache when new product is created
   catchAsyncErrors(async (req, res, next) => {
     try {
       const shopId = req.body.shopId;
@@ -85,6 +87,7 @@ router.post(
 // get all products of a shop
 router.get(
   "/get-all-products-shop/:id",
+  cacheProducts(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const products = await Product.find({ shopId: req.params.id });
@@ -103,6 +106,7 @@ router.get(
 router.delete(
   "/delete-shop-product/:id",
   isSeller,
+  invalidateProductCache(), // Invalidate cache when product is deleted
   catchAsyncErrors(async (req, res, next) => {
     try {
       const productId = req.params.id;
@@ -139,6 +143,7 @@ router.delete(
 // get all products
 router.get(
   "/get-all-products",
+  cacheProducts(900), // Cache for 15 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const products = await Product.find().sort({ createdAt: -1 });

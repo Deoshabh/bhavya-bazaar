@@ -6,10 +6,13 @@ const { isAuthenticated, isSeller, isAdmin } = require("../middleware/auth");
 const Order = require("../model/order");
 const Shop = require("../model/shop");
 const Product = require("../model/product");
+// Import caching middleware
+const { cacheOrders, invalidateOrderCache } = require("../middleware/cache");
 
 // create new order
 router.post(
   "/create-order",
+  invalidateOrderCache(), // Invalidate cache when new order is created
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { cart, shippingAddress, user, totalPrice, paymentInfo } = req.body;
@@ -52,6 +55,7 @@ router.post(
 // get all orders of user
 router.get(
   "/get-all-orders/:userId",
+  cacheOrders(900), // Cache for 15 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const orders = await Order.find({ "user._id": req.params.userId }).sort({
@@ -71,6 +75,7 @@ router.get(
 // get all orders of seller
 router.get(
   "/get-seller-all-orders/:shopId",
+  cacheOrders(900), // Cache for 15 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const orders = await Order.find({
@@ -93,6 +98,7 @@ router.get(
 router.put(
   "/update-order-status/:id",
   isSeller,
+  invalidateOrderCache(), // Invalidate cache when order status is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const order = await Order.findById(req.params.id);
@@ -147,6 +153,7 @@ router.put(
 // give a refund ----- user
 router.put(
   "/order-refund/:id",
+  invalidateOrderCache(), // Invalidate cache when order is refunded
   catchAsyncErrors(async (req, res, next) => {
     try {
       const order = await Order.findById(req.params.id);
@@ -174,6 +181,7 @@ router.put(
 router.put(
   "/order-refund-success/:id",
   isSeller,
+  invalidateOrderCache(), // Invalidate cache when refund is processed
   catchAsyncErrors(async (req, res, next) => {
     try {
       const order = await Order.findById(req.params.id);
@@ -216,6 +224,7 @@ router.get(
   "/admin-all-orders",
   isAuthenticated,
   isAdmin("Admin"),
+  cacheOrders(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const orders = await Order.find().sort({

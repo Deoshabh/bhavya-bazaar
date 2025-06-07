@@ -29,7 +29,6 @@ services:
     labels:
       - "com.bhavyabazaar.service=frontend"
       - "com.bhavyabazaar.version=1.0"
-
   backend:
     build:
       context: ./backend
@@ -41,8 +40,32 @@ services:
       - "8000:8000"
     environment:
       - NODE_ENV=production
+      - PORT=8000
+      # Database configuration
       - DB_URL=mongodb://mongo:27017/bhavyabazaar
-      - REDIS_URL=redis://redis:6379
+      - MONGO_PASSWORD=${MONGO_PASSWORD:-secure_password_here}
+      # Redis configuration
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-secure_redis_password}@redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-secure_redis_password}
+      - REDIS_DB=0
+      # Cache TTL settings
+      - CACHE_TTL_SHORT=300
+      - CACHE_TTL_MEDIUM=900
+      - CACHE_TTL_LONG=3600
+      - CACHE_TTL_VERY_LONG=86400
+      # Security
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default_jwt_secret_change_in_production}
+      - ACTIVATION_SECRET=${ACTIVATION_SECRET:-default_activation_secret_change_in_production}
+      - COOKIE_EXPIRES_TIME=7
+      # CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://bhavyabazaar.com,https://www.bhavyabazaar.com}
+      # Redis monitoring
+      - REDIS_ENABLE_ANALYTICS=true
+      - REDIS_ENABLE_HEALTH_CHECK=true
+      - ENABLE_CACHE_WARMING=true
+      - CACHE_WARM_ON_STARTUP=true
     depends_on:
       - mongo
       - redis
