@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+require("dotenv").config();
 
-// Hardcode the MongoDB connection string directly to avoid .env loading issues
-const DB_URL = "mongodb://127.0.0.1:27017/multi-vendor";
+// Use production MongoDB connection string from environment variables
+const DB_URL = process.env.DB_URI || "mongodb://root:jmU9RAj8gDoz794KNPk1f7GkIKjX0bnqLZ1DSnylnnsTjuJG5CStX1IuTD4ZA9BO@hk0w48gckcgcwggkgwg04wgo:27017/bhavya-bazar?authSource=admin";
 
-console.log("Attempting to connect to MongoDB database:", DB_URL);
+console.log("Attempting to connect to MongoDB database:", DB_URL.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')); // Hide credentials in logs
 
 // Connect to the database
 mongoose.connect(DB_URL, {
@@ -71,9 +72,9 @@ async function createAdmin() {
       console.log("Please use this account to log in to the admin dashboard");
     } else {
       // Get admin details from command line arguments
-      const phoneNumber = process.argv[2] || "1234567890";
-      const password = process.argv[3] || "admin123";
-      const name = process.argv[4] || "Admin User";
+      const phoneNumber = process.argv[2] || "7900601901";
+      const password = process.argv[3] || "DevSum@123";
+      const name = process.argv[4] || "DevSum Admin";
 
       // Check if any user with this phone number exists
       const existingUser = await User.findOne({ phoneNumber });
