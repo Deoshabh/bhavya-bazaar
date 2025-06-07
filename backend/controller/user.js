@@ -155,7 +155,15 @@ router.get(
       const user = await User.findById(req.user.id);
 
       if (!user) {
-        return next(new ErrorHandler("User doesn't exist", 400));
+        console.log(`User not found for authenticated token ID: ${req.user.id}`);
+        // Clear the invalid token by setting expired cookie
+        res.cookie("token", null, {
+          expires: new Date(Date.now()),
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        });
+        return next(new ErrorHandler("Session expired. Please login again.", 401));
       }
       res.status(200).json({
         success: true,

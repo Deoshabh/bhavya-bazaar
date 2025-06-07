@@ -318,8 +318,7 @@ const MessageList = ({
     >
       <div className="relative">
         <UserAvatar
-          src={userData?.avatar}
-          userName={userData?.name}
+          user={userData}
           className="w-[50px] h-[50px] rounded-full"
           size="50"
         />
@@ -360,8 +359,7 @@ const SellerInbox = ({
       <div className="w-full flex p-3 items-center justify-between bg-slate-200">
         <div className="flex">
           <UserAvatar
-            src={userData?.avatar}
-            userName={userData?.name}
+            user={userData}
             className="w-[60px] h-[60px] rounded-full"
             size="60"
           />
@@ -390,8 +388,7 @@ const SellerInbox = ({
             >
               {item.sender !== sellerId && (
                 <UserAvatar
-                  src={userData?.avatar}
-                  userName={userData?.name}
+                  user={userData}
                   className="w-[40px] h-[40px] rounded-full mr-3"
                   size="40"
                 />

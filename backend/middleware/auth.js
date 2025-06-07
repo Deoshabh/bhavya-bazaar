@@ -35,8 +35,9 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
       user = await User.findById(decoded.id);
       
       if (!user) {
-        console.error("User not found in database for id:", decoded.id);
-        return next(new ErrorHandler("User not found", 401));
+        console.error("User not found in database for token ID:", decoded.id);
+        console.log("This indicates a stale or invalid token - user may have been deleted");
+        return next(new ErrorHandler("Session expired. Please login again.", 401));
       }
       
       // Cache user session for 30 minutes

@@ -327,8 +327,7 @@ const MessageList = ({
     >
       <div className="relative">
         <UserAvatar
-          src={userData?.avatar}
-          userName={userData?.name}
+          user={userData}
           className="w-[50px] h-[50px] rounded-full"
           size="50"
         />

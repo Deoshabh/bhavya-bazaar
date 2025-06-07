@@ -159,8 +159,7 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
             <div className="relative">
                 {/* Avatar with enhanced UserAvatar component */}
                 <UserAvatar
-                    src={user?.avatar}
-                    userName={user?.name}
+                    user={user}
                     className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
                     size="150"
                 />
