@@ -39,20 +39,19 @@
     "socket.io-client": "^4.6.1",
     "timeago.js": "^4.0.2",
     "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "prestart": "node scripts/fix-source-maps.js",
+  },  "scripts": {
+    "prestart": "node ./scripts/fix-source-maps.js",
     "start": "cross-env NODE_ENV=development react-app-rewired start",
     "build": "cross-env CI=false GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
     "build:prod": "cross-env NODE_ENV=production npm run build",
-    "build:coolify": "npm run build && node scripts/configure-coolify.js",
-    "prebuild": "node scripts/fix-source-maps.js",
+    "build:coolify": "npm run build && node ./scripts/configure-coolify.js",
+    "build:docker": "cross-env CI=false GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject",
     "serve": "cross-env NODE_ENV=production node server.js",
     "start:prod": "npm run build && npm run serve",
     "dev": "cross-env NODE_ENV=development HOST=0.0.0.0 react-app-rewired start",
-    "deploy:configure": "node scripts/configure-coolify.js"
+    "deploy:configure": "node ./scripts/configure-coolify.js"
   },
   "eslintConfig": {
     "extends": [
