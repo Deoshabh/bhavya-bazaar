@@ -46,17 +46,31 @@ const getWebsocketUrl = () => {
     return window.RUNTIME_CONFIG.SOCKET_URL;
   }
   
-  // Default for bhavyabazaar.com production
-  if (window.__RUNTIME_CONFIG__?.NODE_ENV === 'production' || window.RUNTIME_CONFIG?.NODE_ENV === 'production') {
-    const currentDomain = window.location.hostname;
-    if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
-      return 'https://api.bhavyabazaar.com';
-    }
+  // Check for environment variable
+  if (process.env.REACT_APP_WS_URL) {
+    return process.env.REACT_APP_WS_URL;
   }
   
-  // Use same logic as API domain but without /api/v2 suffix
-  const apiDomain = getApiDomain();
-  return apiDomain.replace('/api/v2', '');
+  // Default for bhavyabazaar.com production
+  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+  
+  if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
+    // Use proper WebSocket URL for production
+    return 'wss://api.bhavyabazaar.com/socket.io';
+  }
+  
+  // For development
+  if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
+    return 'ws://localhost:8000/socket.io';
+  }
+  
+  // Fallback: try to infer from current domain
+  if (currentDomain && currentDomain !== 'localhost') {
+    return `wss://api.${currentDomain}/socket.io`;
+  }
+  
+  // Final fallback
+  return 'wss://api.bhavyabazaar.com/socket.io';
 };
 
 const getBackendUrl = () => {  // Check for runtime environment variables first

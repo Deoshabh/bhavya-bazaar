@@ -20,3 +20,6 @@ window.__RUNTIME_CONFIG__ = {
 
 // Compatibility alias for older components
 window.RUNTIME_CONFIG = window.__RUNTIME_CONFIG__;
+
+// Log configuration load for debugging
+console.log("✅ Runtime configuration loaded:", window.__RUNTIME_CONFIG__);

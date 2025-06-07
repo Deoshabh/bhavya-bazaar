@@ -2,16 +2,58 @@
 // This centralizes all API URL handling logic in one place
 import axios from 'axios';
 
-class ApiService {
-  constructor() {
-    // Get base API URL from the runtime config
-    this.apiBase = window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL;
+class ApiService {  constructor() {
+    // Enhanced API URL resolution with better fallback chain
+    this.apiBase = this.getApiUrl();
     
-    // If we still don't have a URL, use production default
-    if (!this.apiBase) {
-      this.apiBase = 'https://api.bhavyabazaar.com/api/v2';
+    console.log(`🔗 API Service initialized with URL: ${this.apiBase}`);
+    
+    // Initialize axios instance
+    this.initializeAxios();
+  }
+  
+  getApiUrl() {
+    // Priority 1: Runtime config (for production deployments)
+    if (window.__RUNTIME_CONFIG__?.API_URL) {
+      console.log('Using runtime config API URL:', window.__RUNTIME_CONFIG__.API_URL);
+      return window.__RUNTIME_CONFIG__.API_URL;
     }
     
+    if (window.RUNTIME_CONFIG?.API_URL) {
+      console.log('Using legacy runtime config API URL:', window.RUNTIME_CONFIG.API_URL);
+      return window.RUNTIME_CONFIG.API_URL;
+    }
+    
+    // Priority 2: Environment variables
+    if (process.env.REACT_APP_API_URL) {
+      console.log('Using environment API URL:', process.env.REACT_APP_API_URL);
+      return process.env.REACT_APP_API_URL;
+    }
+    
+    // Priority 3: Smart domain detection for production
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      
+      if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+        const apiUrl = 'https://api.bhavyabazaar.com/api/v2';
+        console.log('Using production domain API URL:', apiUrl);
+        return apiUrl;
+      }
+      
+      // For other domains, try to infer API URL
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        const apiUrl = `https://api.${hostname}/api/v2`;
+        console.log('Using inferred API URL:', apiUrl);
+        return apiUrl;
+      }
+    }
+    
+    // Priority 4: Default fallback
+    const fallbackUrl = 'https://api.bhavyabazaar.com/api/v2';
+    console.log('Using fallback API URL:', fallbackUrl);
+    return fallbackUrl;  }
+  
+  initializeAxios() {
     // Ensure API URL ends with /api/v2
     if (!this.apiBase.includes('/api/v2')) {
       // If it already has /api but not /api/v2, replace it
@@ -24,7 +66,7 @@ class ApiService {
           : `${this.apiBase}/api/v2`;
       }
     }
-    
+
     // Create axios instance
     this.api = axios.create({
       baseURL: this.apiBase,

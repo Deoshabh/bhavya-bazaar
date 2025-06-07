@@ -9,9 +9,12 @@ const sessionService = require("../utils/sessionService");
 exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
   try {
     console.log("Auth cookies:", req.cookies);
+    console.log("Auth headers:", req.headers.authorization);
+    
     const { token } = req.cookies;
     
     if (!token) {
+      console.log("No token found in cookies");
       return next(new ErrorHandler("Please login to continue", 401));
     }
     
@@ -21,22 +24,26 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    console.log("Decoded token user:", decoded);
+    console.log("Decoded token user ID:", decoded.id);
     
     // Try to get user from cache first
     let user = await sessionService.getUserSession(decoded.id);
     
     if (!user) {
+      console.log("User not found in cache, fetching from database");
       // If not in cache, get from database and cache it
       user = await User.findById(decoded.id);
       
       if (!user) {
-        console.error("User not found for id:", decoded.id);
+        console.error("User not found in database for id:", decoded.id);
         return next(new ErrorHandler("User not found", 401));
       }
       
       // Cache user session for 30 minutes
       await sessionService.setUserSession(decoded.id, user, 1800);
+      console.log("User cached successfully");
+    } else {
+      console.log("User found in cache");
     }
     
     req.user = user;

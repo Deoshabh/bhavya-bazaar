@@ -115,14 +115,42 @@ const allowedOrigins = rawCors
   .map((s) => s.trim())
   .filter((s) => s.length > 0);
 
+// Add default origins if none specified
+if (allowedOrigins.length === 0) {
+  if (process.env.NODE_ENV === 'production') {
+    allowedOrigins.push(
+      "https://bhavyabazaar.com",
+      "https://www.bhavyabazaar.com"
+    );
+  } else {
+    allowedOrigins.push(
+      "https://bhavyabazaar.com",
+      "https://www.bhavyabazaar.com",
+      "http://localhost:3000"
+    );
+  }
+}
+
+console.log("🌐 Allowed CORS origins:", allowedOrigins);
+
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      } else {
+        console.warn(`❌ CORS blocked request from: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
-      "Authorization",
+      "Authorization", 
       "X-Requested-With",
       "Accept",
       "Origin",
@@ -141,6 +169,27 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// —————————— Debug endpoint for production troubleshooting ——————————
+app.get("/api/v2/debug/env", (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return res.status(403).json({ error: "Debug endpoint only available in production" });
+  }
+  
+  res.json({
+    nodeEnv: process.env.NODE_ENV,
+    port: process.env.PORT,
+    hasDbUri: !!process.env.DB_URI,
+    hasJwtSecret: !!process.env.JWT_SECRET_KEY,
+    hasActivationSecret: !!process.env.ACTIVATION_SECRET,
+    corsOrigin: process.env.CORS_ORIGIN,
+    redisHost: process.env.REDIS_HOST,
+    redisPort: process.env.REDIS_PORT,
+    hasRedisPassword: !!process.env.REDIS_PASSWORD,
+    redisAvailable: global.redisAvailable || false,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // —————————— Health & Root Routes ——————————
 app.get("/api/v2/health", async (req, res) => {
@@ -207,18 +256,56 @@ const { WebSocketServer } = require("ws");
 const wss = new WebSocketServer({
   server,
   path: "/ws",
+  verifyClient: (info) => {
+    // Allow connections from allowed origins
+    const origin = info.origin;
+    if (!origin) return true; // Allow connections without origin (mobile apps, etc.)
+    
+    const allowedOrigins = process.env.CORS_ORIGIN ? 
+      process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : 
+      ['https://bhavyabazaar.com', 'https://www.bhavyabazaar.com'];
+    
+    return allowedOrigins.includes(origin);
+  }
 });
 
 wss.on("connection", (ws, req) => {
   console.log("🟢 WebSocket client connected:", req.socket.remoteAddress);
+  
+  // Send welcome message
+  ws.send(JSON.stringify({ 
+    type: "welcome", 
+    message: "Connected to Bhavya Bazaar WebSocket",
+    timestamp: new Date().toISOString()
+  }));
 
   ws.on("message", (message) => {
-    console.log("📨 Received WebSocket message:", message.toString());
-    ws.send(JSON.stringify({ reply: "Echo: " + message.toString() }));
+    try {
+      console.log("📨 Received WebSocket message:", message.toString());
+      const data = JSON.parse(message.toString());
+      
+      // Echo back with type and timestamp
+      ws.send(JSON.stringify({ 
+        type: "echo",
+        originalMessage: data,
+        reply: "Message received successfully",
+        timestamp: new Date().toISOString()
+      }));
+    } catch (error) {
+      ws.send(JSON.stringify({ 
+        type: "error",
+        message: "Invalid JSON format",
+        timestamp: new Date().toISOString()
+      }));
+    }
   });
 
   ws.on("close", () => {
     console.log("🔴 WebSocket client disconnected");
+  });
+  
+  ws.on("error", (error) => {
+    console.error("🚨 WebSocket error:", error);
   });
 });
 
@@ -261,8 +348,30 @@ app.get("/api/v2/cache/metrics", async (req, res) => {
 // Redis health check
 app.get("/api/v2/cache/health", async (req, res) => {
   try {
-    const health = await redisHealth.getHealthStatus();
-    res.json(health);
+    // Direct Redis health check without external dependency
+    let redisStatus = 'disconnected';
+    let connectionDetails = {};
+    
+    try {
+      await redis.ping();
+      redisStatus = 'connected';
+      connectionDetails = {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: process.env.REDIS_PORT || 6379,
+        db: process.env.REDIS_DB || 0
+      };
+    } catch (redisError) {
+      redisStatus = 'error';
+      connectionDetails.error = redisError.message;
+    }
+
+    res.json({
+      healthy: redisStatus === 'connected',
+      status: redisStatus,
+      connection: connectionDetails,
+      globalAvailable: global.redisAvailable || false,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
     res.status(500).json({
       error: "Failed to get Redis health status",
@@ -370,10 +479,15 @@ process.on("unhandledRejection", (err) => {
 });
 
 // —————————— Start Listening on PORT=443 ——————————
-const PORT = process.env.PORT || 443;
+const PORT = process.env.PORT || 8000; // Changed default from 443 to 8000
 server.listen(PORT, async () => {
   console.log(`🚀 Server listening on port ${PORT}`);
   console.log(`🌐 API base: https://api.bhavyabazaar.com`);
+  
+  // Log environment details for debugging
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`DB URI: ${process.env.DB_URI ? 'Connected' : 'Not configured'}`);
+  console.log(`Redis Host: ${process.env.REDIS_HOST || 'Not configured'}`);
   
   // Initialize cache warming on server startup
   console.log("🔥 Warming up cache...");
