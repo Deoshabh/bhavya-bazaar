@@ -1,0 +1,45 @@
+/* Watermark Fix Styles */
+
+/* Remove or customize watermarks in development/production */
+.watermark,
+.dev-watermark,
+.demo-watermark {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Fix for any background watermarks */
+body::before,
+body::after,
+.app::before,
+.app::after {
+  content: none !important;
+}
+
+/* Remove any overlay watermarks */
+.overlay-watermark,
+.background-watermark,
+.footer-watermark {
+  display: none !important;
+}
+
+/* Fix for logo watermarks */
+.logo-watermark {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Ensure main content is not affected */
+.main-content,
+.app-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Remove demo/trial banners */
+.demo-banner,
+.trial-banner,
+.watermark-banner {
+  display: none !important;
+}
