@@ -177,38 +177,7 @@ const invalidateMessageCache = () => {
   return invalidateCache(['message:*']);
 };
 
-/**
- * Cache warming functions
- */
-const warmCache = {
-  /**
-   * Warm up popular products cache
-   */
-  async popularProducts() {
-    try {
-      // This would typically fetch popular products from database
-      // and store in cache for quick access
-      const key = cacheService.generatePopularProductsKey();
-      // Implementation depends on your business logic for determining popular products
-      console.log(`🔥 Warming cache for popular products: ${key}`);
-    } catch (error) {
-      console.error('Error warming popular products cache:', error);
-    }
-  },
-
-  /**
-   * Warm up category cache
-   */
-  async categories() {
-    try {
-      // This would fetch all categories and cache them
-      const key = 'categories:all';
-      console.log(`🔥 Warming cache for categories: ${key}`);
-    } catch (error) {
-      console.error('Error warming categories cache:', error);
-    }
-  }
-};
+// Cache warming is now handled by the dedicated CacheWarmupService
 
 /**
  * Cache orders with TTL
@@ -282,7 +251,6 @@ module.exports = {
   invalidateEventCache,
   invalidateConversationCache,
   invalidateMessageCache,
-  warmCache,
   cacheOrders,
   cacheEvents,
   cacheConversations,
