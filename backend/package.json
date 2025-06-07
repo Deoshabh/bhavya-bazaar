@@ -8,7 +8,13 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false",
+    "redis:test": "node scripts/redis-troubleshoot.js",
+    "seed": "node scripts/seed-database.js",
+    "test:redis": "node test/redis-test-suite.js",
+    "cache:clear": "node -e \"require('./utils/cacheService').clearAll().then(() => console.log('Cache cleared'))\"",
+    "cache:warm": "node -e \"require('./utils/cacheWarmup').warmAllCaches().then(() => console.log('Cache warmed'))\"",
+    "db:seed": "npm run seed"
   },
   "author": "Om Prakash Pattjoshi",
   "license": "ISC",

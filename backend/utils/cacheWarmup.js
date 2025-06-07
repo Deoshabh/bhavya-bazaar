@@ -217,12 +217,19 @@ class CacheWarmupService {
       timestamp: new Date().toISOString()
     };
   }
-
   /**
    * Force refresh all cache
    */
   async forceRefresh() {
     this.warmedUp = false;
+    await this.warmUpCache();
+    await this.preCacheSearches();
+  }
+
+  /**
+   * Warm all caches (alias for warmUpCache for compatibility)
+   */
+  async warmAllCaches() {
     await this.warmUpCache();
     await this.preCacheSearches();
   }

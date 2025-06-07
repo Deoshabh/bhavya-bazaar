@@ -1,0 +1,53 @@
+# ===================================================
+# COOLIFY ENVIRONMENT VARIABLES - BHAVYA BAZAAR
+# ===================================================
+# Copy these environment variables to your Coolify backend service
+
+# ===================================================
+# APPLICATION CONFIGURATION
+# ===================================================
+NODE_ENV=production
+PORT=443
+
+# ===================================================
+# DATABASE CONFIGURATION  
+# ===================================================
+DB_URI=mongodb://root:jmU9RAj8gDoz794KNPk1f7GkIKjX0bnqLZ1DSnylnnsTjuJG5CStX1IuTD4ZA9BO@hk0w48gckcgcwggkgwg04wgo:27017/bhavya-bazar?authSource=admin
+
+# ===================================================
+# JWT & AUTHENTICATION
+# ===================================================
+JWT_SECRET_KEY=c4d6c1e15acc2b4461c15b1f7fc6e58f83e03dd48ff5b5ac41fbf3afd10a3113
+JWT_EXPIRES=7d
+ACTIVATION_SECRET=c4d6c1e15acc2b4461c15b1f7fc6e58f83e03dd48ff5b5ac41fbf3afd10a3113
+
+# ===================================================
+# CORS & FRONTEND DOMAINS
+# ===================================================
+CORS_ORIGIN=https://www.bhavyabazaar.com, https://bhavyabazaar.com, https://bhavyabazaar.com, http://localhost:3000
+WS_ORIGIN=https://bhavyabazaar.com
+
+# ===================================================
+# REDIS CONFIGURATION (OPTIONAL - FOR CACHING)
+# ===================================================
+# IMPORTANT: Only add these if you have a Redis service in Coolify
+# If no Redis service, the app will work fine without caching
+
+# REDIS_HOST=redis
+# REDIS_PORT=6379
+# REDIS_PASSWORD=your_redis_password_here
+# REDIS_DB=0
+# CACHE_ENABLED=true
+# CACHE_DEFAULT_TTL=300
+# SESSION_SECRET=your_session_secret_here
+
+# ===================================================
+# INSTRUCTIONS FOR COOLIFY DEPLOYMENT
+# ===================================================
+# 
+# STEP 1: Copy all environment variables above to your Coolify backend service
+# STEP 2: If you want Redis caching:
+#   - Add a Redis service in Coolify 
+#   - Uncomment the Redis variables above
+#   - Set REDIS_PASSWORD to match your Redis service password
+# STEP 3: Deploy your backend service

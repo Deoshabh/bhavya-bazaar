@@ -30,30 +30,71 @@ if (!process.env.JWT_SECRET_KEY || !process.env.ACTIVATION_SECRET) {
 connectDatabase();
 
 // Initialize Redis connection with fallback handling
+let redisConnected = false;
 (async () => {
   try {
-    await redis.ping();
-    console.log("✅ Redis connection is successful!");
-    
-    // Set global Redis availability flag
-    global.redisAvailable = true;
-    
-    // Register Redis error handlers for graceful degradation
-    redis.on('error', (err) => {
-      console.warn('⚠️ Redis connection error:', err.message);
-      global.redisAvailable = false;
-    });
-    
-    redis.on('connect', () => {
-      console.log('🔄 Redis reconnected');
+    // Only attempt Redis connection if Redis environment variables are set
+    if (process.env.REDIS_HOST || process.env.REDIS_URL) {
+      console.log('🔄 Attempting Redis connection...');
+      console.log(`Redis Host: ${process.env.REDIS_HOST || 'localhost'}`);
+      console.log(`Redis Port: ${process.env.REDIS_PORT || 6379}`);
+      console.log(`Redis Password: ${process.env.REDIS_PASSWORD ? '[PROTECTED]' : 'Not set'}`);
+      
+      await redis.ping();
+      console.log("✅ Redis connection is successful!");
+      redisConnected = true;
+      
+      // Set global Redis availability flag
       global.redisAvailable = true;
-    });
-    
+      
+      // Register Redis error handlers for graceful degradation
+      redis.on('error', (err) => {
+        console.warn('⚠️ Redis connection error:', err.message);
+        global.redisAvailable = false;
+        redisConnected = false;
+      });
+      
+      redis.on('connect', () => {
+        console.log('🔄 Redis reconnected');
+        global.redisAvailable = true;
+        redisConnected = true;
+      });
+      
+      redis.on('close', () => {
+        console.log('🔴 Redis connection closed');
+        global.redisAvailable = false;
+        redisConnected = false;
+      });
+    } else {
+      console.log('ℹ️ No Redis configuration found, running without cache');
+      global.redisAvailable = false;
+    }
   } catch (error) {
-    console.warn("⚠️ Redis connection failed, continuing without cache:", error.message);
+    console.warn('⚠️ Redis connection failed, continuing without cache:', error.message);
     global.redisAvailable = false;
+    redisConnected = false;
   }
 })();
+
+// Initialize cache warming after Redis connection (if available)
+setTimeout(async () => {
+  if (global.redisAvailable && redisConnected) {
+    try {
+      const cacheWarmup = require("./utils/cacheWarmup");
+      if (cacheWarmup && typeof cacheWarmup.warmAllCaches === 'function') {
+        console.log('🔥 Warming up cache...');
+        await cacheWarmup.warmAllCaches();
+        console.log('✅ Cache warmup completed');
+      } else {
+        console.log('⚠️ Cache warmup method not available');
+      }
+    } catch (error) {
+      console.warn('⚠️ Cache warmup failed:', error.message);
+    }
+  } else {
+    console.log('ℹ️ Skipping cache warmup (Redis not available)');
+  }
+}, 5000); // Wait 5 seconds after server start
 
 const uploadsPath = path.join(__dirname, "uploads");
 ensureDirectoryExists(uploadsPath);
@@ -260,6 +301,13 @@ app.delete("/api/v2/cache/clear", async (req, res) => {
 // Cache warming endpoint
 app.post("/api/v2/cache/warm", async (req, res) => {
   try {
+    if (!global.redisAvailable) {
+      return res.status(503).json({
+        error: "Redis unavailable",
+        message: "Cache warming requires Redis to be available"
+      });
+    }
+    
     const cacheWarmup = require("./utils/cacheWarmup");
     await cacheWarmup.warmAllCaches();
     res.json({ message: "Cache warming initiated successfully" });
@@ -330,9 +378,13 @@ server.listen(PORT, async () => {
   // Initialize cache warming on server startup
   console.log("🔥 Warming up cache...");
   try {
-    const cacheWarmup = require("./utils/cacheWarmup");
-    await cacheWarmup.warmAllCaches();
-    console.log("✅ Cache warmup completed successfully");
+    if (global.redisAvailable) {
+      const cacheWarmup = require("./utils/cacheWarmup");
+      await cacheWarmup.warmAllCaches();
+      console.log("✅ Cache warmup completed successfully");
+    } else {
+      console.log("ℹ️ Skipping cache warmup (Redis not available)");
+    }
   } catch (error) {
     console.warn("⚠️ Cache warmup failed:", error.message);
   }
