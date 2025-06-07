@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "form-data": "^4.0.3"
-  },
-  "devDependencies": {
-    "axios": "^1.9.0"
-  }
-}
