@@ -11,7 +11,8 @@ const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
 const { initializeSocket } = require("./socket/socketHandler");
 const { ensureDirectoryExists } = require("./utils/fileSystem");
-const redis = require("./config/redis");
+const redisClient = require("./utils/redisClient");
+const { apiLimiter, authLimiter } = require("./middleware/rateLimiter");
 
 const app = express();
 
@@ -29,72 +30,12 @@ if (!process.env.JWT_SECRET_KEY || !process.env.ACTIVATION_SECRET) {
 // Connect to MongoDB and create uploads folder
 connectDatabase();
 
-// Initialize Redis connection with fallback handling
-let redisConnected = false;
-(async () => {
-  try {
-    // Only attempt Redis connection if Redis environment variables are set
-    if (process.env.REDIS_HOST || process.env.REDIS_URL) {
-      console.log('🔄 Attempting Redis connection...');
-      console.log(`Redis Host: ${process.env.REDIS_HOST || 'localhost'}`);
-      console.log(`Redis Port: ${process.env.REDIS_PORT || 6379}`);
-      console.log(`Redis Password: ${process.env.REDIS_PASSWORD ? '[PROTECTED]' : 'Not set'}`);
-      
-      await redis.ping();
-      console.log("✅ Redis connection is successful!");
-      redisConnected = true;
-      
-      // Set global Redis availability flag
-      global.redisAvailable = true;
-      
-      // Register Redis error handlers for graceful degradation
-      redis.on('error', (err) => {
-        console.warn('⚠️ Redis connection error:', err.message);
-        global.redisAvailable = false;
-        redisConnected = false;
-      });
-      
-      redis.on('connect', () => {
-        console.log('🔄 Redis reconnected');
-        global.redisAvailable = true;
-        redisConnected = true;
-      });
-      
-      redis.on('close', () => {
-        console.log('🔴 Redis connection closed');
-        global.redisAvailable = false;
-        redisConnected = false;
-      });
-    } else {
-      console.log('ℹ️ No Redis configuration found, running without cache');
-      global.redisAvailable = false;
-    }
-  } catch (error) {
-    console.warn('⚠️ Redis connection failed, continuing without cache:', error.message);
-    global.redisAvailable = false;
-    redisConnected = false;
-  }
-})();
-
-// Initialize cache warming after Redis connection (if available)
-setTimeout(async () => {
-  if (global.redisAvailable && redisConnected) {
-    try {
-      const cacheWarmup = require("./utils/cacheWarmup");
-      if (cacheWarmup && typeof cacheWarmup.warmAllCaches === 'function') {
-        console.log('🔥 Warming up cache...');
-        await cacheWarmup.warmAllCaches();
-        console.log('✅ Cache warmup completed');
-      } else {
-        console.log('⚠️ Cache warmup method not available');
-      }
-    } catch (error) {
-      console.warn('⚠️ Cache warmup failed:', error.message);
-    }
-  } else {
-    console.log('ℹ️ Skipping cache warmup (Redis not available)');
-  }
-}, 5000); // Wait 5 seconds after server start
+// Initialize Redis connection
+redisClient.initialize().then(() => {
+  console.log("✅ Redis connection initialized");
+}).catch((error) => {
+  console.warn("⚠️ Redis initialization failed, falling back to memory storage:", error.message);
+});
 
 const uploadsPath = path.join(__dirname, "uploads");
 ensureDirectoryExists(uploadsPath);
@@ -170,6 +111,10 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// —————————— Rate Limiting ——————————
+// Apply general rate limiting to all API routes
+app.use("/api/", apiLimiter);
+
 // —————————— Debug endpoint for production troubleshooting ——————————
 app.get("/api/v2/debug/env", (req, res) => {
   if (process.env.NODE_ENV !== 'production') {
@@ -194,22 +139,10 @@ app.get("/api/v2/debug/env", (req, res) => {
 // —————————— Health & Root Routes ——————————
 app.get("/api/v2/health", async (req, res) => {
   try {
-    // Check Redis connection
-    let redisStatus = 'disconnected';
-    try {
-      await redis.ping();
-      redisStatus = 'connected';
-    } catch (redisError) {
-      redisStatus = 'error';
-    }
-
     res.status(200).json({
       status: "healthy",
       service: "backend",
-      timestamp: new Date().toISOString(),
-      cache: {
-        redis: redisStatus
-      }
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({
@@ -250,6 +183,7 @@ app.use("/api/v2/message", require("./controller/message"));
 app.use("/api/v2/coupon", require("./controller/coupounCode"));
 app.use("/api/v2/payment", require("./controller/payment"));
 app.use("/api/v2/withdraw", require("./controller/withdraw"));
+app.use("/api/v2/cart", require("./controller/cart"));
 
 // —————————— WebSocketServer on /ws ——————————
 const { WebSocketServer } = require("ws");
@@ -315,156 +249,7 @@ app.get("/socket/status", (req, res) => {
   res.json(getSocketStatus());
 });
 
-// —————————— Cache Management Routes ——————————
-const cacheService = require("./utils/cacheService");
-const redisHealth = require("./utils/redisHealth");
 
-// Cache statistics and analytics
-app.get("/api/v2/cache/stats", async (req, res) => {
-  try {
-    const stats = await cacheService.getStats();
-    res.json(stats);
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to get cache stats",
-      message: error.message
-    });
-  }
-});
-
-// Performance metrics
-app.get("/api/v2/cache/metrics", async (req, res) => {
-  try {
-    const metrics = await cacheService.getPerformanceMetrics();
-    res.json(metrics);
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to get performance metrics",
-      message: error.message
-    });
-  }
-});
-
-// Redis health check
-app.get("/api/v2/cache/health", async (req, res) => {
-  try {
-    // Direct Redis health check without external dependency
-    let redisStatus = 'disconnected';
-    let connectionDetails = {};
-    
-    try {
-      await redis.ping();
-      redisStatus = 'connected';
-      connectionDetails = {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
-        db: process.env.REDIS_DB || 0
-      };
-    } catch (redisError) {
-      redisStatus = 'error';
-      connectionDetails.error = redisError.message;
-    }
-
-    res.json({
-      healthy: redisStatus === 'connected',
-      status: redisStatus,
-      connection: connectionDetails,
-      globalAvailable: global.redisAvailable || false,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to get Redis health status",
-      message: error.message,
-      healthy: false
-    });
-  }
-});
-
-// Reset analytics
-app.post("/api/v2/cache/analytics/reset", async (req, res) => {
-  try {
-    cacheService.resetAnalytics();
-    res.json({ message: "Analytics reset successfully" });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to reset analytics",
-      message: error.message
-    });
-  }
-});
-
-// Clear cache
-app.delete("/api/v2/cache/clear", async (req, res) => {
-  try {
-    await cacheService.clearAll();
-    res.json({ message: "Cache cleared successfully" });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to clear cache",
-      message: error.message
-    });
-  }
-});
-
-// Cache warming endpoint
-app.post("/api/v2/cache/warm", async (req, res) => {
-  try {
-    if (!global.redisAvailable) {
-      return res.status(503).json({
-        error: "Redis unavailable",
-        message: "Cache warming requires Redis to be available"
-      });
-    }
-    
-    const cacheWarmup = require("./utils/cacheWarmup");
-    await cacheWarmup.warmAllCaches();
-    res.json({ message: "Cache warming initiated successfully" });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to warm cache",
-      message: error.message
-    });
-  }
-});
-
-// Performance benchmark endpoint
-app.post("/api/v2/cache/benchmark", async (req, res) => {
-  try {
-    const performanceBenchmark = require("./utils/performanceBenchmark");
-    const results = await performanceBenchmark.runCachePerformanceTests();
-    const report = performanceBenchmark.generateReport(results);
-    
-    res.json({
-      message: "Performance benchmark completed",
-      report
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to run performance benchmark",
-      message: error.message
-    });
-  }
-});
-
-// Redis test suite endpoint
-app.post("/api/v2/cache/test", async (req, res) => {
-  try {
-    const RedisTestSuite = require("./test/redis-test-suite");
-    const testSuite = new RedisTestSuite();
-    const report = await testSuite.runAllTests();
-    
-    res.json({
-      message: "Redis test suite completed",
-      report
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "Failed to run Redis test suite",
-      message: error.message
-    });
-  }
-});
 
 // —————————— Error Handling & Unhandled Exceptions ——————————
 app.use(ErrorHandler);
@@ -490,16 +275,5 @@ server.listen(PORT, async () => {
   console.log(`Redis Host: ${process.env.REDIS_HOST || 'Not configured'}`);
   
   // Initialize cache warming on server startup
-  console.log("🔥 Warming up cache...");
-  try {
-    if (global.redisAvailable) {
-      const cacheWarmup = require("./utils/cacheWarmup");
-      await cacheWarmup.warmAllCaches();
-      console.log("✅ Cache warmup completed successfully");
-    } else {
-      console.log("ℹ️ Skipping cache warmup (Redis not available)");
-    }
-  } catch (error) {
-    console.warn("⚠️ Cache warmup failed:", error.message);
-  }
+  console.log("🔥 Cache functionality has been removed");
 });

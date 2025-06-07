@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../model/user");
 const Shop = require("../model/shop");
 const sessionService = require("../utils/sessionService");
+const { isTokenBlacklisted } = require("./tokenBlacklist");
 
 // Check if user is authenticated or not
 exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
@@ -16,6 +17,13 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
     if (!token) {
       console.log("No token found in cookies");
       return next(new ErrorHandler("Please login to continue", 401));
+    }
+    
+    // Check if token is blacklisted
+    const blacklisted = await isTokenBlacklisted(token);
+    if (blacklisted) {
+      console.log("Token is blacklisted");
+      return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
     }
     
     if (!process.env.JWT_SECRET_KEY) {
@@ -69,6 +77,13 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
     if (!seller_token) {
       console.error("No seller token in cookies");
       return next(new ErrorHandler("Please login to continue", 401));
+    }
+    
+    // Check if seller token is blacklisted
+    const blacklisted = await isTokenBlacklisted(seller_token);
+    if (blacklisted) {
+      console.log("Seller token is blacklisted");
+      return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
     }
     
     if (!process.env.JWT_SECRET_KEY) {

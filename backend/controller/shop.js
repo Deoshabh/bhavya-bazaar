@@ -9,7 +9,8 @@ const { upload } = require("../multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
 const sendShopToken = require("../utils/shopToken");
-const { cacheShop, invalidateShopCache } = require("../middleware/cache");
+const { blacklistToken } = require("../middleware/tokenBlacklist");
+const { authLimiter } = require("../middleware/rateLimiter");
 
 // Create shop without email verification
 router.post("/create-shop", upload.single("file"), async (req, res, next) => {
@@ -108,6 +109,7 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
 // Login shop
 router.post(
   "/login-shop",
+  authLimiter, // Add rate limiting for authentication
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { phoneNumber, password } = req.body;
@@ -168,10 +170,28 @@ router.get(
   "/logout",
   catchAsyncErrors(async (req, res, next) => {
     try {
+      const { seller_token } = req.cookies;
+      
+      // Blacklist the seller token if it exists
+      if (seller_token) {
+        // Get token expiration time from JWT (typically 90 days)
+        try {
+          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
+          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
+          await blacklistToken(seller_token, Math.max(remainingTime, 3600)); // At least 1 hour
+        } catch (jwtError) {
+          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
+          await blacklistToken(seller_token, 3600);
+        }
+      }
+
       res.cookie("seller_token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
+      
       res.status(201).json({
         success: true,
         message: "Log out successful!",
@@ -185,7 +205,6 @@ router.get(
 // Get shop info
 router.get(
   "/get-shop-info/:id",
-  cacheShop(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const shop = await Shop.findById(req.params.id);
@@ -204,7 +223,6 @@ router.put(
   "/update-shop-profile",
   isSeller,
   upload.single("file"),
-  invalidateShopCache(), // Invalidate cache when shop is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { name, description, address, phoneNumber, zipCode } = req.body;

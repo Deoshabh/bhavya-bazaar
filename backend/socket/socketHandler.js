@@ -1,5 +1,6 @@
 // Socket.IO handler for real-time messaging
 const socketIO = require("socket.io");
+const redisClient = require("../utils/redisClient");
 
 // Initialize Socket.IO
 const initializeSocket = (server) => {
@@ -50,6 +51,33 @@ const initializeSocket = (server) => {
     allowEIO3: true, // Allow Engine.IO protocol version 3
     serveClient: false // Don't serve client files
   });
+
+  // Set up Redis adapter for Socket.io clustering if Redis is available
+  if (redisClient.isConnected()) {
+    try {
+      const { createAdapter } = require("@socket.io/redis-adapter");
+      const { createClient } = require("redis");
+      
+      // Create Redis clients for Socket.io adapter
+      const pubClient = createClient({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: process.env.REDIS_PORT || 6379,
+        password: process.env.REDIS_PASSWORD,
+        db: process.env.REDIS_DB || 0,
+      });
+      
+      const subClient = pubClient.duplicate();
+
+      Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log("✅ Socket.io Redis adapter configured for scaling");
+      }).catch((error) => {
+        console.warn("⚠️ Failed to set up Socket.io Redis adapter:", error.message);
+      });
+    } catch (error) {
+      console.warn("⚠️ Socket.io Redis adapter not available:", error.message);
+    }
+  }
 
   // Socket.IO connection handling
   let users = [];

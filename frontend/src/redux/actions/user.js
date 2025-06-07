@@ -46,6 +46,16 @@ export const loadUser = () => async (dispatch) => {
 // load seller
 export const loadSeller = () => async (dispatch) => {
   try {
+    // Check if seller token exists before making request
+    const hasSellerToken = document.cookie.includes('seller_token=');
+    if (!hasSellerToken) {
+      dispatch({
+        type: "LoadSellerFail",
+        payload: "No seller authentication found",
+      });
+      return;
+    }
+
     dispatch({
       type: "LoadSellerRequest",
     });

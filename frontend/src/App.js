@@ -94,7 +94,15 @@ const App = () => {
 
   useEffect(() => {
     dispatch(loadUser());
-    dispatch(loadSeller());
+    // Only load seller if we have seller token or are on seller pages
+    const hasSellerToken = document.cookie.includes('seller_token=');
+    const isSellerRoute = window.location.pathname.includes('/dashboard') || 
+                         window.location.pathname.includes('/shop');
+    
+    if (hasSellerToken || isSellerRoute) {
+      dispatch(loadSeller());
+    }
+    
     dispatch(getAllProducts());
     dispatch(getAllEvents());
   }, [dispatch]);

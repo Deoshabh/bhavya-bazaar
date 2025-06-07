@@ -7,8 +7,8 @@ const path = require("path");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
-// Import caching middleware
-const { cacheUsers, invalidateUserCache } = require("../middleware/cache");
+const { authLimiter } = require("../middleware/rateLimiter");
+const { blacklistToken } = require("../middleware/tokenBlacklist");
 
 const router = express.Router();
 
@@ -116,6 +116,7 @@ router.post("/create-user", upload.single("file"), async (req, res, next) => {
 // login user with phone number
 router.post(
   "/login-user",
+  authLimiter, // Add rate limiting for authentication
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { phoneNumber, password } = req.body;
@@ -180,10 +181,29 @@ router.get(
   "/logout",
   catchAsyncErrors(async (req, res, next) => {
     try {
+      const { token } = req.cookies;
+      
+      // Blacklist the token if it exists
+      if (token) {
+        // Get token expiration time from JWT (typically 90 days)
+        const jwt = require('jsonwebtoken');
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
+          await blacklistToken(token, Math.max(remainingTime, 3600)); // At least 1 hour
+        } catch (jwtError) {
+          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
+          await blacklistToken(token, 3600);
+        }
+      }
+
       res.cookie("token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
+      
       res.status(201).json({
         success: true,
         message: "Log out successful!",
@@ -236,7 +256,6 @@ router.put(
   "/update-avatar",
   isAuthenticated,
   upload.single("image"),
-  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const existsUser = await User.findById(req.user.id);
@@ -278,7 +297,6 @@ router.put(
 router.put(
   "/update-user-addresses",
   isAuthenticated,
-  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const user = await User.findById(req.user.id);
@@ -319,7 +337,6 @@ router.put(
 router.delete(
   "/delete-user-address/:id",
   isAuthenticated,
-  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const userId = req.user._id;
@@ -345,7 +362,6 @@ router.delete(
 router.put(
   "/update-user-password",
   isAuthenticated,
-  invalidateUserCache(), // Invalidate cache when user data is updated
   catchAsyncErrors(async (req, res, next) => {
     try {
       const user = await User.findById(req.user.id).select("+password");
@@ -399,7 +415,6 @@ router.get(
   "/admin-all-users",
   isAuthenticated,
   isAdmin("Admin"),
-  cacheUsers(1800), // Cache for 30 minutes
   catchAsyncErrors(async (req, res, next) => {
     try {
       const users = await User.find().sort({
