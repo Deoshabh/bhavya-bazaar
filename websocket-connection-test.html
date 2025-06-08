@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhavya Bazaar - WebSocket Connection Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .log {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .config {
+            background-color: #f7fafc;
+            padding: 10px;
+            border-left: 4px solid #4299e1;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Bhavya Bazaar WebSocket Test</h1>
+        
+        <div class="test-section">
+            <h3>📡 Soketi Configuration</h3>
+            <div id="config-display" class="config">Loading configuration...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔌 Connection Test</h3>
+            <div id="connection-status" class="status info">Ready to test</div>
+            <button onclick="testSoketiConnection()" id="test-button">Test Soketi Connection</button>
+            <button onclick="testFallbackConnection()">Test Fallback Connection</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Connection Log</h3>
+            <div id="log" class="log">Waiting for test to start...\n</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Troubleshooting</h3>
+            <div class="info">
+                <strong>If connection fails, check:</strong><br>
+                • Soketi service is running in Coolify<br>
+                • Domain routing is configured correctly<br>
+                • TLS certificate is valid<br>
+                • Firewall allows WebSocket connections<br>
+                • App key and secret are correct
+            </div>
+        </div>
+    </div>
+
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+        // Configuration
+        const CONFIG = {
+            APP_ID: "Js3axIJci9Zlwl88",
+            APP_KEY: "TzBt", // Update with full key in production
+            HOST: "soketi-u40wwkwwws04os4cg8sgsws4.147.79.66.75.sslip.io",
+            PORT: 443,
+            PATH: "/ws",
+            TLS: true,
+            CLUSTER: "mt1"
+        };
+
+        let pusher = null;
+        let testChannel = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(message, type) {
+            const statusElement = document.getElementById('connection-status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        function displayConfig() {
+            const configElement = document.getElementById('config-display');
+            configElement.innerHTML = `
+                <strong>App ID:</strong> ${CONFIG.APP_ID}<br>
+                <strong>App Key:</strong> ${CONFIG.APP_KEY}...<br>
+                <strong>Host:</strong> ${CONFIG.HOST}<br>
+                <strong>Port:</strong> ${CONFIG.PORT}<br>
+                <strong>Path:</strong> ${CONFIG.PATH}<br>
+                <strong>TLS:</strong> ${CONFIG.TLS ? 'Enabled' : 'Disabled'}<br>
+                <strong>Connection URL:</strong> wss://${CONFIG.HOST}:${CONFIG.PORT}${CONFIG.PATH}
+            `;
+        }
+
+        function testSoketiConnection() {
+            log('🔌 Starting Soketi connection test...');
+            updateStatus('Testing connection...', 'warning');
+            document.getElementById('test-button').disabled = true;
+
+            try {
+                // Clean up existing connection
+                if (pusher) {
+                    pusher.disconnect();
+                    pusher = null;
+                }
+
+                log(`📡 Connecting to: wss://${CONFIG.HOST}:${CONFIG.PORT}${CONFIG.PATH}`);
+                log(`🔑 Using App Key: ${CONFIG.APP_KEY}...`);
+
+                // Initialize Pusher/Soketi
+                pusher = new Pusher(CONFIG.APP_KEY, {
+                    wsHost: CONFIG.HOST,
+                    wsPort: CONFIG.PORT,
+                    wsPath: CONFIG.PATH,
+                    forceTLS: CONFIG.TLS,
+                    enabledTransports: ['ws', 'wss'],
+                    disableStats: true,
+                    cluster: CONFIG.CLUSTER,
+                    activityTimeout: 30000,
+                    pongTimeout: 6000,
+                    unavailableTimeout: 10000
+                });
+
+                // Connection event handlers
+                pusher.connection.bind('connected', () => {
+                    log('✅ Connection successful!', 'success');
+                    log(`🆔 Socket ID: ${pusher.connection.socket_id}`);
+                    log(`🚀 State: ${pusher.connection.state}`);
+                    updateStatus('Connected successfully!', 'success');
+                    
+                    // Test channel subscription
+                    testChannelSubscription();
+                });
+
+                pusher.connection.bind('connecting', () => {
+                    log('🔄 Establishing connection...');
+                    updateStatus('Connecting...', 'warning');
+                });
+
+                pusher.connection.bind('unavailable', () => {
+                    log('⚠️ Connection unavailable', 'warning');
+                    updateStatus('Connection unavailable', 'warning');
+                });
+
+                pusher.connection.bind('failed', () => {
+                    log('❌ Connection failed', 'error');
+                    log('💡 Possible issues:', 'error');
+                    log('   • Soketi service not running', 'error');
+                    log('   • Incorrect configuration', 'error');
+                    log('   • Network/firewall blocking', 'error');
+                    updateStatus('Connection failed', 'error');
+                    document.getElementById('test-button').disabled = false;
+                });
+
+                pusher.connection.bind('disconnected', () => {
+                    log('🔌 Disconnected');
+                    updateStatus('Disconnected', 'info');
+                    document.getElementById('test-button').disabled = false;
+                });
+
+                pusher.connection.bind('error', (error) => {
+                    log(`🚨 Connection error: ${JSON.stringify(error)}`, 'error');
+                    updateStatus('Connection error', 'error');
+                    document.getElementById('test-button').disabled = false;
+                });
+
+                // Auto-timeout for the test
+                setTimeout(() => {
+                    if (pusher && pusher.connection.state !== 'connected') {
+                        log('⏰ Connection test timed out (30s)', 'warning');
+                        updateStatus('Connection test timed out', 'warning');
+                        document.getElementById('test-button').disabled = false;
+                    }
+                }, 30000);
+
+            } catch (error) {
+                log(`❌ Test setup error: ${error.message}`, 'error');
+                updateStatus('Test setup error', 'error');
+                document.getElementById('test-button').disabled = false;
+            }
+        }
+
+        function testChannelSubscription() {
+            try {
+                log('📺 Testing channel subscription...');
+                
+                // Subscribe to a test channel
+                testChannel = pusher.subscribe('test-channel');
+                
+                testChannel.bind('pusher:subscription_succeeded', () => {
+                    log('✅ Channel subscription successful!', 'success');
+                    
+                    // Try to send a client event (if enabled)
+                    try {
+                        testChannel.trigger('client-test', { message: 'Hello from browser!' });
+                        log('📤 Client event sent', 'success');
+                    } catch (err) {
+                        log('⚠️ Client events may not be enabled', 'warning');
+                    }
+                });
+
+                testChannel.bind('pusher:subscription_error', (error) => {
+                    log(`❌ Channel subscription error: ${JSON.stringify(error)}`, 'error');
+                });
+
+                // Listen for test events
+                testChannel.bind('test-event', (data) => {
+                    log(`📨 Received test event: ${JSON.stringify(data)}`, 'success');
+                });
+
+                testChannel.bind('client-test', (data) => {
+                    log(`📨 Received client event: ${JSON.stringify(data)}`, 'success');
+                });
+
+                // Clean up after 10 seconds
+                setTimeout(() => {
+                    if (testChannel) {
+                        pusher.unsubscribe('test-channel');
+                        log('🧹 Test channel unsubscribed');
+                    }
+                }, 10000);
+
+            } catch (error) {
+                log(`❌ Channel test error: ${error.message}`, 'error');
+            }
+        }
+
+        function testFallbackConnection() {
+            log('🔄 Testing fallback connection to main domain...');
+            
+            // Test connection to main domain with different configuration
+            const fallbackConfig = {
+                ...CONFIG,
+                HOST: "bhavyabazaar.com",
+                PORT: 6001,
+                PATH: "/",
+            };
+
+            log(`📡 Fallback URL: wss://${fallbackConfig.HOST}:${fallbackConfig.PORT}${fallbackConfig.PATH}`);
+
+            try {
+                if (pusher) {
+                    pusher.disconnect();
+                }
+
+                pusher = new Pusher(CONFIG.APP_KEY, {
+                    wsHost: fallbackConfig.HOST,
+                    wsPort: fallbackConfig.PORT,
+                    wsPath: fallbackConfig.PATH,
+                    forceTLS: fallbackConfig.TLS,
+                    enabledTransports: ['ws', 'wss'],
+                    disableStats: true
+                });
+
+                pusher.connection.bind('connected', () => {
+                    log('✅ Fallback connection successful!', 'success');
+                    updateStatus('Fallback connected!', 'success');
+                });
+
+                pusher.connection.bind('failed', () => {
+                    log('❌ Fallback connection failed', 'error');
+                    updateStatus('Fallback failed', 'error');
+                });
+
+            } catch (error) {
+                log(`❌ Fallback test error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = 'Log cleared...\n';
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            displayConfig();
+            log('🎯 WebSocket test page loaded');
+            log('🔧 Click "Test Soketi Connection" to begin');
+        });
+    </script>
+</body>
+</html>

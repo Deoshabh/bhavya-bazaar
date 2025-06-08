@@ -1,6 +1,8 @@
 import io from 'socket.io-client';
+import { initializeSoketi, subscribeToChannel, getConnectionState, disconnectSoketi } from './SoketiClient';
 
 let socket = null;
+let soketiEnabled = false;
 
 // Get WebSocket URL from runtime config or fallback
 const getSocketURL = () => {
@@ -17,7 +19,30 @@ const getSocketURL = () => {
     return 'https://api.bhavyabazaar.com';
 };
 
+// Check if Soketi should be used instead of Socket.IO
+const shouldUseSoketi = () => {
+    // Check for Soketi configuration
+    if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__?.SOKETI) {
+        return true;
+    }
+    
+    // Check environment variables
+    if (process.env.REACT_APP_SOKETI_HOST || process.env.REACT_APP_USE_SOKETI === 'true') {
+        return true;
+    }
+    
+    return false;
+};
+
 export const initializeSocket = () => {
+    // Check if we should use Soketi instead of Socket.IO
+    if (shouldUseSoketi()) {
+        console.log('🔌 Using Soketi WebSocket client...');
+        soketiEnabled = true;
+        return initializeSoketi();
+    }
+
+    // Original Socket.IO logic
     if (!socket) {
         const SOCKET_URL = getSocketURL();
         
@@ -124,10 +149,23 @@ export const initializeSocket = () => {
     return socket;
 };
 
-export const getSocket = () => socket;
+export const getSocket = () => {
+    if (soketiEnabled) {
+        // Return Soketi connection state info
+        return {
+            connected: getConnectionState() === 'connected',
+            state: getConnectionState(),
+            soketi: true
+        };
+    }
+    return socket;
+};
 
 export const disconnectSocket = () => {
-    if (socket) {
+    if (soketiEnabled) {
+        disconnectSoketi();
+        soketiEnabled = false;
+    } else if (socket) {
         socket.disconnect();
         socket = null;
     }
