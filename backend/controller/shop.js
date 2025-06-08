@@ -10,7 +10,17 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
 const sendShopToken = require("../utils/shopToken");
 const { blacklistToken } = require("../middleware/tokenBlacklist");
-const { authLimiter } = require("../middleware/rateLimiter");
+
+// Import authLimiter with fallback
+let authLimiter;
+try {
+  const rateLimiters = require("../middleware/rateLimiter");
+  authLimiter = rateLimiters.authLimiter;
+} catch (error) {
+  console.error("Failed to load authLimiter in shop controller:", error.message);
+  // Create a pass-through middleware as fallback
+  authLimiter = (req, res, next) => next();
+}
 
 // Create shop without email verification
 router.post("/create-shop", upload.single("file"), async (req, res, next) => {

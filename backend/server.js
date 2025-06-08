@@ -12,7 +12,32 @@ const connectDatabase = require("./db/Database");
 const { initializeSocket } = require("./socket/socketHandler");
 const { ensureDirectoryExists } = require("./utils/fileSystem");
 const redisClient = require("./utils/redisClient");
-const { apiLimiter, authLimiter } = require("./middleware/rateLimiter");
+
+// Import rate limiters with fallback
+let apiLimiter, authLimiter;
+try {
+  const rateLimiters = require("./middleware/rateLimiter");
+  apiLimiter = rateLimiters.apiLimiter;
+  authLimiter = rateLimiters.authLimiter;
+} catch (error) {
+  console.error("Failed to load rate limiters:", error.message);
+  console.log("Creating fallback rate limiters...");
+  
+  // Fallback rate limiters using express-rate-limit directly
+  const rateLimit = require('express-rate-limit');
+  
+  apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests, please try again later.' }
+  });
+  
+  authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'Too many authentication attempts, please try again later.' }
+  });
+}
 
 const app = express();
 
@@ -135,7 +160,12 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // —————————— Rate Limiting ——————————
 // Apply general rate limiting to all API routes
-app.use("/api/", apiLimiter);
+if (apiLimiter && typeof apiLimiter === 'function') {
+  app.use("/api/", apiLimiter);
+  console.log("✅ API rate limiter enabled");
+} else {
+  console.warn("⚠️ API rate limiter not available, proceeding without rate limiting");
+}
 
 // —————————— Debug endpoint for production troubleshooting ——————————
 app.get("/api/v2/debug/env", (req, res) => {

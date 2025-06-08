@@ -2,7 +2,17 @@ const express = require("express");
 const router = express.Router();
 const redisClient = require("../utils/redisClient");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-const { uploadLimiter } = require("../middleware/rateLimiter");
+
+// Import uploadLimiter with fallback
+let uploadLimiter;
+try {
+  const rateLimiters = require("../middleware/rateLimiter");
+  uploadLimiter = rateLimiters.uploadLimiter;
+} catch (error) {
+  console.error("Failed to load uploadLimiter in cart controller:", error.message);
+  // Create a pass-through middleware as fallback
+  uploadLimiter = (req, res, next) => next();
+}
 
 /**
  * Save guest cart

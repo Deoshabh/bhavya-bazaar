@@ -7,8 +7,18 @@ const path = require("path");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
-const { authLimiter } = require("../middleware/rateLimiter");
 const { blacklistToken } = require("../middleware/tokenBlacklist");
+
+// Import authLimiter with fallback
+let authLimiter;
+try {
+  const rateLimiters = require("../middleware/rateLimiter");
+  authLimiter = rateLimiters.authLimiter;
+} catch (error) {
+  console.error("Failed to load authLimiter in user controller:", error.message);
+  // Create a pass-through middleware as fallback
+  authLimiter = (req, res, next) => next();
+}
 
 const router = express.Router();
 
