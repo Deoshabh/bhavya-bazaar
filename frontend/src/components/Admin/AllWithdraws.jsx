@@ -116,9 +116,9 @@ const AllWithdraws = () => {
         id: item._id,
         name: item?.seller?.name || "N/A",
         phone: item?.seller?.phoneNumber || "N/A",
-        amount: "₹" + item?.amount,
-        status: item?.status,
-        createdAt: new Date(item?.createdAt).toLocaleString(),
+        amount: "₹" + (item?.amount || 0),
+        status: item?.status || 'Pending',
+        createdAt: item?.createdAt ? new Date(item.createdAt).toLocaleString() : 'N/A',
         withdraw: item,
       });
     });
@@ -128,14 +128,17 @@ const AllWithdraws = () => {
       <div className="w-[97%]">
         <h3 className="text-[22px] font-Poppins pb-2">All Withdraw Requests</h3>
         <div className="w-full min-h-[45vh] bg-white rounded">
-          <DataGrid
-            rows={row}
-            columns={columns}
-            pageSize={10}
-            disableSelectionOnClick
-            autoHeight
-            loading={loading}
-          />
+          <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+            <DataGrid
+              rows={row}
+              columns={columns}
+              pageSize={10}
+              disableSelectionOnClick
+              autoHeight
+              loading={loading}
+              getRowId={(row) => row.id}
+            />
+          </div>
         </div>
         {open && (
           <div className="fixed top-0 left-0 w-full h-screen bg-[#00000062] z-[9999] flex items-center justify-center">

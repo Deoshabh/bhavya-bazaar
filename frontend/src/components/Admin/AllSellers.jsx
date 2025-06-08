@@ -98,14 +98,17 @@ const AllSellers = () => {
       </div>
 
       <div className="w-full min-h-[45vh] bg-white rounded">
-        <DataGrid
-          rows={row}
-          columns={columns}
-          pageSize={10}
-          disableSelectionOnClick
-          autoHeight
-          loading={isLoading}
-        />
+        <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+          <DataGrid
+            rows={row}
+            columns={columns}
+            pageSize={10}
+            disableSelectionOnClick
+            autoHeight
+            loading={isLoading}
+            getRowId={(row) => row.id}
+          />
+        </div>
       </div>
 
       {open && selectedSeller && (

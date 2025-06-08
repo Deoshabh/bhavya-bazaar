@@ -255,7 +255,7 @@ const AllOrders = () => {
             minWidth: 130,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },
@@ -303,22 +303,26 @@ const AllOrders = () => {
         orders.forEach((item) => {
             row.push({
                 id: item._id,
-                itemsQty: item.cart.length,
-                total: "₹" + item.totalPrice,
-                status: item.status,
+                itemsQty: item?.cart?.length || 0,
+                total: "₹" + (item?.totalPrice || 0),
+                status: item?.status || 'Pending',
             });
         });
 
     return (
         <>
             <div className='pl-8 pt-1'>
-                <DataGrid
-                    rows={row}
-                    columns={columns}
-                    pageSize={10}
-                    disableSelectionOnClick
-                    autoHeight
-                />
+                <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+                    <DataGrid
+                        rows={row}
+                        columns={columns}
+                        pageSize={10}
+                        disableSelectionOnClick
+                        autoHeight
+                        loading={!orders}
+                        getRowId={(row) => row.id}
+                    />
+                </div>
             </div>
         </>
     )
@@ -348,7 +352,7 @@ const AllRefundOrders = () => {
             minWidth: 130,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },
@@ -396,21 +400,25 @@ const AllRefundOrders = () => {
         eligibleOrders.forEach((item) => {
             row.push({
                 id: item._id,
-                itemsQty: item.cart.length,
-                total: "₹" + item.totalPrice,
-                status: item.status,
+                itemsQty: item?.cart?.length || 0,
+                total: "₹" + (item?.totalPrice || 0),
+                status: item?.status || 'Pending',
             });
         });
 
     return (
         <div className="pl-8 pt-1">
-            <DataGrid
-                rows={row}
-                columns={columns}
-                pageSize={10}
-                autoHeight
-                disableSelectionOnClick
-            />
+            <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+                <DataGrid
+                    rows={row}
+                    columns={columns}
+                    pageSize={10}
+                    autoHeight
+                    disableSelectionOnClick
+                    loading={!eligibleOrders}
+                    getRowId={(row) => row.id}
+                />
+            </div>
         </div>
     );
 };
@@ -436,7 +444,7 @@ const TrackOrder = () => {
             minWidth: 150,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },
@@ -484,21 +492,25 @@ const TrackOrder = () => {
         orders.forEach((item) => {
             row.push({
                 id: item._id,
-                itemsQty: item.cart.length,
-                total: "₹" + item.totalPrice,
-                status: item.status,
+                itemsQty: item?.cart?.length || 0,
+                total: "₹" + (item?.totalPrice || 0),
+                status: item?.status || 'Pending',
             });
         });
 
     return (
         <div className="pl-8 pt-1">
-            <DataGrid
-                rows={row}
-                columns={columns}
-                pageSize={10}
-                disableSelectionOnClick
-                autoHeight
-            />
+            <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+                <DataGrid
+                    rows={row}
+                    columns={columns}
+                    pageSize={10}
+                    disableSelectionOnClick
+                    autoHeight
+                    loading={!orders}
+                    getRowId={(row) => row.id}
+                />
+            </div>
         </div>
     )
 }

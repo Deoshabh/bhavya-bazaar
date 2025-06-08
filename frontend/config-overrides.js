@@ -1,6 +1,22 @@
 const webpack = require('webpack');
 
-module.exports = function override(config) {  
+module.exports = function override(config, env) {
+  // Jest configuration for MSW v2.x compatibility
+  if (env === 'test') {
+    // Add Jest configuration to handle MSW ES modules
+    config.transformIgnorePatterns = [
+      'node_modules/(?!(msw|@bundled-es-modules|@mswjs)/)'
+    ];
+    
+    // Add Jest module name mapping
+    config.moduleNameMapper = {
+      ...config.moduleNameMapper,
+      '^@/(.*)$': '<rootDir>/src/$1'
+    };
+    
+    return config;
+  }
+  
   // Remove ModuleScopePlugin to allow imports outside of src/
   config.resolve.plugins = config.resolve.plugins.filter(plugin => 
     plugin.constructor.name !== 'ModuleScopePlugin'

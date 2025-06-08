@@ -25,7 +25,7 @@ const AdminDashboardOrders = () => {
       minWidth: 130,
       flex: 0.7,
       cellClassName: (params) => {
-        return params.getValue(params.id, "status") === "Delivered"
+        return params.row.status === "Delivered"
           ? "greenColor"
           : "redColor";
       },
@@ -59,10 +59,10 @@ const AdminDashboardOrders = () => {
     adminOrders.forEach((item) => {
       row.push({
         id: item._id,
-        itemsQty: item?.cart?.reduce((acc, item) => acc + item.qty, 0),
-        total: "₹" + item?.totalPrice,
-        status: item?.status,
-        createdAt: item?.createdAt.slice(0, 10),
+        itemsQty: item?.cart?.reduce((acc, cartItem) => acc + (cartItem?.qty || 0), 0) || 0,
+        total: "₹" + (item?.totalPrice || 0),
+        status: item?.status || 'Pending',
+        createdAt: item?.createdAt ? item.createdAt.slice(0, 10) : 'N/A',
       });
     });
   return (
@@ -76,13 +76,17 @@ const AdminDashboardOrders = () => {
 
           <div className="w-full min-h-[45vh] pt-5 rounded flex justify-center">
             <div className="w-[97%] flex justify-center">
-              <DataGrid
-                rows={row}
-                columns={columns}
-                pageSize={4}
-                disableSelectionOnClick
-                autoHeight
-              />
+              <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+                <DataGrid
+                  rows={row}
+                  columns={columns}
+                  pageSize={4}
+                  disableSelectionOnClick
+                  autoHeight
+                  loading={!adminOrders}
+                  getRowId={(row) => row.id}
+                />
+              </div>
             </div>
           </div>
         </div>

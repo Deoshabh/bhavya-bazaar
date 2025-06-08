@@ -26,7 +26,7 @@ const AllOrders = () => {
             minWidth: 130,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },
@@ -74,9 +74,9 @@ const AllOrders = () => {
         orders.forEach((item) => {
             row.push({
                 id: item._id,
-                itemsQty: item.cart.length,
-                total: "₹" + item.totalPrice,
-                status: item.status,
+                itemsQty: item?.cart?.length || 0,
+                total: "₹" + (item?.totalPrice || 0),
+                status: item?.status || 'Pending',
             });
         });
 
@@ -86,13 +86,17 @@ const AllOrders = () => {
                 <Loader />
             ) : (
                 <div className="w-full mx-8 pt-1 mt-10 bg-white">
-                    <DataGrid
-                        rows={row}
-                        columns={columns}
-                        pageSize={10}
-                        disableSelectionOnClick
-                        autoHeight
-                    />
+                    <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+                        <DataGrid
+                            rows={row}
+                            columns={columns}
+                            pageSize={10}
+                            disableSelectionOnClick
+                            autoHeight
+                            loading={isLoading}
+                            getRowId={(row) => row.id}
+                        />
+                    </div>
                 </div>
             )}
         </>

@@ -1,8 +1,9 @@
-# Build stage
+# Multi-stage build for React + Node.js production server
 FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-# Configure npm for better network handling and cache
+# Configure npm for better network handling
 RUN npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-retries 3 && \
@@ -13,50 +14,55 @@ RUN npm config set fetch-retry-mintimeout 20000 && \
 # Copy package files
 COPY package*.json ./
 
-# Clean install with better error handling
+# Install dependencies
 RUN npm ci --prefer-offline --no-audit --no-fund --silent
 
 # Copy source code
 COPY . .
 
-# Copy Docker environment file for build
+# Copy environment file for build
 COPY .env.docker .env
 
 # Build the application
-RUN CI=false npm run build:docker
+RUN CI=false npm run build
 
-# Production stage
-FROM nginx:alpine
+# Production stage - Node.js server (NOT nginx)
+FROM node:18-alpine AS production
 
-# Add curl for health checks
-RUN apk add --no-cache curl
+WORKDIR /app
 
-# Copy built application
-COPY --from=builder /app/build /usr/share/nginx/html
+# Install production dependencies only
+COPY package*.json ./
+RUN npm ci --only=production --prefer-offline --no-audit --no-fund --silent
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY default.conf /etc/nginx/conf.d/default.conf
+# Copy built application from builder stage
+COPY --from=builder /app/build ./build
 
-# Copy docker entrypoint script
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Copy production server
+COPY production-server.js ./
 
-# Create nginx directories with proper permissions
-RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run/nginx && \
-    chmod -R 755 /usr/share/nginx/html
+# Copy runtime configuration
+COPY --from=builder /app/build/runtime-config.js ./build/
 
-# Health check configuration
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80/ || exit 1
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
 
-# Expose port
+# Change ownership of the app directory
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Expose port 80 (standard HTTP port for Coolify)
 EXPOSE 80
 
-# Add labels for better container management
-LABEL maintainer="Bhavya Bazaar Team" \
-      version="1.0" \
-      description="Bhavya Bazaar Frontend Production Container"
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "const http = require('http'); http.get('http://localhost:80/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', () => process.exit(1));"
 
-# Use custom entrypoint
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Add labels
+LABEL maintainer="Bhavya Bazaar Team" \
+      version="2.0" \
+      description="Bhavya Bazaar Frontend - Node.js SPA Server"
+
+# Start the Node.js server (SPA routing built-in!)
+CMD ["node", "production-server.js"]

@@ -8,13 +8,16 @@ window.__RUNTIME_CONFIG__ = {
   API_URL: "https://api.bhavyabazaar.com/api/v2",
   SOCKET_URL: "wss://api.bhavyabazaar.com/socket.io", 
   BACKEND_URL: "https://api.bhavyabazaar.com",
+  FRONTEND_URL: "https://bhavyabazaar.com",
   NODE_ENV: "production",
   DEBUG: false,
   VERSION: "2.0.0",
+  SERVER_TYPE: "nodejs", // Indicates Node.js server instead of static
   FEATURES: {
     ENHANCED_IMAGES: true,
     BRAND_DETECTION: true,
-    FALLBACK_SYSTEM: true
+    FALLBACK_SYSTEM: true,
+    SPA_ROUTING: true // SPA routing handled by Node.js server
   }
 };
 

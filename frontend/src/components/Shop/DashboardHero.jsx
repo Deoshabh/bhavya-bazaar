@@ -32,7 +32,7 @@ const DashboardHero = () => {
             minWidth: 130,
             flex: 0.7,
             cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
+                return params.row.status === "Delivered"
                     ? "greenColor"
                     : "redColor";
             },
@@ -79,9 +79,9 @@ const DashboardHero = () => {
     orders && orders.forEach((item) => {
         row.push({
             id: item._id,
-            itemsQty: item.cart.reduce((acc, item) => acc + item.qty, 0),
-            total: "₹" + item.totalPrice,
-            status: item.status,
+            itemsQty: item?.cart?.reduce((acc, cartItem) => acc + (cartItem?.qty || 0), 0) || 0,
+            total: "₹" + (item?.totalPrice || 0),
+            status: item?.status || 'Pending',
         });
     });
     return (
@@ -132,7 +132,7 @@ const DashboardHero = () => {
                         </span>
                     </div>
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Total Orders</h3>
-                    <p className="text-2xl font-bold text-gray-900 mb-4">{orders && orders.length}</p>
+                    <p className="text-2xl font-bold text-gray-900 mb-4">{orders?.length || 0}</p>
                     <Link 
                         to="/dashboard-orders"
                         className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"

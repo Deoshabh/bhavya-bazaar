@@ -31,10 +31,11 @@ const ProductDetails = ({ data }) => {
   const [click, setClick] = useState(false);
   const [select, setSelect] = useState(0);
   const navigate = useNavigate();
-
   useEffect(() => {
-    dispatch(getAllProductsShop(data && data?.shop._id));
-    if (wishlist && wishlist.find((i) => i._id === data?._id)) {
+    if (data?.shop?._id) {
+      dispatch(getAllProductsShop(data.shop._id));
+    }
+    if (wishlist && data?._id && wishlist.find((i) => i._id === data._id)) {
       setClick(true);
     } else {
       setClick(false);
@@ -52,7 +53,6 @@ const ProductDetails = ({ data }) => {
     setClick(!click);
     dispatch(addToWishlist(data));
   };
-
   // Add to cart
   const addToCartHandler = (id) => {
     const isItemExists = cart && cart.find((i) => i._id === id);
@@ -60,7 +60,7 @@ const ProductDetails = ({ data }) => {
     if (isItemExists) {
       toast.error("item already in cart!");
     } else {
-      if (data.stock < 1) {
+      if (!data || (data.stock || 0) < 1) {
         toast.error("Product stock limited!");
       } else {
         const cartData = { ...data, qty: count };
@@ -78,41 +78,37 @@ const ProductDetails = ({ data }) => {
       setCount(count - 1);
     }
   };
-
   const totalReviewsLength =
     products &&
-    products.reduce((acc, product) => acc + product.reviews.length, 0);
+    products.reduce((acc, product) => acc + (product?.reviews?.length || 0), 0);
 
   const totalRatings =
     products &&
     products.reduce(
       (acc, product) =>
-        acc + product.reviews.reduce((sum, review) => sum + review.rating, 0),
+        acc + (product?.reviews?.reduce((sum, review) => sum + (review?.rating || 0), 0) || 0),
       0
     );
 
-  const avg = totalRatings / totalReviewsLength || 0;
+  const avg = totalReviewsLength > 0 ? totalRatings / totalReviewsLength : 0;
 
   const averageRating = avg.toFixed(2);
-
   // Sand message
   const handleMessageSubmit = async () => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user?._id && data?.shop?._id) {
       const groupTitle = data._id + user._id;
       const userId = user._id;
       const sellerId = data.shop._id;
-      await axios
-        .post(`${server}/conversation/create-new-conversation`, {
+      try {
+        const res = await axios.post(`${server}/conversation/create-new-conversation`, {
           groupTitle,
           userId,
           sellerId,
-        })
-        .then((res) => {
-          navigate(`/inbox?${res.data.conversation._id}`);
-        })
-        .catch((error) => {
-          toast.error(error.response.data.message);
         });
+        navigate(`/inbox?${res.data.conversation._id}`);
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to create conversation");
+      }
     } else {
       toast.error("Please login to create a conversation");
     }

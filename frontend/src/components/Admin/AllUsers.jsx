@@ -87,10 +87,10 @@ const AllUsers = () => {
     users.forEach((item) => {
       row.push({
         id: item._id,
-        name: item.name,
-        email: item.email,
-        role: item.role,
-        joinedAt: item.createdAt.slice(0, 10),
+        name: item?.name || 'N/A',
+        email: item?.email || 'N/A',
+        role: item?.role || 'User',
+        joinedAt: item?.createdAt ? item.createdAt.slice(0, 10) : 'N/A',
       });
     });
 
@@ -99,13 +99,17 @@ const AllUsers = () => {
       <div className="w-[97%]">
         <h3 className="text-[22px] font-Poppins pb-2">All Users</h3>
         <div className="w-full min-h-[45vh] bg-white rounded">
-          <DataGrid
-            rows={row}
-            columns={columns}
-            pageSize={10}
-            disableSelectionOnClick
-            autoHeight
-          />
+          <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+            <DataGrid
+              rows={row}
+              columns={columns}
+              pageSize={10}
+              disableSelectionOnClick
+              autoHeight
+              loading={!users}
+              getRowId={(row) => row.id}
+            />
+          </div>
         </div>
         {open && (
           <div className="w-full fixed top-0 left-0 z-[999] bg-[#00000039] flex items-center justify-center h-screen">

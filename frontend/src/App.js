@@ -66,6 +66,8 @@ import {
 import { getAllProducts } from "./redux/actions/product";
 import { getAllEvents } from "./redux/actions/event";
 import NavigationWrapper from "./components/Layout/NavigationWrapper";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import productionMonitor from "./utils/productionMonitor";
 
 // Import cart and wishlist components
 import Cart from "./components/cart/Cart";
@@ -84,6 +86,17 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    // Initialize production monitoring
+    if (process.env.NODE_ENV === 'production') {
+      productionMonitor.init({
+        enableErrorTracking: true,
+        enablePerformanceTracking: true,
+        enableHealthReporting: true,
+        reportingInterval: 300000, // 5 minutes
+        endpoint: '/api/v2/monitoring/report'
+      });
+    }
+
     // Always try to load both user and seller authentication on app start
     // The backend will handle the validation and return appropriate responses
     
@@ -126,9 +139,10 @@ const App = () => {
   }, []);
 
   return (
-    <BrowserRouter>
-      <NavigationWrapper>
-        <Routes>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <NavigationWrapper>
+          <Routes>
           <Route path="/" element={<HomePage />} />
           
           {/* Legacy auth routes (keep for backward compatibility) */}
@@ -398,6 +412,7 @@ const App = () => {
         />
       </NavigationWrapper>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 

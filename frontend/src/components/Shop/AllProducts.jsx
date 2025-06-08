@@ -96,10 +96,10 @@ const AllProducts = () => {
     products.forEach((item) => {
       row.push({
         id: item._id,
-        name: item.name,
-        price: "US$ " + item.discountPrice,
-        Stock: item.stock,
-        sold: item.sold_out,
+        name: item?.name || 'Unknown Product',
+        price: "US$ " + (item?.discountPrice || item?.originalPrice || 0),
+        Stock: item?.stock || 0,
+        sold: item?.sold_out || 0,
       });
     });
 
@@ -109,13 +109,17 @@ const AllProducts = () => {
         <Loader />
       ) : (
         <div className="w-full mx-8 pt-1 mt-10 bg-white">
-          <DataGrid
-            rows={row}
-            columns={columns}
-            pageSize={10}
-            disableSelectionOnClick
-            autoHeight
-          />
+          <div style={{ height: 'auto', minHeight: '400px', width: '100%' }}>
+            <DataGrid
+              rows={row}
+              columns={columns}
+              pageSize={10}
+              disableSelectionOnClick
+              autoHeight
+              loading={isLoading}
+              getRowId={(row) => row.id}
+            />
+          </div>
         </div>
       )}
     </>

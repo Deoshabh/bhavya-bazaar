@@ -53,10 +53,10 @@ const Checkout = () => {
         }
     };
 
-    const subTotalPrice = cart.reduce(
-        (acc, item) => acc + item.qty * item.discountPrice,
+    const subTotalPrice = cart?.reduce(
+        (acc, item) => acc + (item?.qty || 0) * (item?.discountPrice || 0),
         0
-    );
+    ) || 0;
 
     // this is shipping cost variable
     const shipping = subTotalPrice * 0.1; // 10%
@@ -65,10 +65,10 @@ const Checkout = () => {
         e.preventDefault();
         const name = couponCode;
 
-        await axios.get(`${server}/coupon/get-coupon-value/${name}`).then((res) => {
-
+        try {
+            const res = await axios.get(`${server}/coupon/get-coupon-value/${name}`);
+            
             const shopId = res.data.couponCode?.shopId;
-
             const couponCodeValue = res.data.couponCode?.value;
 
             if (res.data.couponCode !== null) {
@@ -79,9 +79,8 @@ const Checkout = () => {
                     toast.error("Coupon code is not valid for this shop");
                     setCouponCode("");
                 } else {
-
                     const eligiblePrice = isCouponValid.reduce(
-                        (acc, item) => acc + item.qty * item.discountPrice,
+                        (acc, item) => acc + (item?.qty || 0) * (item?.discountPrice || 0),
                         0
                     );
                     const discountPrice = (eligiblePrice * couponCodeValue) / 100;
@@ -89,12 +88,14 @@ const Checkout = () => {
                     setCouponCodeData(res.data.couponCode);
                     setCouponCode("");
                 }
-            }
-            if (res.data.couponCode === null) {
+            } else {
                 toast.error("Coupon code doesn't exists!");
                 setCouponCode("");
             }
-        });
+        } catch (error) {
+            toast.error("Failed to validate coupon code");
+            setCouponCode("");
+        }
     };
 
     const discountPercentenge = couponCodeData ? discountPrice : "";

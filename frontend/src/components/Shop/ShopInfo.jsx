@@ -23,17 +23,20 @@ const ShopInfo = ({ isOwner }) => {
 
 
     useEffect(() => {
-        dispatch(getAllProductsShop(id));
-        setIsLoading(true);
-        axios.get(`${server}/shop/get-shop-info/${id}`).then((res) => {
-            setData(res.data.shop || {});
-            setIsLoading(false);
-        }).catch((error) => {
-            console.error('Error fetching shop info:', error);
-            setData({}); // Set empty object on error to prevent undefined access
-            setIsLoading(false);
-        })
-    }, [dispatch, id])
+        if (id) {
+            dispatch(getAllProductsShop(id));
+            setIsLoading(true);
+            axios.get(`${server}/shop/get-shop-info/${id}`)
+                .then((res) => {
+                    setData(res.data.shop || {});
+                    setIsLoading(false);
+                }).catch((error) => {
+                    console.error('Error fetching shop info:', error);
+                    setData({}); // Set empty object on error to prevent undefined access
+                    setIsLoading(false);
+                });
+        }
+    }, [dispatch, id]);
 
 
     const logoutHandler = async () => {
@@ -50,11 +53,11 @@ const ShopInfo = ({ isOwner }) => {
 
     const totalReviewsLength =
         products &&
-        products.reduce((acc, product) => acc + product.reviews.length, 0);
+        products.reduce((acc, product) => acc + (product?.reviews?.length || 0), 0);
 
-    const totalRatings = products && products.reduce((acc, product) => acc + product.reviews.reduce((sum, review) => sum + review.rating, 0), 0);
+    const totalRatings = products && products.reduce((acc, product) => acc + (product?.reviews?.reduce((sum, review) => sum + (review?.rating || 0), 0) || 0), 0);
 
-    const averageRating = totalRatings / totalReviewsLength || 0;
+    const averageRating = totalReviewsLength > 0 ? totalRatings / totalReviewsLength : 0;
 
 
 
