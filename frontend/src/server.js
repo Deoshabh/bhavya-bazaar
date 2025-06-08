@@ -50,12 +50,11 @@ const getWebsocketUrl = () => {
   if (process.env.REACT_APP_WS_URL) {
     return process.env.REACT_APP_WS_URL;
   }
-  
-  // Default for bhavyabazaar.com production
+    // Default for bhavyabazaar.com production
   const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
-    if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
+  if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
     // Use proper WebSocket URL for production through reverse proxy
-    return 'wss://bhavyabazaar.com/socket.io';
+    return 'wss://api.bhavyabazaar.com/socket.io';
   }
   
   // For development
@@ -66,9 +65,8 @@ const getWebsocketUrl = () => {
   if (currentDomain && currentDomain !== 'localhost') {
     return `wss://${currentDomain}/socket.io`;
   }
-  
-  // Final fallback
-  return 'wss://bhavyabazaar.com/socket.io';
+    // Final fallback
+  return 'wss://api.bhavyabazaar.com/socket.io';
 };
 
 const getBackendUrl = () => {  // Check for runtime environment variables first

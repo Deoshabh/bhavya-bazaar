@@ -147,7 +147,7 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
 
             setLoading(false);
             toast.success("User info updated successfully!");
-            window.location.reload();
+            dispatch(loadUser());
         } catch (error) {
             setLoading(false);
             toast.error(error.response?.data?.message || "An error occurred while updating user info");

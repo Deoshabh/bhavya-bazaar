@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser, AiOutlineLock } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { loadUser } from "../../redux/actions/user";
 import apiService from "../../services/api.js";
 import Card from "../common/Card";
 import Button from "../common/Button";
@@ -10,6 +12,7 @@ import Input from "../common/Input";
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
@@ -38,8 +41,8 @@ const Login = () => {
       setPhoneNumber("");
       setPassword("");
       setLoading(false);
-      navigate("/");
-      window.location.reload(true); 
+      dispatch(loadUser());
+      navigate("/"); 
     } catch (err) {
       setLoading(false);
       if (err.response && err.response.data) {
