@@ -252,7 +252,7 @@ const wss = new WebSocketServer({
     
     const allowedOrigins = process.env.CORS_ORIGIN ? 
       process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : 
-      ['https://bhavyabazaar.com', 'https://www.bhavyabazaar.com'];
+      ['https://bhavyabazaar.com', 'https://www.bhavyabazaar.com', 'http://localhost:3000'];
     
     return allowedOrigins.includes(origin);
   }

@@ -5,16 +5,15 @@ const redisClient = require("../utils/redisClient");
 // Initialize Socket.IO
 const initializeSocket = (server) => {
   // Define allowed origins from environment variable or use defaults
-  const allowedOriginsEnv = process.env.ALLOWED_ORIGINS;
+  const allowedOriginsEnv = process.env.CORS_ORIGIN;
   const allowedOrigins = allowedOriginsEnv ? 
-    allowedOriginsEnv.split(',') : 
+    allowedOriginsEnv.split(',').map(origin => origin.trim()) : 
     [
       "http://localhost:3000",
       "https://bhavyabazaar.com", 
       "http://bhavyabazaar.com",
       "https://www.bhavyabazaar.com",
-      "https://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
-      "http://so88s4g4o8cgwscsosk448kw.147.79.66.75.sslip.io",
+      "http://www.bhavyabazaar.com",
       "https://api.bhavyabazaar.com",
       "http://api.bhavyabazaar.com"
     ];
