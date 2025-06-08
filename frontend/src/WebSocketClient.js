@@ -5,6 +5,9 @@ let socket = null;
 
 export const initializeSocket = () => {
     if (!socket) {
+        // Determine if we're in development based on the socket URL
+        const isDevelopment = SOCKET_URL.startsWith('ws://') || SOCKET_URL.includes('localhost');
+        
         const options = {
             transports: ['websocket', 'polling'],
             reconnection: true,
@@ -15,12 +18,12 @@ export const initializeSocket = () => {
             autoConnect: true,
             forceNew: true,
             path: '/socket.io',
-            secure: true,
-            rejectUnauthorized: false,
+            secure: !isDevelopment, // Only secure in production
+            rejectUnauthorized: !isDevelopment, // Only strict SSL in production
             withCredentials: true,
             transportOptions: {
                 polling: {
-                    extraHeaders: {
+                    extraHeaders: isDevelopment ? {} : {
                         'Origin': 'https://bhavyabazaar.com'
                     }
                 }

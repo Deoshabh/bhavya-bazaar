@@ -7,9 +7,15 @@ const getApiDomain = () => {
   if (window.RUNTIME_CONFIG?.API_URL) {
     return window.RUNTIME_CONFIG.API_URL;
   }
-    // Smart default for bhavyabazaar.com deployment
+  
+  // For local development - check if we're on localhost
+  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+  if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
+    return 'http://localhost:8000/api/v2';
+  }
+  
+  // Smart default for bhavyabazaar.com deployment
   if (window.__RUNTIME_CONFIG__?.NODE_ENV === 'production' || window.RUNTIME_CONFIG?.NODE_ENV === 'production') {
-    const currentDomain = window.location.hostname;
     // If deployed on bhavyabazaar.com or related domains
     if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
       return 'https://api.bhavyabazaar.com/api/v2';

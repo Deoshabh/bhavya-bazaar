@@ -12,23 +12,44 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/main.png" />
 
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!-- EMERGENCY FIX: Inline runtime configuration to bypass file loading issues -->
+    <!-- Runtime configuration with environment detection -->
     <script>
-      // Emergency inline runtime config - bypasses external file issues
-      window.__RUNTIME_CONFIG__ = window.__RUNTIME_CONFIG__ || {
-        API_URL: "https://api.bhavyabazaar.com/api/v2",
-        SOCKET_URL: "wss://api.bhavyabazaar.com/ws",
-        BACKEND_URL: "https://api.bhavyabazaar.com",
-        NODE_ENV: "production",
-        FEATURES: {
-          ENABLE_CHAT: true,
-          ENABLE_NOTIFICATIONS: true,
-          ENABLE_ANALYTICS: true
-        },
-        VERSION: "2.0.2-emergency",
-        BUILD_TIME: "2025-06-06T16:00:00.000Z",
-        DEBUG: false
-      };
+      // Detect environment and set appropriate runtime config
+      const isLocalDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (isLocalDevelopment) {
+        // Development configuration
+        window.__RUNTIME_CONFIG__ = {
+          API_URL: "http://localhost:8000/api/v2",
+          SOCKET_URL: "ws://localhost:8000/socket.io",
+          BACKEND_URL: "http://localhost:8000",
+          NODE_ENV: "development",
+          FEATURES: {
+            ENABLE_CHAT: true,
+            ENABLE_NOTIFICATIONS: true,
+            ENABLE_ANALYTICS: false
+          },
+          VERSION: "2.0.2-dev",
+          BUILD_TIME: new Date().toISOString(),
+          DEBUG: true
+        };
+      } else {
+        // Production configuration
+        window.__RUNTIME_CONFIG__ = {
+          API_URL: "https://api.bhavyabazaar.com/api/v2",
+          SOCKET_URL: "wss://api.bhavyabazaar.com/ws",
+          BACKEND_URL: "https://api.bhavyabazaar.com",
+          NODE_ENV: "production",
+          FEATURES: {
+            ENABLE_CHAT: true,
+            ENABLE_NOTIFICATIONS: true,
+            ENABLE_ANALYTICS: true
+          },
+          VERSION: "2.0.2-emergency",
+          BUILD_TIME: "2025-06-06T16:00:00.000Z",
+          DEBUG: false
+        };
+      }
       // Backward compatibility
       window.RUNTIME_CONFIG = window.__RUNTIME_CONFIG__;
       console.log("✅ EMERGENCY: Inline runtime config loaded - v2.0.2-emergency");
