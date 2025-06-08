@@ -2,17 +2,19 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Configure npm for better network handling
+# Configure npm for better network handling and cache
 RUN npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-retries 3 && \
-    npm config set registry https://registry.npmjs.org/
+    npm config set registry https://registry.npmjs.org/ && \
+    npm config set fund false && \
+    npm config set audit false
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies needed for build)
-RUN npm ci --prefer-offline --no-audit
+# Clean install with better error handling
+RUN npm ci --prefer-offline --no-audit --no-fund --silent
 
 # Copy source code
 COPY . .

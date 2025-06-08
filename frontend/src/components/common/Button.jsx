@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 
 const Button = ({ 
   children, 
@@ -48,10 +48,9 @@ const Button = ({
     ${loading ? loadingClasses : ''}
     ${className}
   `.trim();
-  
-  const renderIcon = (position) => {
+    const renderIcon = (position) => {
     if (loading && position === 'left') {
-      return <Loader2 className="w-4 h-4 mr-2 animate-spin" />;
+      return <AiOutlineLoading3Quarters className="w-4 h-4 mr-2 animate-spin" />;
     }
     
     if (icon && iconPosition === position) {

@@ -30,14 +30,34 @@ if (!process.env.JWT_SECRET_KEY || !process.env.ACTIVATION_SECRET) {
 // Connect to MongoDB and create uploads folder
 connectDatabase();
 
-// Initialize Redis connection
-redisClient.initialize().then(() => {
-  console.log("✅ Redis connection initialized");
-  global.redisAvailable = true;
-}).catch((error) => {
-  console.warn("⚠️ Redis initialization failed, falling back to memory storage:", error.message);
-  global.redisAvailable = false;
-});
+// Initialize Redis connection with error handling
+const initializeRedis = async () => {
+  try {
+    if (redisClient) {
+      // Check if redisClient has the initialize method
+      if (typeof redisClient.initialize === 'function') {
+        await redisClient.initialize();
+        console.log("✅ Redis connection initialized via initialize()");
+        global.redisAvailable = true;
+      } else if (typeof redisClient.connect === 'function') {
+        await redisClient.connect();
+        console.log("✅ Redis connection initialized via connect()");
+        global.redisAvailable = true;
+      } else {
+        console.warn("⚠️ Redis client doesn't have initialize or connect method, available methods:", Object.getOwnPropertyNames(redisClient));
+        global.redisAvailable = false;
+      }
+    } else {
+      console.warn("⚠️ Redis client is not available");
+      global.redisAvailable = false;
+    }
+  } catch (error) {
+    console.warn("⚠️ Redis initialization failed, falling back to memory storage:", error.message);
+    global.redisAvailable = false;
+  }
+};
+
+initializeRedis();
 
 const uploadsPath = path.join(__dirname, "uploads");
 ensureDirectoryExists(uploadsPath);
