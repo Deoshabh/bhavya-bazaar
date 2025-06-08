@@ -41,8 +41,27 @@ try {
 
 const app = express();
 
-// Trust proxy - needed for production deployment behind reverse proxy
-app.set('trust proxy', true);
+// Trust proxy configuration - secure setup for production
+if (process.env.NODE_ENV === 'production') {
+  // In production, trust only specific proxy configurations
+  // This prevents IP spoofing attacks while allowing legitimate proxy forwarding
+  const trustedProxies = process.env.TRUSTED_PROXIES;
+  
+  if (trustedProxies) {
+    // Trust specific IP addresses/subnets
+    const proxies = trustedProxies.split(',').map(ip => ip.trim());
+    app.set('trust proxy', proxies);
+    console.log('✅ Trust proxy configured for specific IPs:', proxies);
+  } else {
+    // Trust only the first proxy (common for single reverse proxy setups)
+    app.set('trust proxy', 1);
+    console.log('✅ Trust proxy configured for first proxy only');
+  }
+} else {
+  // In development, we can be more permissive
+  app.set('trust proxy', true);
+  console.log('⚠️ Trust proxy set to true (development mode)');
+}
 
 // Load additional .env if you have a custom file path (optional):
 require("dotenv").config({

@@ -91,10 +91,42 @@ function isRedisAvailable() {
 }
 
 /**
+ * Get client IP configuration for rate limiting
+ * This function determines how to extract the real client IP
+ * while preventing IP spoofing attacks
+ */
+function getClientIpConfig() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    // In production, use a more secure IP extraction
+    return {
+      // Custom key generator that validates proxy headers
+      keyGenerator: (req) => {
+        // First check if we have trusted proxy configuration
+        const trustedProxies = process.env.TRUSTED_PROXIES;
+        
+        if (trustedProxies) {
+          // We have trusted proxies, can use forwarded IP
+          return req.ip || req.connection.remoteAddress;
+        } else {
+          // No trusted proxies configured, use direct connection IP only
+          return req.connection.remoteAddress || req.socket.remoteAddress;
+        }
+      }
+    };
+  } else {
+    // In development, use default behavior
+    return {};
+  }
+}
+
+/**
  * General API rate limiter
  */
 let apiLimiter;
 try {
+  const ipConfig = getClientIpConfig();
   apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
@@ -104,6 +136,7 @@ try {
     },
     standardHeaders: true,
     legacyHeaders: false,
+    ...ipConfig,
     // Use memory store if Redis is not available
     ...(isRedisAvailable() ? {
       store: new RedisStore({
@@ -132,6 +165,7 @@ try {
  */
 let authLimiter;
 try {
+  const ipConfig = getClientIpConfig();
   authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // limit each IP to 5 login attempts per windowMs
@@ -142,6 +176,7 @@ try {
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true, // Don't count successful requests
+    ...ipConfig,
     // Use memory store if Redis is not available
     ...(isRedisAvailable() ? {
       store: new RedisStore({
@@ -178,6 +213,7 @@ const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  ...getClientIpConfig(),
   // Use memory store if Redis is not available
   ...(isRedisAvailable() ? {
     store: new RedisStore({
@@ -199,6 +235,7 @@ const uploadLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  ...getClientIpConfig(),
   // Use memory store if Redis is not available
   ...(isRedisAvailable() ? {
     store: new RedisStore({
@@ -220,6 +257,7 @@ const searchLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  ...getClientIpConfig(),
   // Use memory store if Redis is not available
   ...(isRedisAvailable() ? {
     store: new RedisStore({
