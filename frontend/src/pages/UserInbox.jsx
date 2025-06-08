@@ -24,7 +24,7 @@ const UserInbox = () => {
   const [activeStatus, setActiveStatus] = useState(false);
   const [open, setOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [setImages] = useState(null);
+  const [images, setImages] = useState(null);  // Fixed: removed extra 'set' prefix
   const scrollRef = useRef(null);
 
   useEffect(() => {

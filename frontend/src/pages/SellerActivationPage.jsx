@@ -7,6 +7,7 @@ import axios from 'axios';
 const SellerActivationPage = () => {
     const { activation_token } = useParams();
     const [error, setError] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     useEffect(() => {
         if (activation_token) {
@@ -16,7 +17,7 @@ const SellerActivationPage = () => {
                         .post(`${server}/shop/activation`, {
                             activation_token
                         })
-
+                    setSuccess(true);
                 } catch (err) {
                     console.log(err.response.data.message);
                     setError(true);
@@ -24,7 +25,6 @@ const SellerActivationPage = () => {
             }
             activationEmail();
         }
-
     }, [activation_token]);
 
     return (
@@ -38,9 +38,11 @@ const SellerActivationPage = () => {
             }}>
             {
                 error ? (
-                    <p className='text-red-800'>Your toke is expair </p>
+                    <p className='text-red-800'>Your token has expired</p>
+                ) : success ? (
+                    <p className='text-green-800'>Your Account has been created successfully!</p>
                 ) : (
-                    <p className='text-green-800'>Your Account has been created sucess fully!</p>
+                    <p className='text-blue-800'>Activating your account...</p>
                 )
             }
 

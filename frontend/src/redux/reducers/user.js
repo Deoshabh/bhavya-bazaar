@@ -2,6 +2,7 @@ import { createReducer } from "@reduxjs/toolkit";
 
 const initialState = {
   isAuthenticated: false,
+  loading: true, // Set to true initially to prevent premature redirects
 };
 
 export const userReducer = createReducer(initialState, (builder) => {
