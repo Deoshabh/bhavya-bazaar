@@ -53,7 +53,7 @@ const initializeSocket = (server) => {
   });
 
   // Set up Redis adapter for Socket.io clustering if Redis is available
-  if (redisClient.isConnected()) {
+  if (redisClient.isRedisConnected()) {
     try {
       const { createAdapter } = require("@socket.io/redis-adapter");
       const { createClient } = require("redis");

@@ -1,11 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     AiFillFacebook,
     AiFillInstagram,
     AiFillYoutube,
     AiOutlineTwitter,
+    AiOutlineMail,
+    AiOutlinePhone,
+    AiOutlineEnvironment,
 } from "react-icons/ai";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import Button from "../common/Button";
+import Input from "../common/Input";
 import {
     footercompanyLinks,
     footerProductLinks,
@@ -13,112 +19,226 @@ import {
 } from "../../static/data";
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (email) {
+      setIsSubscribed(true);
+      setEmail("");
+      setTimeout(() => setIsSubscribed(false), 3000);
+    }
+  };
+
+  const socialLinks = [
+    { icon: AiFillFacebook, href: "#", color: "hover:text-blue-500" },
+    { icon: AiOutlineTwitter, href: "#", color: "hover:text-blue-400" },
+    { icon: AiFillInstagram, href: "#", color: "hover:text-pink-500" },
+    { icon: AiFillYoutube, href: "#", color: "hover:text-red-500" },
+  ];
+
   return (
-    <div className="bg-[#000] text-white md:pb-0 pb-16"> {/* Added bottom padding for mobile */}
-      <div className="md:flex md:justify-between md:items-center sm:px-12 px-4 bg-[#342ac8] py-7">
-          <h1 className="lg:text-4xl text-3xl md:mb-0 mb-6 lg:leading-normal font-semibold md:w-2/5">
-              <span className="text-[#56d879]">Subscribe</span> us for get news{" "}
-              <br />
-              events and offers
-          </h1>
-          <div>
-              <input
-                  type="text"
-                  required
+    <footer className="bg-gray-900 text-white md:pb-0 pb-16">
+      {/* Newsletter Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="md:w-3/5">
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-3xl lg:text-4xl font-bold leading-tight mb-4 md:mb-0"
+              >
+                <span className="text-green-400">Subscribe</span> to get the latest{" "}
+                <br className="hidden md:block" />
+                news, events and offers
+              </motion.h2>
+            </div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="md:w-2/5"
+            >
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  type="email"
                   placeholder="Enter your email..."
-                  className="text-gray-800
-          sm:w-72 w-full sm:mr-5 mr-1 lg:mb-0 mb-4 py-2.5 rounded px-2 focus:outline-none"
-              />
-              <button className="bg-[#56d879] hover:bg-teal-500 duration-300 px-5 py-2.5 rounded-md text-whie md:w-auto w-full">
-                  Submit
-              </button>
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 bg-white/10 border-white/20 text-white placeholder-white/70 focus:border-white/40"
+                  required
+                />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="bg-green-500 hover:bg-green-600 text-white border-0 px-8 whitespace-nowrap"
+                  disabled={isSubscribed}
+                >
+                  {isSubscribed ? "✓ Subscribed!" : "Subscribe"}
+                </Button>
+              </form>
+            </motion.div>
           </div>
+        </div>
       </div>
-      <div className="grid grid-cols-1 sm:gird-cols-3 lg:grid-cols-4 gap-6 sm:px-8 px-5 py-16 sm:text-center">
-          <ul className="px-5 text-center sm:text-start flex sm:block flex-col items-center">
-              <img
+
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Company Info */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-1"
+          >
+            <div className="mb-6">
+              <Link to="/" className="flex items-center mb-4">
+                <img
                   src="/main.png"
                   alt="Bhavya Vyapar"
-              />
-              <br />
-              <p>The home and elements needeed to create beatiful products.</p>
-              <div className="flex items-center mt-[15px]">
-                  <AiFillFacebook size={25} className="cursor-pointer" />
-                  <AiOutlineTwitter
-                      size={25}
-                      style={{ marginLeft: "15px", cursor: "pointer" }}
-                  />
-                  <AiFillInstagram
-                      size={25}
-                      style={{ marginLeft: "15px", cursor: "pointer" }}
-                  />
-                  <AiFillYoutube
-                      size={25}
-                      style={{ marginLeft: "15px", cursor: "pointer" }}
-                  />
+                  className="h-12 w-auto"
+                />
+                <span className="ml-2 text-xl font-bold">Bhavya Vyapar</span>
+              </Link>
+              <p className="text-gray-400 leading-relaxed mb-6">
+                Your trusted marketplace for quality products. We bring you the best deals and authentic products from verified sellers.
+              </p>
+            </div>
+
+            {/* Contact Info */}
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center text-gray-400">
+                <AiOutlineEnvironment className="mr-3 text-blue-400" size={18} />
+                <span className="text-sm">New Delhi, India</span>
               </div>
-          </ul>
+              <div className="flex items-center text-gray-400">
+                <AiOutlinePhone className="mr-3 text-green-400" size={18} />
+                <span className="text-sm">+91 9999-XXX-XXX</span>
+              </div>
+              <div className="flex items-center text-gray-400">
+                <AiOutlineMail className="mr-3 text-purple-400" size={18} />
+                <span className="text-sm">hello@bhavyavyapar.com</span>
+              </div>
+            </div>
 
-          <ul className="text-center sm:text-start">
-              <h1 className="mb-1 font-semibold">Company</h1>
+            {/* Social Links */}
+            <div className="flex space-x-4">
+              {socialLinks.map((social, index) => (
+                <motion.a
+                  key={index}
+                  href={social.href}
+                  whileHover={{ scale: 1.1, y: -2 }}
+                  whileTap={{ scale: 0.9 }}
+                  className={`p-2 bg-gray-800 rounded-full transition-colors duration-300 ${social.color}`}
+                >
+                  <social.icon size={20} />
+                </motion.a>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Company Links */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <h3 className="text-lg font-semibold mb-6 text-white">Company</h3>
+            <ul className="space-y-3">
               {footerProductLinks.map((link, index) => (
-                  <li key={index}>
-                      <Link
-                          className="text-gray-400 hover:text-teal-400 duration-300
-             text-sm cursor-pointer leading-6"
-                          to={link.link}
-                      >
-                          {link.name}
-                      </Link>
-                  </li>
+                <li key={index}>
+                  <Link
+                    to={link.link}
+                    className="text-gray-400 hover:text-white transition-colors duration-300 text-sm block py-1"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
               ))}
-          </ul>
+            </ul>
+          </motion.div>
 
-          <ul className="text-center sm:text-start">
-              <h1 className="mb-1 font-semibold">Shop</h1>
+          {/* Shop Links */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <h3 className="text-lg font-semibold mb-6 text-white">Shop</h3>
+            <ul className="space-y-3">
               {footercompanyLinks.map((link, index) => (
-                  <li key={index}>
-                      <Link
-                          className="text-gray-400 hover:text-teal-400 duration-300
-             text-sm cursor-pointer leading-6"
-                          to={link.link}
-                      >
-                          {link.name}
-                      </Link>
-                  </li>
+                <li key={index}>
+                  <Link
+                    to={link.link}
+                    className="text-gray-400 hover:text-white transition-colors duration-300 text-sm block py-1"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
               ))}
-          </ul>
+            </ul>
+          </motion.div>
 
-          <ul className="text-center sm:text-start">
-              <h1 className="mb-1 font-semibold">Support</h1>
+          {/* Support Links */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <h3 className="text-lg font-semibold mb-6 text-white">Support</h3>
+            <ul className="space-y-3">
               {footerSupportLinks.map((link, index) => (
-                  <li key={index}>
-                      <Link
-                          className="text-gray-400 hover:text-teal-400 duration-300
-             text-sm cursor-pointer leading-6"
-                          to={link.link}
-                      >
-                          {link.name}
-                      </Link>
-                  </li>
+                <li key={index}>
+                  <Link
+                    to={link.link}
+                    className="text-gray-400 hover:text-white transition-colors duration-300 text-sm block py-1"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
               ))}
-          </ul>
+            </ul>
+          </motion.div>
+        </div>
       </div>
 
-      <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10
-   text-center pt-2 text-gray-400 text-sm pb-8"
-      >
-          <span>© 2025 DevSum IT Solutions. All rights reserved.</span>
-          <span>Terms · Privacy Policy</span>
-          <div className="sm:block flex items-center justify-center w-full">
-              <img
+      {/* Bottom Section */}
+      <div className="border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div className="text-center md:text-left">
+              <p className="text-gray-400 text-sm">
+                © 2025 DevSum IT Solutions. All rights reserved.
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
+              <div className="flex space-x-6">
+                <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Terms of Service
+                </Link>
+                <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Privacy Policy
+                </Link>
+              </div>
+              
+              <div className="flex items-center">
+                <img
                   src="/payment-methods.png"
                   alt="Payment methods"
-              />
+                  className="h-6 opacity-70"
+                />
+              </div>
+            </div>
           </div>
+        </div>
       </div>
-    </div>
+    </footer>
   );
 };
 

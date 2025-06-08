@@ -17,6 +17,8 @@ import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 import { RxCross1 } from "react-icons/rx";
 import { UserAvatar, ProductImage } from "../common/EnhancedImage";
+import Button from "../common/Button";
+import Badge from "../common/Badge";
 
 const Header = ({ activeHeading }) => {
   const { isSeller } = useSelector((state) => state.seller);
@@ -72,32 +74,54 @@ const Header = ({ activeHeading }) => {
           </div>
           {/*Search box  */}
           <div className="w-[50%] relative">
-            <input
-              type="text"
-              placeholder="Search for product..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="h-[40px] w-full px-2 border-[#3957db] border-[2px] rounded-md"
-            />
-            <AiOutlineSearch
-              size={30}
-              className="absolute right-2 top-1.5 cursor-pointer"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search for products..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="h-[44px] w-full pl-4 pr-12 border-2 border-gray-200 rounded-xl 
+                          focus:border-blue-500 focus:ring-2 focus:ring-blue-100 
+                          transition-all duration-300 outline-none
+                          bg-white shadow-sm"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 hover:bg-blue-50 rounded-lg"
+              >
+                <AiOutlineSearch size={20} className="text-gray-500" />
+              </Button>
+            </div>
             {
               // Search data if length is not 0 then show
               searchData && searchData.length !== 0 ? (
-                <div className="absolute min-h-[30vh] bg-slate-50 shadow-sm-2 z-[9] p-4">
+                <div className="absolute w-full min-h-[30vh] bg-white shadow-xl rounded-xl border border-gray-100 z-[9] p-2 mt-2 max-h-96 overflow-y-auto">
                   {searchData &&
-                    searchData.map((i) => {
+                    searchData.map((i, index) => {
                       return (
-                        <Link to={`/product/${i._id}`}>
-                          <div className="w-full flex items-start-py-3">
+                        <Link to={`/product/${i._id}`} key={index}>
+                          <div className="w-full flex items-center py-3 px-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
                             <ProductImage
                               product={i}
-                              className="w-[40px] h-[40px] mr-[10px]"
+                              className="w-[50px] h-[50px] mr-4 rounded-lg object-cover border border-gray-200"
                               alt="Product image"
                             />
-                            <h1>{i.name}</h1>
+                            <div className="flex-1">
+                              <h3 className="text-sm font-medium text-gray-900 line-clamp-1">
+                                {i.name}
+                              </h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm font-semibold text-blue-600">
+                                  ₹{(i.discountPrice || i.originalPrice)?.toLocaleString()}
+                                </span>
+                                {i.shop?.name && (
+                                  <span className="text-xs text-gray-500">
+                                    by {i.shop.name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </Link>
                       );
@@ -109,20 +133,30 @@ const Header = ({ activeHeading }) => {
           {/* Search end */}
 
           {/* Become a Seller */}
-          <div className={`${styles.button}`}>
+          <div>
             {isAuthenticated ? (
               <Link to={`${isSeller ? "/dashboard" : "/shop-create"}`}>
-                <h1 className="text-[#fff] flex items-center">
-                  {isSeller ? "Go Dashboard" : "Become Seller"}{" "}
-                  <IoIosArrowForward className="ml-1" />
-                </h1>
+                <Button
+                  variant="primary"
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                >
+                  <span className="flex items-center text-white">
+                    {isSeller ? "Go Dashboard" : "Become Seller"}
+                    <IoIosArrowForward className="ml-2" size={16} />
+                  </span>
+                </Button>
               </Link>
             ) : (
               <Link to="/login">
-                <h1 className="text-[#fff] flex items-center">
-                  Login to Become Seller{" "}
-                  <IoIosArrowForward className="ml-1" />
-                </h1>
+                <Button
+                  variant="outline"
+                  className="px-6 py-2.5 border-blue-600 text-blue-600 hover:bg-blue-50"
+                >
+                  <span className="flex items-center">
+                    Login to Become Seller
+                    <IoIosArrowForward className="ml-2" size={16} />
+                  </span>
+                </Button>
               </Link>
             )}
           </div>
@@ -133,8 +167,8 @@ const Header = ({ activeHeading }) => {
       {/*  2nd part of header start */}
       <div
         className={`${
-          active === true ? "shadow-sm fixed top-0 left-0 z-10" : null
-        } transition hidden 800px:flex items-center justify-between w-full bg-[#3321c8] h-[70px]`}
+          active === true ? "shadow-lg fixed top-0 left-0 z-10" : null
+        } transition hidden 800px:flex items-center justify-between w-full bg-gradient-to-r from-blue-600 to-blue-700 h-[70px]`}
       >
         <div
           className={`${styles.section} relative ${styles.noramlFlex} justify-between`}
@@ -167,62 +201,69 @@ const Header = ({ activeHeading }) => {
             <Navbar active={activeHeading} />
           </div>
 
-          <div className="flex">
-            <div className={`${styles.noramlFlex}`}>
-              <div
-                className="relative cursor-pointer mr-[15px]"
-                onClick={() => setOpenWishlist(true)}
-              >
-                <AiOutlineHeart size={30} color="rgb(255 255 255 / 83%)" />
-                <span className="absolute right-0 top-0 rounded-full bg-[#3bc177] w-4 h-4 top right p-0 m-0 text-white font-mono text-[12px] leading-tight text-center">
-                  {wishlist && wishlist.length}
-                </span>
-              </div>
+          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
+            {/* Wishlist */}
+            <Button
+              variant="ghost"
+              onClick={() => setOpenWishlist(true)}
+              className="relative p-3 hover:bg-white/10 rounded-full transition-colors duration-300"
+            >
+              <AiOutlineHeart size={24} className="text-white" />
+              {wishlist && wishlist.length > 0 && (
+                <Badge
+                  variant="error"
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs animate-pulse"
+                >
+                  {wishlist.length}
+                </Badge>
+              )}
+            </Button>
+
+            {/* Cart */}
+            <Button
+              variant="ghost"
+              onClick={() => setOpenCart(true)}
+              className="relative p-3 hover:bg-white/10 rounded-full transition-colors duration-300"
+            >
+              <AiOutlineShoppingCart size={24} className="text-white" />
+              {cart && cart.length > 0 && (
+                <Badge
+                  variant="success"
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs animate-pulse"
+                >
+                  {cart.length}
+                </Badge>
+              )}
+            </Button>
+
+            {/* User Avatar */}
+            <div className="relative">
+              {isAuthenticated ? (
+                <Link to="/profile">
+                  <UserAvatar
+                    user={user}
+                    className="w-10 h-10 rounded-full border-2 border-white/30 hover:border-white/60 transition-colors duration-300"
+                    alt="User avatar"
+                  />
+                </Link>
+              ) : (
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    className="p-3 hover:bg-white/10 rounded-full transition-colors duration-300"
+                  >
+                    <CgProfile size={24} className="text-white" />
+                  </Button>
+                </Link>
+              )}
             </div>
 
-            <div className={`${styles.noramlFlex}`}>
-              <div
-                className="relative cursor-pointer mr-[15px]"
-                onClick={() => setOpenCart(true)}
-              >
-                <AiOutlineShoppingCart
-                  size={30}
-                  color="rgb(255 255 255 / 83%)"
-                />
-                <span className="absolute right-0 top-0 rounded-full bg-[#3bc177] w-4 h-4 top right p-0 m-0 text-white font-mono text-[12px] leading-tight text-center">
-                  {cart && cart.length}
-                </span>
-              </div>
-            </div>
-
-            {/* avatar */}
-            <div className={`${styles.noramlFlex}`}>
-              <div className="relative cursor-pointer mr-[15px]">
-                {isAuthenticated ? (
-                  <Link to="/profile">
-                    <UserAvatar
-                      user={user}
-                      className="w-[35px] h-[35px] rounded-full"
-                      alt="User avatar"
-                    />
-                  </Link>
-                ) : (
-                  <Link to="/login">
-                    <CgProfile size={30} color="rgb(255 255 255 / 83%)" />
-                  </Link>
-                )}
-              </div>
-            </div>
-            {/* Avatar end */}
-            {/* card  popup start */}
-            {openCart ? <Cart setOpenCart={setOpenCart} /> : null}
-            {/* card popup end */}
-
-            {/* Wish list pop uo Start */}
-            {openWishlist ? (
-              <Wishlist setOpenWishlist={setOpenWishlist} />
-            ) : null}
-            {/* Wish list pop uo end */}
+            {/* Cart Popup */}
+            {openCart && <Cart setOpenCart={setOpenCart} />}
+            {/* Wishlist Popup */}
+            {openWishlist && <Wishlist setOpenWishlist={setOpenWishlist} />}
+          </div>
           </div>
         </div>
       </div>

@@ -1,11 +1,15 @@
 import React, { useState } from 'react'
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import styles from "../../styles/styles";
+import { motion } from "framer-motion";
+import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser, AiOutlineLock, AiOutlinePhone } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
+import { MdCloudUpload } from "react-icons/md";
 import axios from "axios";
 import { server } from "../../server";
 import { toast } from "react-toastify";
+import Card from "../common/Card";
+import Button from "../common/Button";
+import Input from "../common/Input";
 
 const Signup = () => {
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -151,153 +155,177 @@ const Signup = () => {
     }
 
     return (
-        <div className='min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8'>
-            <div className='sm:mx-auto sm:w-full sm:max-w-md'>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Register as new user
-                </h2>
-            </div>
-            <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
-                <div className='bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10'>
-                    <form className='space-y-6' onSubmit={handleSubmit} >
-                        {/* Full Name start */}
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="sm:mx-auto sm:w-full sm:max-w-md"
+            >
+                <div className="text-center">
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
+                        className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center mb-6"
+                    >
+                        <AiOutlineUser size={32} className="text-white" />
+                    </motion.div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        Join Bhavya Bazaar
+                    </h2>
+                    <p className="mt-2 text-gray-600">Create your account today</p>
+                </div>
+            </motion.div>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+            >
+                <Card className="py-8 px-6 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+                    <form className="space-y-6" onSubmit={handleSubmit}>
+                        {/* Full Name */}
                         <div>
-                            <label htmlFor="text"
-                                className='block text-sm font-medium text-gray-700'
-                            >
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Full Name
                             </label>
-                            <div className='mt-1'>
-                                <input 
+                            <div className="relative">
+                                <AiOutlineUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                                <Input
                                     type="text"
-                                    name='text'
-                                    autoComplete='name'
+                                    name="text"
+                                    autoComplete="name"
                                     required
-                                    placeholder='John Doe'
+                                    placeholder="Enter your full name"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className='appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+                                    className="pl-10 h-12 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
                                 />
                             </div>
                         </div>
-                        {/* Full Name end */}
 
                         {/* Phone number */}
                         <div>
-                            <label htmlFor="phoneNumber"
-                                className='block text-sm font-medium text-gray-700'
-                            >
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Phone Number
                             </label>
-                            <div className='mt-1 relative'>
-                                <input
+                            <div className="relative">
+                                <AiOutlinePhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                                <Input
                                     type="text"
-                                    name='phoneNumber'
-                                    autoComplete='tel'
+                                    name="phoneNumber"
+                                    autoComplete="tel"
                                     required
-                                    placeholder='10-digit phone number'
+                                    placeholder="Enter 10-digit phone number"
                                     value={phoneNumber}
                                     maxLength={10}
                                     onChange={(e) => {
-                                        // Only allow digits
                                         const value = e.target.value.replace(/\D/g, '');
                                         setPhoneNumber(value);
                                     }}
-                                    className='appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+                                    className="pl-10 h-12 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
                                 />
                             </div>
                         </div>
-                        {/* Phone number end */}
-                        
-                        {/* Password start */}
+
+                        {/* Password */}
                         <div>
-                            <label htmlFor="password"
-                                className='block text-sm font-medium text-gray-700'
-                            >
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Password
                             </label>
-                            <div className='mt-1 relative'>
-                                <input 
+                            <div className="relative">
+                                <AiOutlineLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                                <Input
                                     type={visible ? "text" : "password"}
-                                    name='password'
-                                    autoComplete='new-password'
+                                    name="password"
+                                    autoComplete="new-password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className='appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
+                                    placeholder="Create a strong password"
+                                    className="pl-10 pr-12 h-12 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
                                 />
-                                {visible ? (
-                                    <AiOutlineEye
-                                        className="absolute right-2 top-2 cursor-pointer"
-                                        size={25}
-                                        onClick={() => setVisible(false)}
-                                    />
-                                ) : (
-                                    <AiOutlineEyeInvisible
-                                        className="absolute right-2 top-2 cursor-pointer"
-                                        size={25}
-                                        onClick={() => setVisible(true)}
-                                    />
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setVisible(!visible)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {visible ? <AiOutlineEye size={20} /> : <AiOutlineEyeInvisible size={20} />}
+                                </button>
                             </div>
                         </div>
-                        {/* Password end */}
 
-                        {/* Avatar start */}
+                        {/* Avatar Upload */}
                         <div>
-                            <label htmlFor="avatar"
-                                className="block text-sm font-medium text-gray-700"
-                            ></label>
-                            <div className='mt-2 flex items-center'>
-                                <span className='inline-block h-8 w-8 rounded-full overflow-hidden'>
-                                    {
-                                        avatar ? (
-                                            <img
-                                                src={URL.createObjectURL(avatar)}
-                                                alt="avatar"
-                                                className="h-full w-full object-cover rounded-full"
-                                            />
-                                        ) : (
-                                            <RxAvatar className="h-8 w-8" />
-                                        )}
-                                </span>
-                                {/* Input file start */}
-                                <label htmlFor="file-input"
-                                    className="ml-5 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                >
-                                    <span>Upload a file</span>
-                                    <input type="file"
-                                        name='avatar'
-                                        id='file-input'
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Profile Picture (Optional)
+                            </label>
+                            <div className="flex items-center space-x-4">
+                                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                                    {avatar ? (
+                                        <img
+                                            src={URL.createObjectURL(avatar)}
+                                            alt="avatar"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <RxAvatar className="w-8 h-8 text-gray-400" />
+                                    )}
+                                </div>
+                                <label htmlFor="file-input" className="flex-1">
+                                    <div className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 cursor-pointer">
+                                        <MdCloudUpload className="w-5 h-5 text-gray-400 mr-2" />
+                                        <span className="text-sm font-medium text-gray-600">
+                                            {avatar ? "Change Image" : "Upload Image"}
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        name="avatar"
+                                        id="file-input"
                                         accept=".jpg,.jpeg,.png"
                                         onChange={handleFileInputChange}
-                                        className="sr-only"
+                                        className="hidden"
                                     />
                                 </label>
-                                {/* Input file end */}
                             </div>
-                        </div>
-                        {/* Avatar end */}
-
-                        <div>
-                            <button
-                                type='submit'
-                                disabled={loading}
-                                className='group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400'
-                            >
-                                {loading ? "Creating Account..." : "Register"}
-                            </button>
+                            <p className="text-xs text-gray-500 mt-1">
+                                PNG, JPG up to 2MB
+                            </p>
                         </div>
 
-                        <div className={`${styles.noramlFlex} w-full`} >
-                            <h4>Already have an account?</h4>
-                            <Link to="/login" className="text-blue-600 pl-2">
-                                Sign In
-                            </Link>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                            variant="gradient"
+                        >
+                            {loading ? (
+                                <div className="flex items-center justify-center gap-2">
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Creating Account...
+                                </div>
+                            ) : (
+                                "Create Account"
+                            )}
+                        </Button>
+
+                        <div className="text-center">
+                            <p className="text-gray-600">
+                                Already have an account?{" "}
+                                <Link 
+                                    to="/login" 
+                                    className="font-semibold text-purple-600 hover:text-purple-500 transition-colors"
+                                >
+                                    Sign In
+                                </Link>
+                            </p>
                         </div>
                     </form>
-                </div>
-            </div>
+                </Card>
+            </motion.div>
         </div>
     )
 }

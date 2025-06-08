@@ -1,11 +1,15 @@
 import axios from "axios";
 import { useState } from 'react';
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { motion } from "framer-motion";
+import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineShop, AiOutlineLock, AiOutlinePhone, AiOutlineHome, AiOutlineUser } from "react-icons/ai";
 import { RxAvatar } from 'react-icons/rx';
+import { MdCloudUpload, MdLocationPin } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { server } from "../../server";
-import styles from "../../styles/styles";
+import Card from "../common/Card";
+import Button from "../common/Button";
+import Input from "../common/Input";
 
 
 const ShopCreate = () => {
@@ -249,7 +253,7 @@ const ShopCreate = () => {
                             </button>
                         </div>
 
-                        <div className={`${styles.noramlFlex} w-full`} >
+                        <div className="flex items-center justify-center w-full" >
                             <h4>Already have an account?</h4>
                             <Link to="/shop-login" className="text-blue-600 pl-2">
                                 Sign In

@@ -67,10 +67,9 @@ const apiLimiter = rateLimit({
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '15 minutes'
-  },
-  standardHeaders: true,
+  },  standardHeaders: true,
   legacyHeaders: false,
-  store: redisClient.isConnected() ? new RedisStore({
+  store: redisClient.isRedisConnected() ? new RedisStore({
     prefix: 'api_limit:',
     windowMs: 15 * 60 * 1000
   }) : undefined
@@ -85,11 +84,10 @@ const authLimiter = rateLimit({
   message: {
     error: 'Too many authentication attempts, please try again later.',
     retryAfter: '15 minutes'
-  },
-  standardHeaders: true,
+  },  standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
-  store: redisClient.isConnected() ? new RedisStore({
+  store: redisClient.isRedisConnected() ? new RedisStore({
     prefix: 'auth_limit:',
     windowMs: 15 * 60 * 1000
   }) : undefined
@@ -104,10 +102,9 @@ const passwordResetLimiter = rateLimit({
   message: {
     error: 'Too many password reset attempts, please try again later.',
     retryAfter: '1 hour'
-  },
-  standardHeaders: true,
+  },  standardHeaders: true,
   legacyHeaders: false,
-  store: redisClient.isConnected() ? new RedisStore({
+  store: redisClient.isRedisConnected() ? new RedisStore({
     prefix: 'password_reset_limit:',
     windowMs: 60 * 60 * 1000
   }) : undefined
@@ -122,10 +119,9 @@ const uploadLimiter = rateLimit({
   message: {
     error: 'Too many upload attempts, please try again later.',
     retryAfter: '1 minute'
-  },
-  standardHeaders: true,
+  },  standardHeaders: true,
   legacyHeaders: false,
-  store: redisClient.isConnected() ? new RedisStore({
+  store: redisClient.isRedisConnected() ? new RedisStore({
     prefix: 'upload_limit:',
     windowMs: 60 * 1000
   }) : undefined
@@ -140,10 +136,9 @@ const searchLimiter = rateLimit({
   message: {
     error: 'Too many search requests, please try again later.',
     retryAfter: '1 minute'
-  },
-  standardHeaders: true,
+  },  standardHeaders: true,
   legacyHeaders: false,
-  store: redisClient.isConnected() ? new RedisStore({
+  store: redisClient.isRedisConnected() ? new RedisStore({
     prefix: 'search_limit:',
     windowMs: 60 * 1000
   }) : undefined

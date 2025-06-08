@@ -23,6 +23,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "framer-motion": "^12.16.0",
     "globalthis": "^1.0.4",
     "js-cookie": "^3.0.1",
     "lottie-react": "^2.4.1",
@@ -39,7 +40,8 @@
     "socket.io-client": "^4.6.1",
     "timeago.js": "^4.0.2",
     "web-vitals": "^2.1.4"
-  },  "scripts": {
+  },
+  "scripts": {
     "prestart": "node ./scripts/fix-source-maps.js",
     "start": "cross-env NODE_ENV=development react-app-rewired start",
     "build": "cross-env CI=false GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
