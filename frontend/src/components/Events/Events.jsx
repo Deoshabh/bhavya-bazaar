@@ -10,7 +10,19 @@ import Loading from "../common/Loading";
 import { AiOutlineCalendar, AiOutlineArrowRight, AiOutlineTags } from "react-icons/ai";
 
 const Events = () => {
-  const { allEvents, isLoading } = useSelector((state) => state.events);
+  const { allEvents, isLoading } = useSelector((state) => state.events || {});
+  
+  // Error fallback for missing data
+  if (!allEvents && !isLoading) {
+    return (
+      <div className="bg-gradient-to-r from-orange-400 to-red-500 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center text-white">
+          <h2 className="text-3xl font-bold mb-4">Events</h2>
+          <p>No events available at the moment. Check back soon!</p>
+        </div>
+      </div>
+    );
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },

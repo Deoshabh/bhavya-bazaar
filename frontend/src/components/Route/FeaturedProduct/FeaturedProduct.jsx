@@ -10,7 +10,19 @@ import Loading from "../../common/Loading";
 import { AiOutlineArrowRight, AiOutlineStar, AiOutlineTrophy } from "react-icons/ai";
 
 const FeaturedProduct = () => {
-  const { allProducts, isLoading } = useSelector((state) => state.products);
+  const { allProducts, isLoading } = useSelector((state) => state.products || {});
+  
+  // Error fallback for missing data
+  if (!allProducts && !isLoading) {
+    return (
+      <div className="bg-gradient-to-r from-purple-500 to-blue-600 py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center text-white">
+          <h2 className="text-3xl font-bold mb-4">Featured Products</h2>
+          <p>No featured products available at the moment. Check back soon!</p>
+        </div>
+      </div>
+    );
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },

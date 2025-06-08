@@ -12,16 +12,37 @@ import { AiOutlineArrowRight, AiOutlineFire } from "react-icons/ai";
 const BestDeals = () => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { allProducts } = useSelector((state) => state.products);
+  const [hasError, setHasError] = useState(false);
+  const { allProducts } = useSelector((state) => state.products || {});
 
   useEffect(() => {
-    setIsLoading(true);
-    const allProductsData = allProducts ? [...allProducts] : [];
-    const sortedData = allProductsData?.sort((a, b) => b.sold_out - a.sold_out);
-    const firstFive = sortedData && sortedData.slice(0, 5);
-    setData(firstFive);
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
+      setHasError(false);
+      const allProductsData = allProducts ? [...allProducts] : [];
+      const sortedData = allProductsData?.sort((a, b) => (b.sold_out || 0) - (a.sold_out || 0));
+      const firstFive = sortedData && sortedData.slice(0, 5);
+      setData(firstFive || []);
+    } catch (error) {
+      console.error('Error loading best deals:', error);
+      setData([]);
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, [allProducts]);
+
+  // Error fallback
+  if (hasError) {
+    return (
+      <div className={`${styles.section} py-8`}>
+        <div className={`${styles.container} text-center`}>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Best Deals</h2>
+          <p className="text-gray-600">Unable to load deals at the moment. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   const containerVariants = {
     hidden: { opacity: 0 },

@@ -8,6 +8,15 @@ import FeaturedProduct from "../components/Route/FeaturedProduct/FeaturedProduct
 import Sponsored from "../components/Route/Sponsored";
 import Footer from "../components/Layout/Footer";
 
+// Safe component wrapper
+const SafeComponent = ({ children, fallback = null }) => {
+  try {
+    return children;
+  } catch (error) {
+    console.error('Component render error:', error);
+    return fallback;
+  }
+};
 
 const HomePage = () => {
     return (
@@ -15,9 +24,15 @@ const HomePage = () => {
             <Header activeHeading={1} />
             <Hero />
             <Categories />
-            <BestDeals />
-            <Events />
-            <FeaturedProduct />
+            <SafeComponent fallback={<div className="py-8 text-center">Best Deals temporarily unavailable</div>}>
+                <BestDeals />
+            </SafeComponent>
+            <SafeComponent fallback={<div className="py-8 text-center">Events temporarily unavailable</div>}>
+                <Events />
+            </SafeComponent>
+            <SafeComponent fallback={<div className="py-8 text-center">Featured Products temporarily unavailable</div>}>
+                <FeaturedProduct />
+            </SafeComponent>
             <Sponsored />
             <Footer />
         </div>
