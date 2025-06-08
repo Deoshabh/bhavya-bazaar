@@ -56,7 +56,12 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
     }
     
     req.user = user;
+    // Ensure id property is available for cached users (Mongoose virtual may be lost in cache)
+    if (!req.user.id && req.user._id) {
+      req.user.id = req.user._id.toString();
+    }
     console.log("User authenticated successfully:", user._id);
+    console.log("req.user.id set to:", req.user.id);
     next();
   } catch (error) {
     console.error("Auth error:", error);
@@ -111,6 +116,10 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
     }
     
     req.seller = seller;
+    // Ensure id property is available for cached sellers (Mongoose virtual may be lost in cache)
+    if (!req.seller.id && req.seller._id) {
+      req.seller.id = req.seller._id.toString();
+    }
     console.log("Seller authenticated successfully:", seller._id);
     next();
   } catch (error) {
