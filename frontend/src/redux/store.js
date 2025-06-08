@@ -20,4 +20,6 @@ const Store = configureStore({
   },
 });
 
+// Export both default and named export for auth utility
+export { Store };
 export default Store;

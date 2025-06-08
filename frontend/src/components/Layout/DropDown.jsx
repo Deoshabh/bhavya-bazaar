@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../styles/styles";
+import SafeImage from "../common/SafeImage";
 
 const DropDown = ({ categoriesData, setDropDown }) => {
     const navigate = useNavigate();
@@ -18,7 +19,7 @@ const DropDown = ({ categoriesData, setDropDown }) => {
                         className={`${styles.noramlFlex}`}
                         onClick={() => submitHandle(i)}
                     >
-                        <img
+                        <SafeImage
                             src={i.image_Url}
                             style={{
                                 width: "25px",
@@ -28,6 +29,7 @@ const DropDown = ({ categoriesData, setDropDown }) => {
                                 userSelect: "none",
                             }}
                             alt="Drop Down img"
+                            fallbackType="general"
                         />
                         <h3 className="m-3 cursor-pointer select-none">{i.title}</h3>
                     </div>

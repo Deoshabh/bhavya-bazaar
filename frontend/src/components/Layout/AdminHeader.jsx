@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { CiMoneyBill } from "react-icons/ci";
 import { GrWorkshop } from "react-icons/gr";
 import { UserAvatar } from "../common/EnhancedImage";
+import SafeImage from "../common/SafeImage";
 
 const AdminHeader = () => {
   const { user } = useSelector((state) => state.user);
@@ -13,10 +14,11 @@ const AdminHeader = () => {
     <div className="w-full h-[80px] bg-white shadow sticky top-0 left-0 z-30 flex items-center justify-between px-4">
       <div>
         <Link to="/">
-          <img
+          <SafeImage
             src="/main.png"
             alt="Bhavya Bazaar"
             className="h-[50px] w-auto max-w-[200px] object-contain"
+            fallbackType="general"
           />
         </Link>
       </div>

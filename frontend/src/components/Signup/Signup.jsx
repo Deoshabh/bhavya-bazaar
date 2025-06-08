@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import Card from "../common/Card";
 import Button from "../common/Button";
 import Input from "../common/Input";
+import SafeImage from "../common/SafeImage";
 
 const Signup = () => {
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -265,10 +266,11 @@ const Signup = () => {
                             <div className="flex items-center space-x-4">
                                 <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200">
                                     {avatar ? (
-                                        <img
+                                        <SafeImage
                                             src={URL.createObjectURL(avatar)}
                                             alt="avatar"
                                             className="w-full h-full object-cover"
+                                            fallbackType="profile"
                                         />
                                     ) : (
                                         <RxAvatar className="w-8 h-8 text-gray-400" />

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "../../styles/styles";
 import { categoriesData } from "../../static/data";
 import {
@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 import { RxCross1 } from "react-icons/rx";
+import SafeImage from "../common/SafeImage";
 import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 import Button from "../common/Button";
 import Badge from "../common/Badge";
@@ -63,10 +64,11 @@ const Header = ({ activeHeading }) => {
           <div>
             <Link to="/">
               <div className="flex items-center">
-                <img
+                <SafeImage
                   src="/main.png"
                   alt="Bhavya Vyapar"
                   className="h-[40px]"
+                  fallbackType="brand"
                 />
                 <span className="font-bold ml-2 text-xl">Bhavya Vyapar</span>
               </div>
@@ -286,10 +288,11 @@ const Header = ({ activeHeading }) => {
           <div>
             <Link to="/">
               <div className="flex items-center">
-                <img
+                <SafeImage
                   src="/main.png"
                   alt="Bhavya Vyapar"
                   className="h-[40px] mt-3 cursor-pointer"
+                  fallbackType="general"
                 />
                 <span className="font-bold ml-2 text-lg">Bhavya Vyapar</span>
               </div>

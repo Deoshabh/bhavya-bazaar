@@ -18,6 +18,7 @@ import {
 import { server } from "../../server";
 import styles from "../../styles/styles";
 import { ProductImage, ShopAvatar } from "../common/EnhancedImage";
+import SafeImage from "../common/SafeImage";
 import Ratings from "./Ratings";
 
 const ProductDetails = ({ data }) => {
@@ -318,12 +319,12 @@ const ProductDetailsInfo = ({
 
       {/* Product Rev */}
       {active === 2 ? (
-        <div className="w-full min-h-[40vh] flex flex-col items-center py-3 overflow-y-scroll">
-          {data &&            data.reviews.map((item, index) => (              <div className="w-full flex my-2" key={index}>
-                <img
+        <div className="w-full min-h-[40vh] flex flex-col items-center py-3 overflow-y-scroll">          {data &&            data.reviews.map((item, index) => (              <div className="w-full flex my-2" key={index}>
+                <SafeImage
                   src={item.user.avatar || "/user-placeholder.png"}
                   alt="User avatar"
                   className="w-[50px] h-[50px] rounded-full"
+                  fallbackType="profile"
                 />
                 <div className="pl-2 ">
                   <div className="w-full flex items-center">

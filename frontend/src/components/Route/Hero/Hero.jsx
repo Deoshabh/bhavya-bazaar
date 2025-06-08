@@ -5,6 +5,7 @@ import Button from "../../common/Button";
 import Card from "../../common/Card";
 import Badge from "../../common/Badge";
 import { AiOutlineArrowRight, AiOutlineStar } from "react-icons/ai";
+import SafeImage from "../../common/SafeImage";
 
 const Hero = () => {
   const categories = [
@@ -178,14 +179,11 @@ const Hero = () => {
                         <div className={`relative p-4 rounded-xl bg-gradient-to-r ${category.color} hover:shadow-lg transition-all duration-300`}>
                           <div className="absolute inset-0 bg-black/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           <div className="relative z-10">
-                            <img
+                            <SafeImage
                               src={category.image}
                               alt={category.name}
                               className="w-full h-16 object-cover rounded-lg mb-3 bg-white/20"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='80' viewBox='0 0 100 80'%3E%3Crect width='100' height='80' fill='%23ffffff20'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12px' fill='%23ffffff'%3E${category.name.split(' ')[0]}%3C/text%3E%3C/svg%3E`;
-                              }}
+                              fallbackType="general"
                             />
                             <h3 className="text-white font-semibold text-sm mb-1 line-clamp-2">
                               {category.name}
@@ -241,16 +239,13 @@ const Hero = () => {
                 <Link to={category.link}>
                   <Card className="p-4 hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
                     <div className="text-center">
-                      <img
+                      <SafeImage
                         src={category.image}
                         alt={category.name}
                         className="w-full h-20 object-cover rounded-lg mb-3 bg-gray-100"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='80' viewBox='0 0 100 80'%3E%3Crect width='100' height='80' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12px' fill='%23374151'%3E${category.name.split(' ')[0]}%3C/text%3E%3C/svg%3E`;
-                        }}
+                        fallbackType="general"
                       />
-                      <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                      <h3 className="font-semibold text-sm mb-1 text-gray-900 line-clamp-2">
                         {category.name}
                       </h3>
                       <p className="text-gray-600 text-xs">

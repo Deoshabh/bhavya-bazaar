@@ -8,6 +8,7 @@ import axios from "axios";
 import { server } from "../../server";
 import { toast } from "react-toastify";
 import { loadSeller } from "../../redux/actions/user";
+import SafeImage from "../common/SafeImage";
 
 const CreateShop = () => {
   const navigate = useNavigate();
@@ -204,10 +205,11 @@ const CreateShop = () => {
               <div className="mt-2 flex items-center">
                 <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
                   {avatar ? (
-                    <img
+                    <SafeImage
                       src={URL.createObjectURL(avatar)}
                       alt="avatar"
                       className="h-full w-full object-cover rounded-full"
+                      fallbackType="profile"
                     />
                   ) : (
                     <RxAvatar className="h-8 w-8" />

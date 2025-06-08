@@ -9,6 +9,7 @@ import {
     AiOutlineEnvironment,
 } from "react-icons/ai";
 import { Link } from "react-router-dom";
+import SafeImage from "../common/SafeImage";
 import { motion } from "framer-motion";
 import Button from "../common/Button";
 import Input from "../common/Input";
@@ -98,10 +99,11 @@ const Footer = () => {
           >
             <div className="mb-6">
               <Link to="/" className="flex items-center mb-4">
-                <img
+                <SafeImage
                   src="/main.png"
                   alt="Bhavya Vyapar"
                   className="h-12 w-auto"
+                  fallbackType="general"
                 />
                 <span className="ml-2 text-xl font-bold">Bhavya Vyapar</span>
               </Link>
@@ -228,10 +230,11 @@ const Footer = () => {
               </div>
               
               <div className="flex items-center">
-                <img
+                <SafeImage
                   src="/payment-methods.png"
                   alt="Payment methods"
                   className="h-6 opacity-70"
+                  fallbackType="general"
                 />
               </div>
             </div>

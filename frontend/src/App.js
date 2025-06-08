@@ -24,6 +24,9 @@ import {
 import NewLoginPage from "./pages/Auth/LoginPage.jsx";
 import NewShopLoginPage from "./pages/Auth/ShopLoginPage.jsx"; 
 import AdminLoginPage from "./pages/Auth/AdminLoginPage.jsx";
+// Import auth utilities and safe analytics
+import { initializeAuth } from "./utils/auth";
+import analytics from "./utils/analytics";
 import {
   ShopDashboardPage,
   ShopCreateProduct,
@@ -53,7 +56,6 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
-import { loadUser, loadSeller } from "./redux/actions/user";
 import { useDispatch } from "react-redux";
 // Import new unified auth guards
 import { 
@@ -86,6 +88,9 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    // Initialize safe analytics
+    analytics.initializeAnalytics();
+    
     // Initialize production monitoring
     if (process.env.NODE_ENV === 'production') {
       productionMonitor.init({
@@ -97,21 +102,16 @@ const App = () => {
       });
     }
 
-    // Always try to load both user and seller authentication on app start
-    // The backend will handle the validation and return appropriate responses
+    // Initialize authentication with improved token persistence
+    const initAuth = async () => {
+      try {
+        await initializeAuth();
+      } catch (error) {
+        console.error('Authentication initialization failed:', error);
+      }
+    };
     
-    const hasUserToken = document.cookie.includes('token=');
-    const hasSellerToken = document.cookie.includes('seller_token=');
-    
-    // Load user authentication if token exists
-    if (hasUserToken) {
-      dispatch(loadUser());
-    }
-    
-    // Load seller authentication if token exists  
-    if (hasSellerToken) {
-      dispatch(loadSeller());
-    }
+    initAuth();
     
     // Always load products and events
     dispatch(getAllProducts());

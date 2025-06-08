@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { categoriesData } from "../../static/data";
 import { toast } from "react-toastify";
 import { createevent } from "../../redux/actions/event";
+import SafeImage from "../common/SafeImage";
 
 const CreateEvent = () => {
     const { seller } = useSelector((state) => state.seller);
@@ -241,11 +242,12 @@ const CreateEvent = () => {
                         </label>
                         {images &&
                             images.map((i) => (
-                                <img
+                                <SafeImage
                                     src={URL.createObjectURL(i)}
                                     key={i}
                                     alt=""
                                     className="h-[120px] w-[120px] object-cover m-2"
+                                    fallbackType="product"
                                 />
                             ))}
                     </div>
