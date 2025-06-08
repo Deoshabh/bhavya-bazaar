@@ -33,8 +33,10 @@ connectDatabase();
 // Initialize Redis connection
 redisClient.initialize().then(() => {
   console.log("✅ Redis connection initialized");
+  global.redisAvailable = true;
 }).catch((error) => {
   console.warn("⚠️ Redis initialization failed, falling back to memory storage:", error.message);
+  global.redisAvailable = false;
 });
 
 const uploadsPath = path.join(__dirname, "uploads");

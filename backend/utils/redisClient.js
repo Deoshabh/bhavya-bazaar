@@ -5,6 +5,9 @@ class RedisClient {
     this.client = null;
     this.isConnected = false;
   }
+  async initialize() {
+    return this.connect();
+  }
 
   async connect() {
     try {
