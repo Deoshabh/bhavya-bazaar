@@ -228,6 +228,7 @@ app.get("/", (req, res) => {
 app.options("*", cors());
 
 // —————————— API Routes ——————————
+app.use("/api/auth", require("./controller/auth")); // New unified auth routes
 app.use("/api/v2/user", require("./controller/user"));
 app.use("/api/v2/shop", require("./controller/shop"));
 app.use("/api/v2/product", require("./controller/product"));

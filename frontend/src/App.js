@@ -1,6 +1,5 @@
 import React from "react";
 import "./App.css";
-import { Navigate } from 'react-router-dom';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
   LoginPage,
@@ -21,6 +20,10 @@ import {
   TrackOrderPage,
   UserInbox,
 } from "./routes/Routes";
+// Import new unified auth pages
+import NewLoginPage from "./pages/Auth/LoginPage.jsx";
+import NewShopLoginPage from "./pages/Auth/ShopLoginPage.jsx"; 
+import AdminLoginPage from "./pages/Auth/AdminLoginPage.jsx";
 import {
   ShopDashboardPage,
   ShopCreateProduct,
@@ -35,11 +38,8 @@ import {
   ShopSettingsPage,
   ShopWithDrawMoneyPage,
   ShopInboxPage,
-  ShopHomePage, // Import ShopHomePage from ShopRoutes instead of directly
+  ShopHomePage,
 } from "./routes/ShopRoutes";
-
-// Remove this incorrect import
-// import ShopHomePage from "../pages/Shop/ShopHomePage";
 
 import {
   AdminDashboardPage,
@@ -54,13 +54,14 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
 import { loadUser, loadSeller } from "./redux/actions/user";
-import { useDispatch, useSelector } from "react-redux";
-import ProtectedRoute from "./routes/ProtectedRoute";
-import SellerProtectedRoute from "./routes/SellerProtectedRoute";
-import AdminProtectedRoute from "./routes/ProtectedAdminRoute";
-
-// Remove duplicate import
-// import { loadUser, loadSeller } from "./redux/actions/user";
+import { useDispatch } from "react-redux";
+// Import new unified auth guards
+import { 
+  RequireUser, 
+  RequireShop, 
+  RequireAdmin, 
+  RequireUserForShopCreate
+} from "./components/Auth/RouteGuards.jsx";
 
 import { getAllProducts } from "./redux/actions/product";
 import { getAllEvents } from "./redux/actions/event";
@@ -70,23 +71,13 @@ import NavigationWrapper from "./components/Layout/NavigationWrapper";
 import Cart from "./components/cart/Cart";
 import Wishlist from "./components/Wishlist/Wishlist";
 
-// Create ShopCreateRoute component for shop creation
+// Create ShopCreateRoute component for shop creation - now using unified auth
 const ShopCreateRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useSelector((state) => state.user);
-  const { isSeller } = useSelector((state) => state.seller);
-  
-  if (loading) {
-    return null;
-  }
-  
-  if (isAuthenticated) {
-    if (isSeller) {
-      return children;
-    }
-    return children;
-  } else {
-    return <Navigate to="/login" />;
-  }
+  return (
+    <RequireUserForShopCreate>
+      {children}
+    </RequireUserForShopCreate>
+  );
 };
 
 const App = () => {
@@ -150,7 +141,16 @@ const App = () => {
       <NavigationWrapper>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          
+          {/* Legacy auth routes (keep for backward compatibility) */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/shop-login" element={<ShopLoginPage />} />
+          
+          {/* New unified auth routes */}
+          <Route path="/auth/login" element={<NewLoginPage />} />
+          <Route path="/shop/login" element={<NewShopLoginPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          
           <Route path="/sign-up" element={<SignupPage />} />
           <Route
             path="/activation/:activation_token"
@@ -169,9 +169,9 @@ const App = () => {
           <Route
             path="/checkout"
             element={
-              <ProtectedRoute>
+              <RequireUser>
                 <CheckoutPage />
-              </ProtectedRoute>
+              </RequireUser>
             }
           />
 
@@ -179,36 +179,36 @@ const App = () => {
           <Route
             path="/profile"
             element={
-              <ProtectedRoute>
+              <RequireUser>
                 <ProfilePage />
-              </ProtectedRoute>
+              </RequireUser>
             }
           />
 
           <Route
             path="/inbox"
             element={
-              <ProtectedRoute>
+              <RequireUser>
                 <UserInbox />
-              </ProtectedRoute>
+              </RequireUser>
             }
           />
 
           <Route
             path="/user/order/:id"
             element={
-              <ProtectedRoute>
+              <RequireUser>
                 <OrderDetailsPage />
-              </ProtectedRoute>
+              </RequireUser>
             }
           />
 
           <Route
             path="/user/track/order/:id"
             element={
-              <ProtectedRoute>
+              <RequireUser>
                 <TrackOrderPage />
-              </ProtectedRoute>
+              </RequireUser>
             }
           />
 
@@ -226,114 +226,114 @@ const App = () => {
           <Route
             path="/shop/:id"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopHomePage />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/settings"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopSettingsPage />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopDashboardPage />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
           <Route
             path="/dashboard-create-product"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopCreateProduct />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard-orders"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopAllOrders />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard-refunds"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopAllRefunds />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/order/:id"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopOrderDetails />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard-products"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopAllProducts />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard-withdraw-money"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopWithDrawMoneyPage />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard-messages"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopInboxPage />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
           <Route
             path="/dashboard-create-event"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopCreateEvents />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
           <Route
             path="/dashboard-events"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopAllEvents />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
           <Route
             path="/dashboard-coupouns"
             element={
-              <SellerProtectedRoute>
+              <RequireShop>
                 <ShopAllCoupouns />
-              </SellerProtectedRoute>
+              </RequireShop>
             }
           />
 
@@ -341,57 +341,57 @@ const App = () => {
           <Route
             path="/admin/dashboard"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardPage />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
           <Route
             path="/admin-users"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardUsers />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
           <Route
             path="/admin-sellers"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardSellers />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
           <Route
             path="/admin-orders"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardOrders />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
           <Route
             path="/admin-products"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardProducts />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
           <Route
             path="/admin-events"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardEvents />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
           <Route
             path="/admin-withdraw-request"
             element={
-              <AdminProtectedRoute>
+              <RequireAdmin>
                 <AdminDashboardWithdraw />
-              </AdminProtectedRoute>
+              </RequireAdmin>
             }
           />
         </Routes>

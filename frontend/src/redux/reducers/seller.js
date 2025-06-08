@@ -26,6 +26,21 @@ export const sellerReducer = createReducer(initialState, (builder) => {
       state.isSeller = false;
     })
     
+    // New unified shop login actions
+    .addCase("LoginShopRequest", (state) => {
+      state.isLoading = true;
+    })
+    .addCase("LoginShopSuccess", (state, action) => {
+      state.isLoading = false;
+      state.isSeller = true;
+      state.seller = action.payload;
+    })
+    .addCase("LoginShopFailed", (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+      state.isSeller = false;
+    })
+    
     // Admin get all sellers
     .addCase("getAllSellersRequest", (state) => {
       state.isLoading = true;
@@ -56,6 +71,17 @@ export const sellerReducer = createReducer(initialState, (builder) => {
     })
 
     .addCase("clearErrors", (state) => {
+      state.error = null;
+    })
+
+    // Logout Seller
+    .addCase("LogoutSellerRequest", (state) => {
+      state.isLoading = true;
+    })
+    .addCase("LogoutSellerSuccess", (state) => {
+      state.isLoading = false;
+      state.isSeller = false;
+      state.seller = null;
       state.error = null;
     });
 });

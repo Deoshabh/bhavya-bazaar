@@ -62,6 +62,36 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.error = action.payload;
     })
 
+    // New unified login actions
+    .addCase("LoginUserRequest", (state) => {
+      state.loading = true;
+    })
+    .addCase("LoginUserSuccess", (state, action) => {
+      state.loading = false;
+      state.isAuthenticated = true;
+      state.user = action.payload;
+    })
+    .addCase("LoginUserFailed", (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isAuthenticated = false;
+    })
+
+    // Admin login (uses same user state)
+    .addCase("LoginAdminRequest", (state) => {
+      state.loading = true;
+    })
+    .addCase("LoginAdminSuccess", (state, action) => {
+      state.loading = false;
+      state.isAuthenticated = true;
+      state.user = action.payload;
+    })
+    .addCase("LoginAdminFailed", (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isAuthenticated = false;
+    })
+
     // Get All Users (Admin)
     .addCase("getAllUsersRequest", (state) => {
       state.usersLoading = true;
@@ -80,19 +110,16 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.error = null;
     })
 
-    // Load Seller
-    .addCase("LoadSellerRequest", (state) => {
+    // Logout User
+    .addCase("LogoutUserRequest", (state) => {
       state.loading = true;
     })
-    .addCase("LoadSellerSuccess", (state, action) => {
-      state.isAuthenticated = true;
+    .addCase("LogoutUserSuccess", (state) => {
       state.loading = false;
-      state.seller = action.payload;
-    })
-    .addCase("LoadSellerFail", (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
       state.isAuthenticated = false;
+      state.user = null;
+      state.error = null;
+      state.seller = null;
     });
 });
 

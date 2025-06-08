@@ -110,16 +110,99 @@ class ApiService {  constructor() {
       }
     );
   }
-  
-  // User endpoints
+    // Authentication endpoints (unified)
   async loginUser(phoneNumber, password) {
-    return this.api.post('/user/login-user', { phoneNumber, password });
+    // Try unified auth endpoint first
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/login/user`, { phoneNumber, password }, {
+        withCredentials: true
+      });
+    } catch (error) {
+      // Fallback to legacy endpoint
+      return this.api.post('/user/login-user', { phoneNumber, password });
+    }
   }
-  
+
+  async loginShop(phoneNumber, password) {
+    // Try unified auth endpoint first
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/login/shop`, { phoneNumber, password }, {
+        withCredentials: true
+      });
+    } catch (error) {
+      // Fallback to legacy endpoint
+      return this.api.post('/shop/login-shop', { phoneNumber, password });
+    }
+  }
+
+  async loginAdmin(phoneNumber, password) {
+    // Try unified auth endpoint first
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/login/admin`, { phoneNumber, password }, {
+        withCredentials: true
+      });
+    } catch (error) {
+      // Fallback to legacy endpoint (will need to check role on frontend)
+      return this.api.post('/user/login-user', { phoneNumber, password });
+    }
+  }
+
+  async logoutUser() {
+    // Try unified auth endpoint first
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/logout/user`, {}, {
+        withCredentials: true
+      });
+    } catch (error) {
+      // Fallback to legacy endpoint
+      return this.api.get('/user/logout');
+    }
+  }
+
+  async logoutShop() {
+    // Try unified auth endpoint first
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/logout/shop`, {}, {
+        withCredentials: true
+      });
+    } catch (error) {
+      // Fallback to legacy endpoint
+      return this.api.get('/shop/logout');
+    }
+  }
+
+  async logoutAdmin() {
+    // Try unified auth endpoint first
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/logout/admin`, {}, {
+        withCredentials: true
+      });
+    } catch (error) {
+      // Fallback to legacy endpoint
+      return this.api.get('/user/logout');
+    }
+  }
+
+  async refreshToken() {
+    try {
+      const unifiedUrl = this.apiBase.replace('/api/v2', '');
+      return axios.post(`${unifiedUrl}/api/auth/refresh`, {}, {
+        withCredentials: true
+      });
+    } catch (error) {
+      throw new Error('Token refresh not available with legacy endpoints');
+    }
+  }  
   async getCurrentUser() {
     return this.api.get('/user/getuser');
   }
-  
+
   // Shop endpoints
   async getShopInfo(userId) {
     return this.api.get(`/shop/get-shop-info/${userId}`);

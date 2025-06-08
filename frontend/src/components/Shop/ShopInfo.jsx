@@ -1,10 +1,12 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { getAllProductsShop } from "../../redux/actions/product";
+import { logoutSeller } from "../../redux/actions/user";
 import { server } from "../../server";
 import { ShopAvatar } from "../common/EnhancedImage";
+import { toast } from "react-toastify";
 import styles from "../../styles/styles";
 import Loader from "../Layout/Loader";
 
@@ -17,6 +19,7 @@ const ShopInfo = ({ isOwner }) => {
 
     const { id } = useParams();
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
 
     useEffect(() => {
@@ -34,10 +37,14 @@ const ShopInfo = ({ isOwner }) => {
 
 
     const logoutHandler = async () => {
-        axios.get(`${server}/shop/logout`, {
-            withCredentials: true,
-        });
-        window.location.reload();
+        try {
+            await dispatch(logoutSeller());
+            toast.success("Logout successful!");
+            navigate("/shop-login");
+        } catch (error) {
+            console.error("Logout error:", error);
+            toast.error("Logout failed. Please try again.");
+        }
     };
 
 

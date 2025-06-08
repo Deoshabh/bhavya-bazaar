@@ -1,4 +1,5 @@
 import axios from "axios";
+import apiService from "../../services/api";
 
 // Get base URL and ensure proper endpoint construction
 const getBaseUrl = () => {
@@ -206,6 +207,132 @@ export const getAllUsers = () => async (dispatch) => {
 // clear errors action
 export const clearErrors = () => (dispatch) => {
   dispatch({ type: "clearErrors" });
+};
+
+// logout user action
+export const logoutUser = () => async (dispatch) => {
+  try {
+    dispatch({ type: "LogoutUserRequest" });
+    
+    // Try unified auth endpoint first, fallback to legacy
+    try {
+      await apiService.logoutUser();
+    } catch (error) {
+      // Fallback to legacy endpoint
+      await axios.get(`${BASE_URL}/api/v2/user/logout`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+    
+    dispatch({ type: "LogoutUserSuccess" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    // Even if backend call fails, clear local state
+    dispatch({ type: "LogoutUserSuccess" });
+  }
+};
+
+// logout seller action
+export const logoutSeller = () => async (dispatch) => {
+  try {
+    dispatch({ type: "LogoutSellerRequest" });
+    
+    // Try unified auth endpoint first, fallback to legacy
+    try {
+      await apiService.logoutShop();
+    } catch (error) {
+      // Fallback to legacy endpoint
+      await axios.get(`${BASE_URL}/api/v2/shop/logout`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+    
+    dispatch({ type: "LogoutSellerSuccess" });
+  } catch (error) {
+    console.error("Seller logout error:", error);
+    // Even if backend call fails, clear local state
+    dispatch({ type: "LogoutSellerSuccess" });
+  }
+};
+
+// Unified auth actions using new API service
+
+// Login user action
+export const loginUser = (phoneNumber, password) => async (dispatch) => {
+  try {
+    dispatch({
+      type: "LoginUserRequest",
+    });
+
+    const { data } = await apiService.loginUser(phoneNumber, password);
+    
+    dispatch({
+      type: "LoginUserSuccess",
+      payload: data.user,
+    });
+    
+    // Auto-load user data after successful login
+    dispatch(loadUser());
+  } catch (error) {
+    dispatch({
+      type: "LoginUserFailed",
+      payload: error.response?.data?.message || "Login failed",
+    });
+  }
+};
+
+// Login shop action
+export const loginShop = (phoneNumber, password) => async (dispatch) => {
+  try {
+    dispatch({
+      type: "LoginShopRequest",
+    });
+
+    const { data } = await apiService.loginShop(phoneNumber, password);
+    
+    dispatch({
+      type: "LoginShopSuccess",
+      payload: data.seller,
+    });
+    
+    // Auto-load seller data after successful login
+    dispatch(loadSeller());
+  } catch (error) {
+    dispatch({
+      type: "LoginShopFailed",
+      payload: error.response?.data?.message || "Shop login failed",
+    });
+  }
+};
+
+// Login admin action
+export const loginAdmin = (phoneNumber, password) => async (dispatch) => {
+  try {
+    dispatch({
+      type: "LoginAdminRequest",
+    });
+
+    const { data } = await apiService.loginAdmin(phoneNumber, password);
+    
+    dispatch({
+      type: "LoginAdminSuccess",
+      payload: data.user,
+    });
+    
+    // Auto-load user data after successful login
+    dispatch(loadUser());
+  } catch (error) {
+    dispatch({
+      type: "LoginAdminFailed",
+      payload: error.response?.data?.message || "Admin login failed",
+    });
+  }
 };
 
 // what is action in redux ?

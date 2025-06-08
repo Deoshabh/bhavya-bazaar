@@ -40,8 +40,14 @@ const Login = () => {
       toast.success("Login successful!");
       setPhoneNumber("");
       setPassword("");
+      
+      // Wait a bit for cookies to be set properly in production
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Load user data and wait for it to complete
+      await dispatch(loadUser());
+      
       setLoading(false);
-      dispatch(loadUser());
       navigate("/"); 
     } catch (err) {
       setLoading(false);

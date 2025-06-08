@@ -46,10 +46,14 @@ const ShopLogin = () => {
         );
 
         toast.success("Login Success!");
-        // Load seller data and navigate
-        dispatch(loadSeller());
-        setLoading(false);
-        navigate("/dashboard");
+        
+        // Add timing delay for cookie setting in production
+        setTimeout(async () => {
+          // Load seller data and wait for authentication state
+          await dispatch(loadSeller());
+          setLoading(false);
+          navigate("/dashboard");
+        }, 100);
       } catch (mainError) {
         console.error("Main shop login error:", mainError.message);
         
@@ -72,10 +76,14 @@ const ShopLogin = () => {
               { withCredentials: true }
             );
             toast.success("Login successful (using fallback connection)!");
-            // Load seller data and navigate
-            dispatch(loadSeller());
-            setLoading(false);
-            navigate("/dashboard");
+            
+            // Add timing delay for cookie setting in production
+            setTimeout(async () => {
+              // Load seller data and wait for authentication state
+              await dispatch(loadSeller());
+              setLoading(false);
+              navigate("/dashboard");
+            }, 100);
             return;
           } catch (fallbackError) {
             console.error("Fallback shop login error:", fallbackError);
