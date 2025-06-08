@@ -93,14 +93,32 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(loadUser());
-    // Only load seller if we have seller token or are on seller pages
+    // Check which tokens are available
+    const hasUserToken = document.cookie.includes('token=');
     const hasSellerToken = document.cookie.includes('seller_token=');
-    const isSellerRoute = window.location.pathname.includes('/dashboard') || 
-                         window.location.pathname.includes('/shop');
+    const currentPath = window.location.pathname;
     
-    if (hasSellerToken || isSellerRoute) {
+    // Determine which authentication to load based on tokens and current route
+    const isSellerRoute = currentPath.includes('/dashboard') || 
+                         currentPath.includes('/shop-login') ||
+                         currentPath.includes('/shop-create') ||
+                         currentPath.includes('/settings') ||
+                         currentPath === '/shop' ||
+                         currentPath.startsWith('/shop/');
+    
+    // Load user authentication if user token exists and not exclusively on seller routes
+    if (hasUserToken && !isSellerRoute) {
+      dispatch(loadUser());
+    }
+    
+    // Load seller authentication if seller token exists or on seller routes
+    if (hasSellerToken) {
       dispatch(loadSeller());
+    }
+    
+    // If no tokens but on a route that requires authentication, try loading user first
+    if (!hasUserToken && !hasSellerToken && !isSellerRoute) {
+      dispatch(loadUser());
     }
     
     dispatch(getAllProducts());

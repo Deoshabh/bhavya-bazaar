@@ -2,15 +2,18 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineShop, AiOutlineLock } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import axios from "axios";
 import { server, debugConnection, getFallbackUrl } from "../../server";
 import { toast } from "react-toastify";
+import { loadSeller } from "../../redux/actions/user";
 import Card from "../common/Card";
 import Button from "../common/Button";
 import Input from "../common/Input";
 
 const ShopLogin = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
@@ -43,9 +46,10 @@ const ShopLogin = () => {
         );
 
         toast.success("Login Success!");
+        // Load seller data and navigate
+        dispatch(loadSeller());
         setLoading(false);
         navigate("/dashboard");
-        window.location.reload();
       } catch (mainError) {
         console.error("Main shop login error:", mainError.message);
         
@@ -68,9 +72,10 @@ const ShopLogin = () => {
               { withCredentials: true }
             );
             toast.success("Login successful (using fallback connection)!");
+            // Load seller data and navigate
+            dispatch(loadSeller());
             setLoading(false);
             navigate("/dashboard");
-            window.location.reload();
             return;
           } catch (fallbackError) {
             console.error("Fallback shop login error:", fallbackError);

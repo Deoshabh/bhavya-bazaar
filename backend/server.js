@@ -41,6 +41,9 @@ try {
 
 const app = express();
 
+// Trust proxy - needed for production deployment behind reverse proxy
+app.set('trust proxy', true);
+
 // Load additional .env if you have a custom file path (optional):
 require("dotenv").config({
   path: path.join(__dirname, "config", ".env"),

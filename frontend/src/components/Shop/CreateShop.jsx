@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { RxAvatar } from "react-icons/rx";
 import axios from "axios";
 import { server } from "../../server";
 import { toast } from "react-toastify";
+import { loadSeller } from "../../redux/actions/user";
 
 const CreateShop = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
@@ -65,9 +68,9 @@ const CreateShop = () => {
       await axios.post(`${server}/shop/create-shop`, newForm, config);
 
       toast.success("Shop created successfully!");
+      // Load seller data and navigate
+      dispatch(loadSeller());
       setLoading(false);
-
-      // Navigate to dashboard since we're logged in directly
       navigate("/dashboard");
     } catch (error) {
       setLoading(false);
