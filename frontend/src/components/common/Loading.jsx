@@ -239,6 +239,31 @@ export const ProductCardSkeleton = ({ className = '' }) => (
   </div>
 );
 
+// Product Grid Skeleton
+export const ProductGrid = ({ 
+  count = 8, 
+  columns = 'auto',
+  gap = '6',
+  className = '' 
+}) => {
+  const items = Array.from({ length: count }, (_, index) => index);
+  
+  const getGridCols = () => {
+    if (columns === 'auto') {
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5';
+    }
+    return `grid-cols-${columns}`;
+  };
+
+  return (
+    <div className={`grid ${getGridCols()} gap-${gap} ${className}`}>
+      {items.map((index) => (
+        <ProductCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+};
+
 // Page Loading Component
 export const PageLoading = ({ 
   message = 'Loading...', 
@@ -295,4 +320,23 @@ export const ButtonLoading = ({ size = 'md' }) => {
   );
 };
 
-export default LoadingSpinner;
+// Create main Loading object with all components
+const Loading = {
+  Spinner: LoadingSpinner,
+  Dots: LoadingDots,
+  Pulse: LoadingPulse,
+  Skeleton,
+  CardSkeleton,
+  ProductCardSkeleton,
+  ProductGrid,
+  ListSkeleton,
+  TableSkeleton,
+  PageLoading,
+  Overlay: LoadingOverlay,
+  Button: ButtonLoading,
+};
+
+// Also export as named export for convenience
+export { Loading };
+
+export default Loading;
