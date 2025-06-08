@@ -55,7 +55,7 @@ import {
 } from "./routes/AdminRoutes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 // Import new unified auth guards
 import { 
@@ -86,6 +86,8 @@ const ShopCreateRoute = ({ children }) => {
 
 const App = () => {
   const dispatch = useDispatch();
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
     // Initialize safe analytics
@@ -102,12 +104,23 @@ const App = () => {
       });
     }
 
-    // Initialize authentication with improved token persistence
+    // Initialize authentication with improved token persistence and loading state
     const initAuth = async () => {
       try {
-        await initializeAuth();
+        console.log('🔄 Initializing authentication...');
+        const result = await initializeAuth();
+        
+        if (result.success) {
+          console.log('✅ Authentication restored:', result.userType);
+        } else {
+          console.log('ℹ️ No existing session found');
+        }
+        
+        setIsAuthInitialized(true);
       } catch (error) {
-        console.error('Authentication initialization failed:', error);
+        console.error('❌ Authentication initialization failed:', error);
+        setAuthError(error.message);
+        setIsAuthInitialized(true); // Still allow app to load
       }
     };
     
@@ -137,6 +150,24 @@ const App = () => {
       document.body.style.paddingBottom = '0'; // Clean up
     };
   }, []);
+
+  // Show loading spinner while authentication is being initialized
+  if (!isAuthInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading Bhavya Bazaar</h2>
+          <p className="text-gray-500">Checking your session...</p>
+          {authError && (
+            <p className="text-red-500 text-sm mt-2">
+              Note: {authError}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>

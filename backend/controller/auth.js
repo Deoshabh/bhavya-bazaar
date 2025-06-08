@@ -259,6 +259,85 @@ router.post(
   })
 );
 
+// Auto-login check endpoint - checks all token types and returns user info
+router.get(
+  "/me",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { token, seller_token, admin_token } = req.cookies;
+      
+      // Check for user token first
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+          const user = await User.findById(decoded.id).select("-password");
+          
+          if (!user) {
+            return next(new ErrorHandler("User not found", 404));
+          }
+          
+          return res.status(200).json({
+            success: true,
+            user,
+            userType: 'user',
+            message: "User session verified"
+          });
+        } catch (jwtError) {
+          // Token invalid/expired, continue to check other tokens
+        }
+      }
+      
+      // Check for seller token
+      if (seller_token) {
+        try {
+          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
+          const shop = await Shop.findById(decoded.id).select("-password");
+          
+          if (!shop) {
+            return next(new ErrorHandler("Shop not found", 404));
+          }
+          
+          return res.status(200).json({
+            success: true,
+            seller: shop,
+            userType: 'seller',
+            message: "Seller session verified"
+          });
+        } catch (jwtError) {
+          // Token invalid/expired, continue to check other tokens
+        }
+      }
+      
+      // Check for admin token
+      if (admin_token) {
+        try {
+          const decoded = jwt.verify(admin_token, process.env.JWT_SECRET_KEY);
+          const user = await User.findById(decoded.id).select("-password");
+          
+          if (!user || user.role !== "Admin") {
+            return next(new ErrorHandler("Admin not found or access denied", 404));
+          }
+          
+          return res.status(200).json({
+            success: true,
+            user,
+            userType: 'admin',
+            message: "Admin session verified"
+          });
+        } catch (jwtError) {
+          // Token invalid/expired
+        }
+      }
+      
+      // No valid tokens found
+      return next(new ErrorHandler("No valid session found", 401));
+      
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 // JWT Refresh endpoint for all token types
 router.post(
   "/refresh",
@@ -317,7 +396,113 @@ router.post(
       } else if (error.name === "TokenExpiredError") {
         return next(new ErrorHandler("Token expired, please login again", 401));
       }
-      return next(new ErrorHandler(error.message, 500));
+      return next(new ErrorHandler(error.message, 500));    }
+  })
+);
+
+// Get current user/seller/admin session
+router.get(
+  "/me",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { token, seller_token, admin_token } = req.cookies;
+
+      // Check for regular user token
+      if (token) {
+        try {
+          // Check if token is blacklisted
+          const { isTokenBlacklisted } = require("../middleware/tokenBlacklist");
+          const blacklisted = await isTokenBlacklisted(token);
+          if (blacklisted) {
+            return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
+          }
+
+          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+          const user = await User.findById(decoded.id);
+
+          if (!user) {
+            return next(new ErrorHandler("User not found", 401));
+          }
+
+          return res.status(200).json({
+            success: true,
+            user,
+            userType: 'user',
+            isAuthenticated: true
+          });
+        } catch (jwtError) {
+          console.error("User token verification failed:", jwtError.message);
+          // Continue to check other tokens
+        }
+      }
+
+      // Check for seller token
+      if (seller_token) {
+        try {
+          // Check if seller token is blacklisted
+          const { isTokenBlacklisted } = require("../middleware/tokenBlacklist");
+          const blacklisted = await isTokenBlacklisted(seller_token);
+          if (blacklisted) {
+            return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
+          }
+
+          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
+          const seller = await Shop.findById(decoded.id);
+
+          if (!seller) {
+            return next(new ErrorHandler("Seller not found", 401));
+          }
+
+          return res.status(200).json({
+            success: true,
+            user: seller,
+            userType: 'seller',
+            isAuthenticated: true
+          });
+        } catch (jwtError) {
+          console.error("Seller token verification failed:", jwtError.message);
+          // Continue to check admin token
+        }
+      }
+
+      // Check for admin token
+      if (admin_token) {
+        try {
+          // Check if admin token is blacklisted
+          const { isTokenBlacklisted } = require("../middleware/tokenBlacklist");
+          const blacklisted = await isTokenBlacklisted(admin_token);
+          if (blacklisted) {
+            return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
+          }
+
+          const decoded = jwt.verify(admin_token, process.env.JWT_SECRET_KEY);
+          const user = await User.findById(decoded.id);
+
+          if (!user || user.role !== 'Admin') {
+            return next(new ErrorHandler("Admin not found", 401));
+          }
+
+          return res.status(200).json({
+            success: true,
+            user,
+            userType: 'admin',
+            isAuthenticated: true
+          });
+        } catch (jwtError) {
+          console.error("Admin token verification failed:", jwtError.message);
+        }
+      }
+
+      // No valid tokens found
+      return res.status(401).json({
+        success: false,
+        message: "No valid authentication token found",
+        isAuthenticated: false
+      });
+
+    } catch (error) {
+      console.error("Session verification error:", error);
+      return next(new ErrorHandler("Session verification failed", 500));
     }
   })
 );

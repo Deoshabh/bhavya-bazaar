@@ -67,12 +67,75 @@ export const getCurrentAuthType = () => {
   return null;
 };
 
+// Auto-login check using /auth/me endpoint
+export const checkAuthSession = async () => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/auth/me`,
+      { 
+        withCredentials: true,
+        timeout: 10000 // 10 second timeout
+      }
+    );
+      if (response.data.success) {
+      const { userType, user } = response.data;
+      
+      // Dispatch appropriate Redux action based on user type
+      switch (userType) {
+        case 'user':
+        case 'admin':
+          // For both regular users and admins, use the user state
+          Store.dispatch({
+            type: 'LoadUserSuccess',
+            payload: user
+          });
+          break;
+          
+        case 'seller':
+          // For sellers, use the seller state
+          Store.dispatch({
+            type: 'LoadSellerSuccess', 
+            payload: user // Note: backend returns seller data as 'user'
+          });
+          break;
+          
+        default:
+          console.warn('Unknown user type:', userType);
+      }
+      
+      return {
+        success: true,
+        userType,
+        user
+      };
+    }
+    
+    return { success: false };
+  } catch (error) {
+    // If 401 or any auth error, clear all auth state
+    if (error.response?.status === 401) {
+      await logoutCurrentUser();
+    }
+    
+    console.warn('Auth session check failed:', error.response?.data?.message || error.message);
+    return { success: false, error: error.response?.data?.message || error.message };
+  }
+};
+
 // Authentication persistence for page refresh
 export const initializeAuth = async () => {
   try {
-    // Check what tokens exist and load appropriate user data
+    // First try the /api/auth/me endpoint for accurate session check
+    const sessionCheck = await checkAuthSession();
+    
+    if (sessionCheck.success) {
+      console.log('✅ Auth session restored:', sessionCheck.userType);
+      return sessionCheck;
+    }
+    
+    // Fallback: Check what tokens exist locally and load appropriate user data
     const promises = [];
-      if (isUserAuthenticated()) {
+    if (isUserAuthenticated()) {
       promises.push(Store.dispatch(loadUser()));
     }
     
@@ -82,8 +145,11 @@ export const initializeAuth = async () => {
     
     // Wait for all auth checks to complete
     await Promise.allSettled(promises);
+    
+    return { success: false };
   } catch (error) {
     console.error('Auth initialization error:', error);
+    return { success: false, error: error.message };
   }
 };
 
