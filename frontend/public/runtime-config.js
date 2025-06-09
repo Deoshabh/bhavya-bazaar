@@ -6,7 +6,6 @@
  */
 window.__RUNTIME_CONFIG__ = {
   API_URL: "https://api.bhavyabazaar.com/api/v2",
-  SOCKET_URL: "wss://api.bhavyabazaar.com/socket.io", 
   BACKEND_URL: "https://api.bhavyabazaar.com",
   FRONTEND_URL: "https://bhavyabazaar.com",
   NODE_ENV: "production",

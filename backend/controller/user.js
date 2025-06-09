@@ -5,9 +5,8 @@ const ErrorHandler = require("../utils/ErrorHandler");
 const { ensureDirectoryExists, deleteFileIfExists } = require("../utils/fileSystem");
 const path = require("path");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-const sendToken = require("../utils/jwtToken");
+const SessionManager = require("../utils/sessionManager");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
-const { blacklistToken } = require("../middleware/tokenBlacklist");
 
 // Import authLimiter with fallback
 let authLimiter;
@@ -99,7 +98,22 @@ router.post("/create-user", upload.single("file"), async (req, res, next) => {
     const user = await User.create(userData);
     console.log("User created successfully:", user._id);
 
-    sendToken(user, 201, res);
+    // Create user session using SessionManager instead of JWT
+    await SessionManager.createUserSession(req, user);
+    
+    res.status(201).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        avatar: user.avatar || null,
+        email: user.email || null
+      },
+      userType: 'user',
+      message: "User created and logged in successfully"
+    });
     
   } catch (err) {
     console.error("User creation error:", err);
@@ -123,7 +137,7 @@ router.post("/create-user", upload.single("file"), async (req, res, next) => {
   }
 });
 
-// login user with phone number
+// login user with phone number (legacy endpoint - redirects to unified auth)
 router.post(
   "/login-user",
   authLimiter, // Add rate limiting for authentication
@@ -133,6 +147,11 @@ router.post(
 
       if (!phoneNumber || !password) {
         return next(new ErrorHandler("Please provide phone number and password", 400));
+      }
+      
+      // Validate phone number format
+      if (!/^\d{10}$/.test(phoneNumber)) {
+        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
       }
       
       const user = await User.findOne({ phoneNumber }).select("+password");
@@ -150,7 +169,21 @@ router.post(
         );
       }
       
-      sendToken(user, 201, res);
+      // Create user session using SessionManager
+      await SessionManager.createUserSession(req, user);
+      
+      res.status(201).json({
+        success: true,
+        user: {
+          id: user._id,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          avatar: user.avatar || null
+        },
+        userType: 'user',
+        message: "User login successful"
+      });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
@@ -186,40 +219,21 @@ router.get(
   })
 );
 
-// log out user
+// log out user (legacy endpoint - redirects to unified auth)
 router.get(
   "/logout",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { token } = req.cookies;
+      // Use SessionManager to destroy session
+      const sessionDestroyed = await SessionManager.destroySession(req);
       
-      // Blacklist the token if it exists
-      if (token) {
-        // Get token expiration time from JWT (typically 90 days)
-        const jwt = require('jsonwebtoken');
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
-          await blacklistToken(token, Math.max(remainingTime, 3600)); // At least 1 hour
-        } catch (jwtError) {
-          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
-          await blacklistToken(token, 3600);
-        }
+      if (!sessionDestroyed) {
+        console.warn("Session could not be destroyed or was already invalid");
       }
-
-      const isProduction = process.env.NODE_ENV === "production";
-      
-      res.cookie("token", null, {
-        expires: new Date(Date.now()),
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        domain: isProduction ? ".bhavyabazaar.com" : undefined
-      });
       
       res.status(201).json({
         success: true,
-        message: "Log out successful!",
+        message: "User logout successful!",
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));

@@ -3,10 +3,7 @@ const User = require("../model/user");
 const Shop = require("../model/shop");
 const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-const sendToken = require("../utils/jwtToken");
-const sendShopToken = require("../utils/shopToken");
-const { blacklistToken } = require("../middleware/tokenBlacklist");
-const jwt = require("jsonwebtoken");
+const SessionManager = require("../utils/sessionManager");
 
 // Import authLimiter with fallback
 let authLimiter;
@@ -21,7 +18,7 @@ try {
 
 const router = express.Router();
 
-// Unified login endpoints
+// Unified login endpoints - Session-based authentication
 // User login endpoint
 router.post(
   "/login/user",
@@ -51,8 +48,21 @@ router.post(
         return next(new ErrorHandler("Incorrect password", 400));
       }
       
-      // Send token with user_token cookie name for clarity
-      sendToken(user, 201, res);
+      // Create user session
+      await SessionManager.createUserSession(req, user);
+      
+      res.status(201).json({
+        success: true,
+        user: {
+          id: user._id,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          avatar: user.avatar || null
+        },
+        userType: 'user',
+        message: "User login successful"
+      });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
@@ -88,8 +98,21 @@ router.post(
         return next(new ErrorHandler("Incorrect password", 400));
       }
 
-      // Send token with shop_token cookie name for clarity
-      sendShopToken(shop, 201, res);
+      // Create shop session
+      await SessionManager.createShopSession(req, shop);
+      
+      res.status(201).json({
+        success: true,
+        seller: {
+          id: shop._id,
+          name: shop.name,
+          phoneNumber: shop.phoneNumber,
+          description: shop.description,
+          avatar: shop.avatar || null
+        },
+        userType: 'shop',
+        message: "Shop login successful"
+      });
       
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -128,36 +151,21 @@ router.post(
 
       if (!isPasswordValid) {
         return next(new ErrorHandler("Incorrect password", 400));
-      }      // Send token with admin_token cookie name for clarity
-      const isProduction = process.env.NODE_ENV === "production";
+      }
       
-      // Simplified domain setting - always use .bhavyabazaar.com for production
-      const cookieDomain = isProduction ? '.bhavyabazaar.com' : undefined;
-      
-      console.log('🍪 Setting admin cookie domain:', cookieDomain, '(production:', isProduction, ')');
-      
-      const adminTokenOptions = {
-        expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        domain: cookieDomain
-      };
-
-      console.log('🍪 Setting admin token cookie with options:', {
-        secure: adminTokenOptions.secure,
-        sameSite: adminTokenOptions.sameSite,
-        domain: adminTokenOptions.domain,
-        httpOnly: adminTokenOptions.httpOnly,
-        env: process.env.NODE_ENV,
-        isProduction: isProduction
-      });
-
-      res.cookie("admin_token", user.getJwtToken(), adminTokenOptions);
+      // Create admin session
+      await SessionManager.createAdminSession(req, user);
 
       res.status(201).json({
         success: true,
-        user,
+        user: {
+          id: user._id,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          avatar: user.avatar || null
+        },
+        userType: 'admin',
         message: "Admin login successful"
       });
       
@@ -173,27 +181,12 @@ router.post(
   "/logout/user",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { token } = req.cookies;
+      // Destroy user session using SessionManager
+      const sessionDestroyed = await SessionManager.destroySession(req);
       
-      // Blacklist the user token if it exists
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
-          await blacklistToken(token, Math.max(remainingTime, 3600)); // At least 1 hour
-        } catch (jwtError) {
-          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
-          await blacklistToken(token, 3600);
-        }
-      }      const isProduction = process.env.NODE_ENV === "production";
-      
-      res.cookie("token", null, {
-        expires: new Date(Date.now()),
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        domain: isProduction ? ".bhavyabazaar.com" : undefined
-      });
+      if (!sessionDestroyed) {
+        console.warn("Session could not be destroyed or was already invalid");
+      }
       
       res.status(200).json({
         success: true,
@@ -210,27 +203,12 @@ router.post(
   "/logout/shop",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { seller_token } = req.cookies;
+      // Destroy shop session using SessionManager
+      const sessionDestroyed = await SessionManager.destroySession(req);
       
-      // Blacklist the seller token if it exists
-      if (seller_token) {
-        try {
-          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
-          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
-          await blacklistToken(seller_token, Math.max(remainingTime, 3600)); // At least 1 hour
-        } catch (jwtError) {
-          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
-          await blacklistToken(seller_token, 3600);
-        }
-      }      const isProduction = process.env.NODE_ENV === "production";
-      
-      res.cookie("seller_token", null, {
-        expires: new Date(Date.now()),
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        domain: isProduction ? ".bhavyabazaar.com" : undefined
-      });
+      if (!sessionDestroyed) {
+        console.warn("Session could not be destroyed or was already invalid");
+      }
       
       res.status(200).json({
         success: true,
@@ -247,27 +225,12 @@ router.post(
   "/logout/admin",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { admin_token } = req.cookies;
+      // Destroy admin session using SessionManager
+      const sessionDestroyed = await SessionManager.destroySession(req);
       
-      // Blacklist the admin token if it exists
-      if (admin_token) {
-        try {
-          const decoded = jwt.verify(admin_token, process.env.JWT_SECRET_KEY);
-          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
-          await blacklistToken(admin_token, Math.max(remainingTime, 3600)); // At least 1 hour
-        } catch (jwtError) {
-          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
-          await blacklistToken(admin_token, 3600);
-        }
-      }      const isProduction = process.env.NODE_ENV === "production";
-      
-      res.cookie("admin_token", null, {
-        expires: new Date(Date.now()),
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        domain: isProduction ? ".bhavyabazaar.com" : undefined
-      });
+      if (!sessionDestroyed) {
+        console.warn("Session could not be destroyed or was already invalid");
+      }
       
       res.status(200).json({
         success: true,
@@ -279,252 +242,179 @@ router.post(
   })
 );
 
-// Auto-login check endpoint - checks all token types and returns user info
+// Session verification endpoint - checks for active sessions across all user types
 router.get(
   "/me",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { token, seller_token, admin_token } = req.cookies;
-      
-      // Check for user token first
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-          const user = await User.findById(decoded.id).select("-password");
-          
-          if (!user) {
-            return next(new ErrorHandler("User not found", 404));
-          }
-          
-          return res.status(200).json({
-            success: true,
-            user,
-            userType: 'user',
-            message: "User session verified"
-          });
-        } catch (jwtError) {
-          // Token invalid/expired, continue to check other tokens
-        }
+      // Try to validate user session first
+      const userSession = await SessionManager.validateUserSession(req);
+      if (userSession.isValid) {
+        return res.status(200).json({
+          success: true,
+          user: userSession.user,
+          userType: 'user',
+          isAuthenticated: true,
+          message: "User session verified"
+        });
       }
       
-      // Check for seller token
-      if (seller_token) {
-        try {
-          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
-          const shop = await Shop.findById(decoded.id).select("-password");
-          
-          if (!shop) {
-            return next(new ErrorHandler("Shop not found", 404));
-          }
-          
-          return res.status(200).json({
-            success: true,
-            seller: shop,
-            userType: 'seller',
-            message: "Seller session verified"
-          });
-        } catch (jwtError) {
-          // Token invalid/expired, continue to check other tokens
-        }
+      // Try to validate shop session
+      const shopSession = await SessionManager.validateShopSession(req);
+      if (shopSession.isValid) {
+        return res.status(200).json({
+          success: true,
+          seller: shopSession.shop,
+          userType: 'seller',
+          isAuthenticated: true,
+          message: "Shop session verified"
+        });
       }
       
-      // Check for admin token
-      if (admin_token) {
-        try {
-          const decoded = jwt.verify(admin_token, process.env.JWT_SECRET_KEY);
-          const user = await User.findById(decoded.id).select("-password");
-          
-          if (!user || user.role !== "Admin") {
-            return next(new ErrorHandler("Admin not found or access denied", 404));
-          }
-          
-          return res.status(200).json({
-            success: true,
-            user,
-            userType: 'admin',
-            message: "Admin session verified"
-          });
-        } catch (jwtError) {
-          // Token invalid/expired
-        }
+      // Try to validate admin session
+      const adminSession = await SessionManager.validateAdminSession(req);
+      if (adminSession.isValid) {
+        return res.status(200).json({
+          success: true,
+          user: adminSession.user,
+          userType: 'admin',
+          isAuthenticated: true,
+          message: "Admin session verified"
+        });
       }
       
-      // No valid tokens found
-      return next(new ErrorHandler("No valid session found", 401));
+      // No valid sessions found
+      return res.status(401).json({
+        success: false,
+        message: "No valid session found",
+        isAuthenticated: false
+      });
       
     } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
+      console.error("Session verification error:", error);
+      return next(new ErrorHandler("Session verification failed", 500));
     }
   })
 );
 
-// JWT Refresh endpoint for all token types
+// Session extension endpoint - extends active sessions
 router.post(
   "/refresh",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { token, seller_token, admin_token } = req.cookies;
-      
-      // Determine which token to refresh based on what's available
-      if (token) {
-        // Refresh user token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        const user = await User.findById(decoded.id);
-        
-        if (!user) {
-          return next(new ErrorHandler("User not found", 404));
-        }
-        
-        sendToken(user, 200, res);
-      } else if (seller_token) {
-        // Refresh shop token
-        const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
-        const shop = await Shop.findById(decoded.id);
-        
-        if (!shop) {
-          return next(new ErrorHandler("Shop not found", 404));
-        }
-        
-        sendShopToken(shop, 200, res);
-      } else if (admin_token) {
-        // Refresh admin token
-        const decoded = jwt.verify(admin_token, process.env.JWT_SECRET_KEY);
-        const user = await User.findById(decoded.id);
-        
-        if (!user || user.role !== "Admin") {
-          return next(new ErrorHandler("Admin not found", 404));
-        }
-          const isProduction = process.env.NODE_ENV === "production";
-        
-        res.cookie("admin_token", user.getJwtToken(), {
-          expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: isProduction ? "none" : "lax",
-          domain: isProduction ? ".bhavyabazaar.com" : undefined
-        });
-
-        res.status(200).json({
+      // Try to extend user session
+      const userSession = await SessionManager.validateUserSession(req);
+      if (userSession.isValid) {
+        await SessionManager.extendSession(req);
+        return res.status(200).json({
           success: true,
-          user,
-          message: "Admin token refreshed"
+          user: userSession.user,
+          userType: 'user',
+          message: "User session extended"
         });
-      } else {
-        return next(new ErrorHandler("No valid token found for refresh", 401));
       }
+      
+      // Try to extend shop session
+      const shopSession = await SessionManager.validateShopSession(req);
+      if (shopSession.isValid) {
+        await SessionManager.extendSession(req);
+        return res.status(200).json({
+          success: true,
+          seller: shopSession.shop,
+          userType: 'seller',
+          message: "Shop session extended"
+        });
+      }
+      
+      // Try to extend admin session
+      const adminSession = await SessionManager.validateAdminSession(req);
+      if (adminSession.isValid) {
+        await SessionManager.extendSession(req);
+        return res.status(200).json({
+          success: true,
+          user: adminSession.user,
+          userType: 'admin',
+          message: "Admin session extended"
+        });
+      }
+      
+      // No valid sessions to extend
+      return next(new ErrorHandler("No valid session found to refresh", 401));
+      
     } catch (error) {
-      if (error.name === "JsonWebTokenError") {
-        return next(new ErrorHandler("Invalid token, please login again", 401));
-      } else if (error.name === "TokenExpiredError") {
-        return next(new ErrorHandler("Token expired, please login again", 401));
-      }
-      return next(new ErrorHandler(error.message, 500));    }
+      console.error("Session extension error:", error);
+      return next(new ErrorHandler("Session extension failed", 500));
+    }
   })
 );
 
-// Get current user/seller/admin session
-router.get(
-  "/me",
+// WebSocket/Pusher authentication endpoint (session-based)
+router.post(
+  "/pusher/auth",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { token, seller_token, admin_token } = req.cookies;
-
-      // Check for regular user token
-      if (token) {
-        try {
-          // Check if token is blacklisted
-          const { isTokenBlacklisted } = require("../middleware/tokenBlacklist");
-          const blacklisted = await isTokenBlacklisted(token);
-          if (blacklisted) {
-            return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
-          }
-
-          const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-          const user = await User.findById(decoded.id);
-
-          if (!user) {
-            return next(new ErrorHandler("User not found", 401));
-          }
-
-          return res.status(200).json({
-            success: true,
-            user,
-            userType: 'user',
-            isAuthenticated: true
-          });
-        } catch (jwtError) {
-          console.error("User token verification failed:", jwtError.message);
-          // Continue to check other tokens
+      const { socket_id, channel_name } = req.body;
+      
+      if (!socket_id || !channel_name) {
+        return next(new ErrorHandler("Socket ID and channel name are required", 400));
+      }
+      
+      // Check if user has any valid session (user, shop, or admin)
+      let isAuthorized = false;
+      let userInfo = null;
+      
+      // Try to validate user session
+      const userSession = await SessionManager.validateUserSession(req);
+      if (userSession.isValid) {
+        isAuthorized = true;
+        userInfo = { type: 'user', data: userSession.user };
+      }
+      
+      // Try to validate shop session if no user session
+      if (!isAuthorized) {
+        const shopSession = await SessionManager.validateShopSession(req);
+        if (shopSession.isValid) {
+          isAuthorized = true;
+          userInfo = { type: 'shop', data: shopSession.shop };
         }
       }
-
-      // Check for seller token
-      if (seller_token) {
-        try {
-          // Check if seller token is blacklisted
-          const { isTokenBlacklisted } = require("../middleware/tokenBlacklist");
-          const blacklisted = await isTokenBlacklisted(seller_token);
-          if (blacklisted) {
-            return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
-          }
-
-          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
-          const seller = await Shop.findById(decoded.id);
-
-          if (!seller) {
-            return next(new ErrorHandler("Seller not found", 401));
-          }
-
-          return res.status(200).json({
-            success: true,
-            user: seller,
-            userType: 'seller',
-            isAuthenticated: true
-          });
-        } catch (jwtError) {
-          console.error("Seller token verification failed:", jwtError.message);
-          // Continue to check admin token
+      
+      // Try to validate admin session if no other sessions
+      if (!isAuthorized) {
+        const adminSession = await SessionManager.validateAdminSession(req);
+        if (adminSession.isValid) {
+          isAuthorized = true;
+          userInfo = { type: 'admin', data: adminSession.user };
         }
       }
-
-      // Check for admin token
-      if (admin_token) {
-        try {
-          // Check if admin token is blacklisted
-          const { isTokenBlacklisted } = require("../middleware/tokenBlacklist");
-          const blacklisted = await isTokenBlacklisted(admin_token);
-          if (blacklisted) {
-            return next(new ErrorHandler("Token has been invalidated. Please login again.", 401));
-          }
-
-          const decoded = jwt.verify(admin_token, process.env.JWT_SECRET_KEY);
-          const user = await User.findById(decoded.id);
-
-          if (!user || user.role !== 'Admin') {
-            return next(new ErrorHandler("Admin not found", 401));
-          }
-
-          return res.status(200).json({
-            success: true,
-            user,
-            userType: 'admin',
-            isAuthenticated: true
-          });
-        } catch (jwtError) {
-          console.error("Admin token verification failed:", jwtError.message);
-        }
+      
+      if (!isAuthorized) {
+        return res.status(401).json({
+          error: "Unauthorized",
+          message: "No valid session found for WebSocket authorization"
+        });
       }
-
-      // No valid tokens found
-      return res.status(401).json({
-        success: false,
-        message: "No valid authentication token found",
-        isAuthenticated: false
+      
+      // For private/presence channels, generate auth signature
+      // This is a simplified version - in production you might want more sophisticated channel authorization
+      const auth_signature = `${socket_id}:${channel_name}`;
+      
+      console.log(`✅ WebSocket auth granted for ${userInfo.type}: ${userInfo.data.name || userInfo.data.shopName}`);
+      
+      res.status(200).json({
+        auth: auth_signature,
+        channel_data: JSON.stringify({
+          user_id: userInfo.data._id || userInfo.data.id,
+          user_info: {
+            name: userInfo.data.name || userInfo.data.shopName,
+            type: userInfo.type
+          }
+        })
       });
-
+      
     } catch (error) {
-      console.error("Session verification error:", error);
-      return next(new ErrorHandler("Session verification failed", 500));
+      console.error("Pusher auth error:", error);
+      return next(new ErrorHandler("WebSocket authorization failed", 500));
     }
   })
 );

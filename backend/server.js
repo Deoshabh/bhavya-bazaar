@@ -9,7 +9,6 @@ const path = require("path");
 
 const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
-const { initializeSocket } = require("./socket/socketHandler");
 const { ensureDirectoryExists } = require("./utils/fileSystem");
 const redisClient = require("./utils/redisClient");
 
@@ -177,6 +176,8 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 app.use(cookieParser());
+const sessionMiddleware = require('./config/session');
+app.use(sessionMiddleware);
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -259,72 +260,6 @@ app.use("/api/v2/coupon", require("./controller/coupounCode"));
 app.use("/api/v2/payment", require("./controller/payment"));
 app.use("/api/v2/withdraw", require("./controller/withdraw"));
 app.use("/api/v2/cart", require("./controller/cart"));
-
-// —————————— WebSocketServer on /ws ——————————
-const { WebSocketServer } = require("ws");
-const wss = new WebSocketServer({
-  server,
-  path: "/ws",
-  verifyClient: (info) => {
-    // Allow connections from allowed origins
-    const origin = info.origin;
-    if (!origin) return true; // Allow connections without origin (mobile apps, etc.)
-    
-    const allowedOrigins = process.env.CORS_ORIGIN ? 
-      process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : 
-      ['https://bhavyabazaar.com', 'https://www.bhavyabazaar.com', 'http://localhost:3000'];
-    
-    return allowedOrigins.includes(origin);
-  }
-});
-
-wss.on("connection", (ws, req) => {
-  console.log("🟢 WebSocket client connected:", req.socket.remoteAddress);
-  
-  // Send welcome message
-  ws.send(JSON.stringify({ 
-    type: "welcome", 
-    message: "Connected to Bhavya Bazaar WebSocket",
-    timestamp: new Date().toISOString()
-  }));
-
-  ws.on("message", (message) => {
-    try {
-      console.log("📨 Received WebSocket message:", message.toString());
-      const data = JSON.parse(message.toString());
-      
-      // Echo back with type and timestamp
-      ws.send(JSON.stringify({ 
-        type: "echo",
-        originalMessage: data,
-        reply: "Message received successfully",
-        timestamp: new Date().toISOString()
-      }));
-    } catch (error) {
-      ws.send(JSON.stringify({ 
-        type: "error",
-        message: "Invalid JSON format",
-        timestamp: new Date().toISOString()
-      }));
-    }
-  });
-
-  ws.on("close", () => {
-    console.log("🔴 WebSocket client disconnected");
-  });
-  
-  ws.on("error", (error) => {
-    console.error("🚨 WebSocket error:", error);
-  });
-});
-
-// —————————— Socket.IO (if you still need it) ——————————
-const { io, getSocketStatus } = initializeSocket(server);
-app.get("/socket/status", (req, res) => {
-  res.json(getSocketStatus());
-});
-
-
 
 // —————————— Error Handling & Unhandled Exceptions ——————————
 app.use(ErrorHandler);

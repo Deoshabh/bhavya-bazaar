@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 import { Store } from '../redux/store';
-import { loadUser, loadSeller, logoutUser, logoutSeller } from '../redux/actions/user';
+import { loadUser, loadSeller } from '../redux/actions/user';
 
 const BASE_URL = process.env.REACT_APP_SERVER;
 
@@ -27,44 +27,66 @@ export const removeCookie = (name) => {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
 };
 
-// Token checking utilities
-export const hasValidToken = (tokenName = 'token') => {
-  const token = getCookie(tokenName);
-  if (!token || token === 'null' || token === 'undefined') {
-    return false;
-  }
-  
+// Session-based authentication checking utilities
+export const checkSessionValidity = async (sessionType = 'user') => {
   try {
-    // Basic JWT structure check
-    const parts = token.split('.');
-    if (parts.length !== 3) return false;
+    const response = await axios.get(
+      `${BASE_URL}/api/auth/me`,
+      { 
+        withCredentials: true,
+        timeout: 5000 // Short timeout for auth checks
+      }
+    );
     
-    // Check if token is expired (basic check without full JWT parsing)
-    const payload = JSON.parse(atob(parts[1]));
-    if (payload.exp && payload.exp < Date.now() / 1000) {
-      removeCookie(tokenName);
-      return false;
+    if (response.data.success && response.data.userType === sessionType) {
+      return true;
     }
-    
-    return true;
+    return false;
   } catch (error) {
-    console.warn('Token validation error:', error);
-    removeCookie(tokenName);
+    // 401 means no valid session
     return false;
   }
 };
 
-// Authentication state checkers
-export const isUserAuthenticated = () => hasValidToken('token');
-export const isSellerAuthenticated = () => hasValidToken('seller_token');
-export const isAdminAuthenticated = () => hasValidToken('admin_token');
+// Authentication state checkers (now session-based)
+export const isUserAuthenticated = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/auth/me`, { withCredentials: true });
+    return response.data.success && response.data.userType === 'user';
+  } catch (error) {
+    return false;
+  }
+};
 
-// Get current authentication type
-export const getCurrentAuthType = () => {
-  if (isAdminAuthenticated()) return 'admin';
-  if (isSellerAuthenticated()) return 'seller';
-  if (isUserAuthenticated()) return 'user';
-  return null;
+export const isSellerAuthenticated = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/auth/me`, { withCredentials: true });
+    return response.data.success && response.data.userType === 'seller';
+  } catch (error) {
+    return false;
+  }
+};
+
+export const isAdminAuthenticated = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/auth/me`, { withCredentials: true });
+    return response.data.success && response.data.userType === 'admin';
+  } catch (error) {
+    return false;
+  }
+};
+
+// Get current authentication type (now session-based)
+export const getCurrentAuthType = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/auth/me`, { withCredentials: true });
+    if (response.data.success) {
+      return response.data.userType;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
 };
 
 // Auto-login check using /api/auth/me endpoint
@@ -149,16 +171,16 @@ export const checkAuthSession = async () => {
   }
 };
 
-// Authentication persistence for page refresh
+// Authentication persistence for page refresh (now session-based)
 export const initializeAuth = async () => {
   try {
-    console.log('🔄 Starting authentication initialization...');
+    console.log('🔄 Starting session-based authentication initialization...');
     
-    // First try the /api/auth/me endpoint for accurate session check
+    // Check for valid session using /api/auth/me endpoint
     const sessionCheck = await checkAuthSession();
     
     if (sessionCheck.success) {
-      console.log('✅ Auth session restored via /api/auth/me:', sessionCheck.userType);
+      console.log('✅ Session restored successfully:', sessionCheck.userType);
       return {
         success: true,
         userType: sessionCheck.userType,
@@ -167,101 +189,45 @@ export const initializeAuth = async () => {
       };
     }
     
-    console.log('ℹ️ /api/auth/me failed, checking local tokens...');
+    console.log('❌ No valid session found, clearing authentication state...');
     
-    // Fallback: Check what tokens exist locally and try to load user data
-    const promises = [];
-    let fallbackSuccess = false;
+    // Clear authentication state if no valid session
+    Store.dispatch({
+      type: 'LoadUserFail',
+      payload: 'No valid session found'
+    });
+    Store.dispatch({
+      type: 'LoadSellerFail',
+      payload: 'No valid session found'
+    });
     
-    if (isUserAuthenticated()) {
-      console.log('📝 Found user token, attempting to load user...');
-      promises.push(
-        Store.dispatch(loadUser())
-          .then(() => {
-            fallbackSuccess = true;
-            return { type: 'user' };
-          })
-          .catch((error) => {
-            console.warn('Failed to load user:', error);
-            return { type: 'user', error };
-          })
-      );
-    }
+    // Clear any stale cookies
+    removeCookie('token');
+    removeCookie('seller_token');
+    removeCookie('admin_token');
     
-    if (isSellerAuthenticated()) {
-      console.log('🏪 Found seller token, attempting to load seller...');
-      promises.push(
-        Store.dispatch(loadSeller())
-          .then(() => {
-            fallbackSuccess = true;
-            return { type: 'seller' };
-          })
-          .catch((error) => {
-            console.warn('Failed to load seller:', error);
-            return { type: 'seller', error };
-          })
-      );
-    }
-    
-    // If no tokens found, explicitly clear loading state
-    if (promises.length === 0) {
-      console.log('❌ No authentication tokens found, clearing loading state...');
-      Store.dispatch({
-        type: 'LoadUserFail',
-        payload: 'No authentication found'
-      });
-      Store.dispatch({
-        type: 'LoadSellerFail',
-        payload: 'No authentication found'
-      });
-      return {
-        success: false,
-        message: 'No authentication tokens found'
-      };
-    }
-      // Wait for all auth checks to complete
-    await Promise.allSettled(promises);
-    
-    if (fallbackSuccess) {
-      console.log('✅ Fallback authentication successful');
-      return {
-        success: true,
-        message: 'Authentication restored via fallback method'
-      };
-    } else {
-      console.log('❌ All authentication methods failed');
-      // Ensure loading state is cleared
-      Store.dispatch({
-        type: 'LoadUserFail',
-        payload: 'Authentication restoration failed'
-      });
-      Store.dispatch({
-        type: 'LoadSellerFail',
-        payload: 'Authentication restoration failed'
-      });
-      return {
-        success: false,
-        message: 'Authentication restoration failed'
-      };
-    }
+    return {
+      success: false,
+      message: 'No valid session found'
+    };
     
   } catch (error) {
-    console.error('❌ Auth initialization error:', error);
+    console.error('❌ Session initialization error:', error);
     
     // Ensure loading state is cleared on error
     Store.dispatch({
       type: 'LoadUserFail',
-      payload: error.message || 'Authentication initialization failed'
+      payload: error.message || 'Session initialization failed'
     });
     Store.dispatch({
       type: 'LoadSellerFail',
-      payload: error.message || 'Authentication initialization failed'
+      payload: error.message || 'Session initialization failed'
     });
     
     return {
       success: false,
       error: error.message,
-      message: 'Authentication initialization failed'
+      message: 'Session initialization failed'
     };
   }
 };
@@ -315,30 +281,31 @@ export const loginAdmin = async (phoneNumber, password) => {
   }
 };
 
-// Logout functions
-export const logoutCurrentUser = async () => {  try {
-    const authType = getCurrentAuthType();
+// Logout functions (now session-based)
+export const logoutCurrentUser = async () => {
+  try {
+    const authType = await getCurrentAuthType();
     
     switch (authType) {
       case 'admin':
         await axios.post(`${BASE_URL}/api/auth/logout/admin`, {}, { withCredentials: true });
-        Store.dispatch(logoutUser());
+        Store.dispatch({ type: 'LogoutUserSuccess' });
         break;
       case 'seller':
         await axios.post(`${BASE_URL}/api/auth/logout/shop`, {}, { withCredentials: true });
-        Store.dispatch(logoutSeller());
+        Store.dispatch({ type: 'LogoutSellerSuccess' });
         break;
       case 'user':
         await axios.post(`${BASE_URL}/api/auth/logout/user`, {}, { withCredentials: true });
-        Store.dispatch(logoutUser());
+        Store.dispatch({ type: 'LogoutUserSuccess' });
         break;
       default:
         // Clear any stale local state
-        Store.dispatch(logoutUser());
-        Store.dispatch(logoutSeller());
+        Store.dispatch({ type: 'LogoutUserSuccess' });
+        Store.dispatch({ type: 'LogoutSellerSuccess' });
     }
     
-    // Clear all auth cookies as backup
+    // Clear all auth cookies as backup (sessions handle this automatically)
     removeCookie('token');
     removeCookie('seller_token');
     removeCookie('admin_token');
@@ -346,8 +313,8 @@ export const logoutCurrentUser = async () => {  try {
   } catch (error) {
     console.error('Logout error:', error);
     // Even if backend call fails, clear local state
-    Store.dispatch(logoutUser());
-    Store.dispatch(logoutSeller());
+    Store.dispatch({ type: 'LogoutUserSuccess' });
+    Store.dispatch({ type: 'LogoutSellerSuccess' });
     removeCookie('token');
     removeCookie('seller_token');
     removeCookie('admin_token');
@@ -369,35 +336,35 @@ export const clearAuthLoadingStates = () => {
   });
 };
 
-// Route protection utility
-export const requireAuth = (authType = 'user') => {
+// Route protection utility (now session-based)
+export const requireAuth = async (authType = 'user') => {
   switch (authType) {
     case 'admin':
-      return isAdminAuthenticated();
+      return await isAdminAuthenticated();
     case 'seller':
-      return isSellerAuthenticated();
+      return await isSellerAuthenticated();
     case 'user':
     default:
-      return isUserAuthenticated();
+      return await isUserAuthenticated();
   }
 };
 
-// Token refresh utility
-export const refreshToken = async () => {
+// Session refresh utility (replaces token refresh)
+export const extendSession = async () => {
   try {
-    await axios.post(`${BASE_URL}/api/auth/refresh`, {}, { withCredentials: true });
+    await axios.post(`${BASE_URL}/api/auth/extend-session`, {}, { withCredentials: true });
     return true;
   } catch (error) {
-    console.error('Token refresh failed:', error);
+    console.error('Session extension failed:', error);
     return false;
   }
 };
 
-export default {
+const authUtils = {
   getCookie,
   setCookie,
   removeCookie,
-  hasValidToken,
+  checkSessionValidity,
   isUserAuthenticated,
   isSellerAuthenticated,
   isAdminAuthenticated,
@@ -408,6 +375,8 @@ export default {
   loginAdmin,
   logoutCurrentUser,
   requireAuth,
-  refreshToken,
+  extendSession,
   clearAuthLoadingStates
 };
+
+export default authUtils;

@@ -10,19 +10,6 @@ configure({ testIdAttribute: 'data-testid' });
 // Mock fetch globally
 global.fetch = jest.fn();
 
-// Mock WebSocket
-global.WebSocket = jest.fn(() => ({
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
-  send: jest.fn(),
-  close: jest.fn(),
-  readyState: 1, // OPEN
-  onopen: null,
-  onmessage: null,
-  onclose: null,
-  onerror: null,
-}));
-
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,

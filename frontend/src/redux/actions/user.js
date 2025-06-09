@@ -13,40 +13,34 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
-// Enhanced axios configuration for authentication
-const createAuthenticatedRequest = (url, options = {}) => {
-  const config = {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      // Add explicit origin header for CORS
-      ...(window.location.origin && { "Origin": window.location.origin })
-    },
-    timeout: 15000,
-    ...options
-  };
-
-  console.log('🔐 Making authenticated request to:', url);
-  console.log('🍪 Current cookies:', document.cookie);
-  console.log('⚙️ Request config:', config);
-
-  return axios.get(url, config);
-};
-
-// load user
+// load user (now session-based)
 export const loadUser = () => async (dispatch) => {
   try {
     dispatch({
       type: "LoadUserRequest",
     });
 
-    const { data } = await createAuthenticatedRequest(`${BASE_URL}/api/v2/user/getuser`);
-
-    dispatch({
-      type: "LoadUserSuccess",
-      payload: data.user,
+    // Use the unified /api/auth/me endpoint for session-based auth
+    const { data } = await axios.get(`${BASE_URL}/api/auth/me`, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      timeout: 15000
     });
+
+    if (data.success && (data.userType === 'user' || data.userType === 'admin')) {
+      dispatch({
+        type: "LoadUserSuccess",
+        payload: data.user,
+      });
+    } else {
+      dispatch({
+        type: "LoadUserFail",
+        payload: "Invalid user session",
+      });
+    }
   } catch (error) {
     // Only log errors that aren't 401 unauthorized
     if (error?.response?.status !== 401) {
@@ -60,31 +54,34 @@ export const loadUser = () => async (dispatch) => {
   }
 };
 
-// load seller
+// load seller (now session-based)
 export const loadSeller = () => async (dispatch) => {
   try {
-    // Check if seller token exists before making request
-    const hasSellerToken = document.cookie.includes('seller_token=');
-    
-    if (!hasSellerToken) {
-      console.log('🚫 No seller token found in cookies');
-      dispatch({
-        type: "LoadSellerFail",
-        payload: "No seller authentication token found",
-      });
-      return;
-    }
-
     dispatch({
       type: "LoadSellerRequest",
     });
 
-    const { data } = await createAuthenticatedRequest(`${BASE_URL}/api/v2/shop/getSeller`);
-
-    dispatch({
-      type: "LoadSellerSuccess",
-      payload: data.seller,
+    // Use the unified /api/auth/me endpoint for session-based auth
+    const { data } = await axios.get(`${BASE_URL}/api/auth/me`, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      timeout: 15000
     });
+
+    if (data.success && data.userType === 'seller') {
+      dispatch({
+        type: "LoadSellerSuccess",
+        payload: data.user, // Backend returns seller data as 'user'
+      });
+    } else {
+      dispatch({
+        type: "LoadSellerFail",
+        payload: "Invalid seller session",
+      });
+    }
   } catch (error) {
     // Only log errors that aren't 401 unauthorized
     if (error?.response?.status !== 401) {
@@ -222,23 +219,18 @@ export const clearErrors = () => (dispatch) => {
   dispatch({ type: "clearErrors" });
 };
 
-// logout user action
+// logout user action (now session-based)
 export const logoutUser = () => async (dispatch) => {
   try {
     dispatch({ type: "LogoutUserRequest" });
     
-    // Try unified auth endpoint first, fallback to legacy
-    try {
-      await apiService.logoutUser();
-    } catch (error) {
-      // Fallback to legacy endpoint
-      await axios.get(`${BASE_URL}/api/v2/user/logout`, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    }
+    // Use the new session-based logout endpoint
+    await axios.post(`${BASE_URL}/api/auth/logout/user`, {}, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     
     dispatch({ type: "LogoutUserSuccess" });
   } catch (error) {
@@ -248,23 +240,18 @@ export const logoutUser = () => async (dispatch) => {
   }
 };
 
-// logout seller action
+// logout seller action (now session-based)
 export const logoutSeller = () => async (dispatch) => {
   try {
     dispatch({ type: "LogoutSellerRequest" });
     
-    // Try unified auth endpoint first, fallback to legacy
-    try {
-      await apiService.logoutShop();
-    } catch (error) {
-      // Fallback to legacy endpoint
-      await axios.get(`${BASE_URL}/api/v2/shop/logout`, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    }
+    // Use the new session-based logout endpoint
+    await axios.post(`${BASE_URL}/api/auth/logout/shop`, {}, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     
     dispatch({ type: "LogoutSellerSuccess" });
   } catch (error) {

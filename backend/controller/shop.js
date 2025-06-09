@@ -2,14 +2,12 @@ const express = require("express");
 const path = require("path");
 const router = express.Router();
 const fs = require("fs");
-const jwt = require("jsonwebtoken");
 const Shop = require("../model/shop");
 const { isAuthenticated, isSeller, isAdmin } = require("../middleware/auth");
 const { upload } = require("../multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
-const sendShopToken = require("../utils/shopToken");
-const { blacklistToken } = require("../middleware/tokenBlacklist");
+const SessionManager = require("../utils/sessionManager");
 
 // Import authLimiter with fallback
 let authLimiter;
@@ -101,7 +99,24 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
     });
 
     // Send token and log in the seller immediately
-    sendShopToken(seller, 201, res);
+    // Create shop session using SessionManager instead of JWT
+    await SessionManager.createShopSession(req, seller);
+    
+    res.status(201).json({
+      success: true,
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        phoneNumber: seller.phoneNumber,
+        description: seller.description,
+        avatar: seller.avatar || null,
+        email: seller.email || null,
+        address: seller.address || null,
+        zipCode: seller.zipCode || null
+      },
+      userType: 'shop',
+      message: "Shop created and logged in successfully"
+    });
     
   } catch (error) {
     // Clean up file if it exists
@@ -145,7 +160,24 @@ router.post(
         return next(new ErrorHandler("Incorrect password", 400));
       }
 
-      sendShopToken(shop, 201, res);
+      // Create shop session using SessionManager instead of JWT
+      await SessionManager.createShopSession(req, shop);
+      
+      res.status(201).json({
+        success: true,
+        seller: {
+          id: shop._id,
+          name: shop.name,
+          phoneNumber: shop.phoneNumber,
+          description: shop.description,
+          avatar: shop.avatar || null,
+          email: shop.email || null,
+          address: shop.address || null,
+          zipCode: shop.zipCode || null
+        },
+        userType: 'shop',
+        message: "Shop login successful"
+      });
       
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -175,36 +207,21 @@ router.get(
   })
 );
 
-// Log out from shop
+// Log out from shop (legacy endpoint - redirects to unified auth)
 router.get(
   "/logout",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { seller_token } = req.cookies;
+      // Use SessionManager to destroy session
+      const sessionDestroyed = await SessionManager.destroySession(req);
       
-      // Blacklist the seller token if it exists
-      if (seller_token) {
-        // Get token expiration time from JWT (typically 90 days)
-        try {
-          const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
-          const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
-          await blacklistToken(seller_token, Math.max(remainingTime, 3600)); // At least 1 hour
-        } catch (jwtError) {
-          // If token is invalid/expired, still blacklist it for 1 hour as safety measure
-          await blacklistToken(seller_token, 3600);
-        }
+      if (!sessionDestroyed) {
+        console.warn("Session could not be destroyed or was already invalid");
       }
-
-      res.cookie("seller_token", null, {
-        expires: new Date(Date.now()),
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      });
       
       res.status(201).json({
         success: true,
-        message: "Log out successful!",
+        message: "Shop logout successful!",
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));

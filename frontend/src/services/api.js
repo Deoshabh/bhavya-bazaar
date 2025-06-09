@@ -188,17 +188,16 @@ class ApiService {  constructor() {
       return this.api.get('/user/logout');
     }
   }
-
-  async refreshToken() {
+  async extendSession() {
     try {
       const unifiedUrl = this.apiBase.replace('/api/v2', '');
-      return axios.post(`${unifiedUrl}/api/auth/refresh`, {}, {
+      return axios.post(`${unifiedUrl}/api/auth/extend-session`, {}, {
         withCredentials: true
       });
     } catch (error) {
-      throw new Error('Token refresh not available with legacy endpoints');
+      throw new Error('Session extension not available with legacy endpoints');
     }
-  }  
+  }
   async getCurrentUser() {
     return this.api.get('/user/getuser');
   }

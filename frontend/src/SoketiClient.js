@@ -61,19 +61,17 @@ export const initializeSoketi = () => {
             activityTimeout: 30000,
             pongTimeout: 6000,
             unavailableTimeout: 10000,
-            
-            // Authorization for private/presence channels
+              // Authorization for private/presence channels (now session-based)
             authorizer: (channel, options) => {
                 return {
                     authorize: (socketId, callback) => {
-                        // Implement your authorization logic here
-                        // This should make a request to your backend to authorize the channel
+                        // Use session-based authentication for WebSocket authorization
                         fetch(`${window.__RUNTIME_CONFIG__?.API_URL || '/api'}/pusher/auth`, {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                                'Content-Type': 'application/json'
                             },
+                            credentials: 'include', // Include session cookies
                             body: JSON.stringify({
                                 socket_id: socketId,
                                 channel_name: channel.name

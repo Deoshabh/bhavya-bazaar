@@ -24,9 +24,8 @@ import {
 import NewLoginPage from "./pages/Auth/LoginPage.jsx";
 import NewShopLoginPage from "./pages/Auth/ShopLoginPage.jsx"; 
 import AdminLoginPage from "./pages/Auth/AdminLoginPage.jsx";
-// Import auth utilities and safe analytics
+// Import auth utilities
 import { initializeAuth } from "./utils/auth";
-import analytics from "./utils/analytics";
 import {
   ShopDashboardPage,
   ShopCreateProduct,
@@ -69,7 +68,6 @@ import { getAllProducts } from "./redux/actions/product";
 import { getAllEvents } from "./redux/actions/event";
 import NavigationWrapper from "./components/Layout/NavigationWrapper";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import productionMonitor from "./utils/productionMonitor";
 
 // Import cart and wishlist components
 import Cart from "./components/cart/Cart";
@@ -90,20 +88,6 @@ const App = () => {
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    // Initialize safe analytics
-    analytics.initializeAnalytics();
-    
-    // Initialize production monitoring
-    if (process.env.NODE_ENV === 'production') {
-      productionMonitor.init({
-        enableErrorTracking: true,
-        enablePerformanceTracking: true,
-        enableHealthReporting: true,
-        reportingInterval: 300000, // 5 minutes
-        endpoint: '/api/v2/monitoring/report'
-      });
-    }
-
     // Initialize authentication with improved token persistence and loading state
     const initAuth = async () => {
       try {
