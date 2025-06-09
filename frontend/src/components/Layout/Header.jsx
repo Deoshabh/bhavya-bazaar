@@ -20,7 +20,6 @@ import SafeImage from "../common/SafeImage";
 import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 import Button from "../common/Button";
 import Badge from "../common/Badge";
-import AuthDebug from "../Debug/AuthDebug"; // Add debug component
 
 const Header = ({ activeHeading }) => {
   const { isSeller } = useSelector((state) => state.seller);
@@ -60,9 +59,6 @@ const Header = ({ activeHeading }) => {
 
   return (
     <>
-      {/* Temporary debug component - remove in production */}
-      <AuthDebug />
-      
       <div className={`${styles.section}`}>
         <div className="hidden 800px:h-[50px] 800px:my-[20px] 800px:flex items-center justify-between ">
           <div>
@@ -413,9 +409,6 @@ const Header = ({ activeHeading }) => {
           </div>
         </div>
       ) : null}
-
-      {/* Debug Component for Auth */}
-      <AuthDebug />
     </>
   );
 };
