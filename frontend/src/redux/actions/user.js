@@ -13,6 +13,27 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
+// Enhanced axios configuration for authentication
+const createAuthenticatedRequest = (url, options = {}) => {
+  const config = {
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      // Add explicit origin header for CORS
+      ...(window.location.origin && { "Origin": window.location.origin })
+    },
+    timeout: 15000,
+    ...options
+  };
+
+  console.log('🔐 Making authenticated request to:', url);
+  console.log('🍪 Current cookies:', document.cookie);
+  console.log('⚙️ Request config:', config);
+
+  return axios.get(url, config);
+};
+
 // load user
 export const loadUser = () => async (dispatch) => {
   try {
@@ -20,12 +41,7 @@ export const loadUser = () => async (dispatch) => {
       type: "LoadUserRequest",
     });
 
-    const { data } = await axios.get(`${BASE_URL}/api/v2/user/getuser`, {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const { data } = await createAuthenticatedRequest(`${BASE_URL}/api/v2/user/getuser`);
 
     dispatch({
       type: "LoadUserSuccess",
@@ -49,10 +65,12 @@ export const loadSeller = () => async (dispatch) => {
   try {
     // Check if seller token exists before making request
     const hasSellerToken = document.cookie.includes('seller_token=');
+    
     if (!hasSellerToken) {
+      console.log('🚫 No seller token found in cookies');
       dispatch({
         type: "LoadSellerFail",
-        payload: "No seller authentication found",
+        payload: "No seller authentication token found",
       });
       return;
     }
@@ -61,12 +79,7 @@ export const loadSeller = () => async (dispatch) => {
       type: "LoadSellerRequest",
     });
 
-    const { data } = await axios.get(`${BASE_URL}/api/v2/shop/getSeller`, {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const { data } = await createAuthenticatedRequest(`${BASE_URL}/api/v2/shop/getSeller`);
 
     dispatch({
       type: "LoadSellerSuccess",
@@ -80,7 +93,7 @@ export const loadSeller = () => async (dispatch) => {
     
     dispatch({
       type: "LoadSellerFail",
-      payload: error?.response?.data?.message || "Authentication failed",
+      payload: error?.response?.data?.message || "Seller authentication failed",
     });
   }
 };

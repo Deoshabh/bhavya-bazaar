@@ -129,14 +129,26 @@ router.post(
       if (!isPasswordValid) {
         return next(new ErrorHandler("Incorrect password", 400));
       }
-      
-      // Send token with admin_token cookie name for clarity
-      res.cookie("admin_token", user.getJwtToken(), {
+        // Send token with admin_token cookie name for clarity
+      const isProduction = process.env.NODE_ENV === "production";
+      const adminTokenOptions = {
         expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: isProduction ? ".bhavyabazaar.com" : undefined
+      };
+
+      console.log('🍪 Setting admin token cookie with options:', {
+        secure: adminTokenOptions.secure,
+        sameSite: adminTokenOptions.sameSite,
+        domain: adminTokenOptions.domain,
+        httpOnly: adminTokenOptions.httpOnly,
+        env: process.env.NODE_ENV,
+        isProduction: isProduction
       });
+
+      res.cookie("admin_token", user.getJwtToken(), adminTokenOptions);
 
       res.status(201).json({
         success: true,
