@@ -1,11 +1,10 @@
-import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import UserAvatar from "../UserAvatar";
-import ProductImage from "../ProductImage";
+import axios from "axios";
+import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 import { format } from "timeago.js";
 import styles from "../../styles/styles";
 
@@ -80,38 +79,6 @@ const DashboardMessages = () => {
     const file = e.target.files[0];
     if (file) {
       setUploadedImage(file);
-      imageSendingHandler(file);
-    }
-  };
-            try {
-        const response = await axios.get(
-          `${window.RUNTIME_CONFIG.API_URL}/conversation/get-all-conversations/${seller?._id}`,
-          {
-            withCredentials: true,
-          }
-        );
-        setConversations(response.data.conversations);
-      } catch (error) {
-        console.error("Error fetching conversations:", error);
-        toast.error("Failed to load conversations");
-      }
-    };
-
-    if (seller?._id) {
-      getConversations();
-    }
-  }, [seller]);
-
-  const onlineCheck = (chat) => {
-    const chatMembers = chat.members.find((member) => member !== seller?._id);
-    const online = onlineUsers.find((user) => user.userId === chatMembers);
-    return Boolean(online);
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    setUploadedImage(file);
-    if (file) {
       imageSendingHandler(file);
     }
   };
