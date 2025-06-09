@@ -9,61 +9,82 @@ import SafeImage from "../../common/SafeImage";
 
 const DashboardHeader = () => {
     const { seller } = useSelector((state) => state.seller);
+    
     return (
-        <div className="w-full h-[80px] bg-white shadow sticky top-0 left-0 z-30 flex items-center justify-between px-4">
-            <div>
-                <Link to="/dashboard">
-                    <SafeImage
-                        src="/main.png"
-                        alt="Bhavya Bazaar"
-                        className="h-[50px] w-auto max-w-[200px] object-contain"
-                        fallbackType="general"
-                    />
-                </Link>
-            </div>
-            <div className="flex items-center">
-                <div className="flex items-center mr-4">
-                    <Link to="/dashboard/cupouns" className="800px:block hidden">
-                        <AiOutlineGift
-                            color="#555"
-                            size={30}
-                            className="mx-5 cursor-pointer"
+        <header className="w-full h-[80px] bg-white shadow-lg sticky top-0 left-0 z-30 border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 h-full">
+                {/* Logo Section */}
+                <div className="flex items-center">
+                    <Link to="/dashboard" className="flex items-center">
+                        <SafeImage
+                            src="/main.png"
+                            alt="Bhavya Bazaar"
+                            className="h-[50px] w-auto max-w-[200px] object-contain hover:opacity-80 transition-opacity"
+                            fallbackType="general"
                         />
                     </Link>
-                    <Link to="/dashboard-events" className="800px:block hidden">
-                        <MdOutlineLocalOffer
-                            color="#555"
-                            size={30}
-                            className="mx-5 cursor-pointer"
-                        />
+                </div>
+
+                {/* Navigation Links */}
+                <div className="hidden md:flex items-center space-x-6">
+                    <Link 
+                        to="/dashboard/cupouns" 
+                        className="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    >
+                        <AiOutlineGift size={20} className="mr-2" />
+                        <span className="text-sm font-medium">Coupons</span>
                     </Link>
-                    <Link to="/dashboard-products" className="800px:block hidden">
-                        <FiShoppingBag
-                            color="#555"
-                            size={30}
-                            className="mx-5 cursor-pointer"
-                        />
+                    
+                    <Link 
+                        to="/dashboard-events" 
+                        className="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all duration-200"
+                    >
+                        <MdOutlineLocalOffer size={20} className="mr-2" />
+                        <span className="text-sm font-medium">Events</span>
                     </Link>
-                    <Link to="/dashboard-orders" className="800px:block hidden">
-                        <FiPackage color="#555" size={30} className="mx-5 cursor-pointer" />
+                    
+                    <Link 
+                        to="/dashboard-products" 
+                        className="flex items-center px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                    >
+                        <FiShoppingBag size={20} className="mr-2" />
+                        <span className="text-sm font-medium">Products</span>
                     </Link>
-                    <Link to="/dashboard-messages" className="800px:block hidden">
-                        <BiMessageSquareDetail
-                            color="#555"
-                            size={30}
-                            className="mx-5 cursor-pointer"
-                        />
+                    
+                    <Link 
+                        to="/dashboard-orders" 
+                        className="flex items-center px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                    >
+                        <FiPackage size={20} className="mr-2" />
+                        <span className="text-sm font-medium">Orders</span>
                     </Link>
-                    <Link to={`/shop/${seller?._id || ''}`}>
+                    
+                    <Link 
+                        to="/dashboard-messages" 
+                        className="flex items-center px-3 py-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                    >
+                        <BiMessageSquareDetail size={20} className="mr-2" />
+                        <span className="text-sm font-medium">Messages</span>
+                    </Link>
+                </div>
+
+                {/* Profile Section */}
+                <div className="flex items-center space-x-4">
+                    {/* Shop Link */}
+                    <Link 
+                        to={`/shop/${seller?._id || ''}`}
+                        className="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    >
+                        <span className="text-sm font-medium mr-2 hidden sm:block">View Shop</span>
                         <ShopAvatar
                             shop={seller}
-                            className="w-[50px] h-[50px] rounded-full object-cover"
+                            className="w-[40px] h-[40px] rounded-full object-cover border-2 border-gray-200 hover:border-blue-300 transition-colors"
                             alt="Seller avatar"
                         />
                     </Link>
                 </div>
             </div>
-        </div>
+        </header>
     );
 };
 

@@ -12,54 +12,70 @@ import styles from "../../styles/styles";
 const ShopSettings = () => {
     const { seller } = useSelector((state) => state.seller);
     const [avatar, setAvatar] = useState();
-    const [name, setName] = useState(seller && seller.name);
-    const [description, setDescription] = useState(seller && seller.description ? seller.description : "");
-    const [address, setAddress] = useState(seller && seller.address);
-    const [phoneNumber, setPhoneNumber] = useState(seller && seller.phoneNumber);
-    const [zipCode, setZipcode] = useState(seller && seller.zipCode);
+    const [name, setName] = useState(seller?.name || "");
+    const [description, setDescription] = useState(seller?.description || "");
+    const [address, setAddress] = useState(seller?.address || "");
+    const [phoneNumber, setPhoneNumber] = useState(seller?.phoneNumber || "");
+    const [zipCode, setZipcode] = useState(seller?.zipCode || "");
+    const [isUpdating, setIsUpdating] = useState(false);
 
 
     const dispatch = useDispatch();
 
-    // Image updated
+    // Show loading or empty state if seller is not available
+    if (!seller) {
+        return (
+            <div className="w-full min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading shop settings...</p>
+                </div>
+            </div>
+        );
+    }    // Image updated
     const handleImage = async (e) => {
         e.preventDefault();
         const file = e.target.files[0];
         setAvatar(file);
 
         const formData = new FormData();
-
         formData.append("image", e.target.files[0]);
 
-        await axios.put(`${server}/shop/update-shop-avatar`, formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-            withCredentials: true,
-        }).then((res) => {
+        try {
+            setIsUpdating(true);
+            await axios.put(`${server}/shop/update-shop-avatar`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+                withCredentials: true,
+            });
             dispatch(loadSeller());
-            toast.success("Avatar updated successfully!")
-        }).catch((error) => {
-            toast.error(error.response.data.message);
-        })
-
-    };
-
-    const updateHandler = async (e) => {
+            toast.success("Avatar updated successfully!");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update avatar");
+        } finally {
+            setIsUpdating(false);
+        }
+    };    const updateHandler = async (e) => {
         e.preventDefault();
-
-        await axios.put(`${server}/shop/update-seller-info`, {
-            name,
-            address,
-            zipCode,
-            phoneNumber,
-            description,
-        }, { withCredentials: true }).then((res) => {
-            toast.success("Shop info updated succesfully!");
+        
+        try {
+            setIsUpdating(true);
+            await axios.put(`${server}/shop/update-seller-info`, {
+                name,
+                address,
+                zipCode,
+                phoneNumber,
+                description,
+            }, { withCredentials: true });
+            
+            toast.success("Shop info updated successfully!");
             dispatch(loadSeller());
-        }).catch((error) => {
-            toast.error(error.response.data.message);
-        })
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update shop info");
+        } finally {
+            setIsUpdating(false);
+        }
     };
 
 
@@ -73,11 +89,10 @@ const ShopSettings = () => {
                                 alt=""
                                 className="w-[200px] h-[200px] rounded-full cursor-pointer"
                                 fallbackType="profile"
-                            />
-                        ) : (
+                            />                        ) : (
                             <ShopAvatar
-                                src={seller.avatar}
-                                shopName={seller.name}
+                                src={seller?.avatar}
+                                shopName={seller?.name || "Shop"}
                                 className="w-[200px] h-[200px] rounded-full cursor-pointer"
                                 size="200"
                             />
@@ -104,10 +119,9 @@ const ShopSettings = () => {
                     <div className="w-[100%] flex items-center flex-col 800px:w-[50%] mt-5">
                         <div className="w-full pl-[3%]">
                             <label className="block pb-2">Shop Name</label>
-                        </div>
-                        <input
+                        </div>                        <input
                             type="name"
-                            placeholder={`${seller.name}`}
+                            placeholder={`${seller?.name || "Enter shop name"}`}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
@@ -169,15 +183,14 @@ const ShopSettings = () => {
                             className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
                             required
                         />
-                    </div>
-
-                    <div className="w-[100%] flex items-center flex-col 800px:w-[50%] mt-5">
+                    </div>                    <div className="w-[100%] flex items-center flex-col 800px:w-[50%] mt-5">
                         <input
                             type="submit"
-                            value="Update Shop"
-                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                            required
-                            readOnly
+                            value={isUpdating ? "Updating..." : "Update Shop"}
+                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0 ${
+                                isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-blue-600'
+                            } bg-blue-500 text-white font-semibold`}
+                            disabled={isUpdating}
                         />
                     </div>
                 </form>
