@@ -1,5 +1,5 @@
 import React from "react";
-import { FiShoppingBag, FiSettings, FiBarChart3 } from "react-icons/fi";
+import { FiShoppingBag, FiSettings, FiBarChart2 } from "react-icons/fi";
 import { GrWorkshop } from "react-icons/gr";
 import { RxDashboard } from "react-icons/rx";
 import { CiMoneyBill } from "react-icons/ci";
@@ -135,7 +135,7 @@ const AdminSideBar = ({ active }) => {
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-gray-50">
         <div className="hidden 800px:block">
           <div className="flex items-center">
-            <FiBarChart3 size={20} className="text-gray-400" />
+            <FiBarChart2 size={20} className="text-gray-400" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-900">Admin Dashboard</p>
               <p className="text-xs text-gray-500">v2.0.0</p>
