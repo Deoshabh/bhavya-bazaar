@@ -249,10 +249,10 @@ router.get(
     try {
       // Try to validate user session first
       const userSession = await SessionManager.validateUserSession(req);
-      if (userSession.isValid) {
+      if (userSession) {
         return res.status(200).json({
           success: true,
-          user: userSession.user,
+          user: userSession,
           userType: 'user',
           isAuthenticated: true,
           message: "User session verified"
@@ -261,10 +261,10 @@ router.get(
       
       // Try to validate shop session
       const shopSession = await SessionManager.validateShopSession(req);
-      if (shopSession.isValid) {
+      if (shopSession) {
         return res.status(200).json({
           success: true,
-          seller: shopSession.shop,
+          seller: shopSession,
           userType: 'seller',
           isAuthenticated: true,
           message: "Shop session verified"
@@ -273,10 +273,10 @@ router.get(
       
       // Try to validate admin session
       const adminSession = await SessionManager.validateAdminSession(req);
-      if (adminSession.isValid) {
+      if (adminSession) {
         return res.status(200).json({
           success: true,
-          user: adminSession.user,
+          user: adminSession,
           userType: 'admin',
           isAuthenticated: true,
           message: "Admin session verified"
@@ -301,14 +301,13 @@ router.get(
 router.post(
   "/refresh",
   catchAsyncErrors(async (req, res, next) => {
-    try {
-      // Try to extend user session
+    try {      // Try to extend user session
       const userSession = await SessionManager.validateUserSession(req);
-      if (userSession.isValid) {
+      if (userSession) {
         await SessionManager.extendSession(req);
         return res.status(200).json({
           success: true,
-          user: userSession.user,
+          user: userSession,
           userType: 'user',
           message: "User session extended"
         });
@@ -316,11 +315,11 @@ router.post(
       
       // Try to extend shop session
       const shopSession = await SessionManager.validateShopSession(req);
-      if (shopSession.isValid) {
+      if (shopSession) {
         await SessionManager.extendSession(req);
         return res.status(200).json({
           success: true,
-          seller: shopSession.shop,
+          seller: shopSession,
           userType: 'seller',
           message: "Shop session extended"
         });
@@ -328,11 +327,11 @@ router.post(
       
       // Try to extend admin session
       const adminSession = await SessionManager.validateAdminSession(req);
-      if (adminSession.isValid) {
+      if (adminSession) {
         await SessionManager.extendSession(req);
         return res.status(200).json({
           success: true,
-          user: adminSession.user,
+          user: adminSession,
           userType: 'admin',
           message: "Admin session extended"
         });
