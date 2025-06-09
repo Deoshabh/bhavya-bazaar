@@ -54,7 +54,7 @@ const DashboardHeader = () => {
                             className="mx-5 cursor-pointer"
                         />
                     </Link>
-                    <Link to={`/shop/${seller._id}`}>
+                    <Link to={`/shop/${seller?._id || ''}`}>
                         <ShopAvatar
                             shop={seller}
                             className="w-[50px] h-[50px] rounded-full object-cover"

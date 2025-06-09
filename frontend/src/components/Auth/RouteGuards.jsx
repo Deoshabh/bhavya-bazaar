@@ -24,7 +24,7 @@ export const RequireUser = ({ children, redirectTo = "/login" }) => {
 };
 
 // Shop authentication guard
-export const RequireShop = ({ children, redirectTo = "/shop/login" }) => {
+export const RequireShop = ({ children, redirectTo = "/shop-login" }) => {
   const { isLoading, isSeller } = useSelector((state) => state.seller);
   
   if (isLoading) {

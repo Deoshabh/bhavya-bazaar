@@ -85,6 +85,12 @@ const DashboardMessages = () => {
 
     const imageSendingHandler = async (file) => {
     try {
+      if (!seller?._id) {
+        console.error("Seller ID not available");
+        toast.error("Unable to send message - seller not authenticated");
+        return;
+      }
+
       const formData = new FormData();
       formData.append("images", file);
       formData.append("sender", seller._id);
@@ -116,6 +122,12 @@ const DashboardMessages = () => {
     
     if (!newMessage.trim() && !uploadedImage) return;
 
+    if (!seller?._id) {
+      console.error("Seller ID not available");
+      toast.error("Unable to send message - seller not authenticated");
+      return;
+    }
+
     try {
       const { data } = await axios.post(`${window.RUNTIME_CONFIG.API_URL}/message/create-new-message`, {
         sender: seller._id,
@@ -135,6 +147,11 @@ const DashboardMessages = () => {
   };
 
   const updateLastMessage = async () => {
+    if (!seller?._id) {
+      console.error("Seller ID not available for updating last message");
+      return;
+    }
+
     try {
       await axios.put(
         `${apiUrl}/conversation/update-last-message/${currentChat._id}`,
@@ -152,6 +169,11 @@ const DashboardMessages = () => {
   };
 
   const updateLastMessageForImage = async () => {
+    if (!seller?._id) {
+      console.error("Seller ID not available for updating last message");
+      return;
+    }
+
     try {
       await axios.put(
         `${apiUrl}/conversation/update-last-message/${currentChat._id}`,

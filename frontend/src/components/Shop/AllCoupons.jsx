@@ -25,6 +25,8 @@ const AllCoupons = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
+        if (!seller?._id) return;
+        
         setIsLoading(true);
         axios
             .get(`${server}/coupon/get-coupon/${seller._id}`, {
@@ -37,7 +39,7 @@ const AllCoupons = () => {
             .catch((error) => {
                 setIsLoading(false);
             });
-    }, [dispatch, seller._id]);
+    }, [dispatch, seller?._id]);
 
     const handleDelete = async (id) => {
         axios.delete(`${server}/coupon/delete-coupon/${id}`, { withCredentials: true }).then((res) => {
@@ -48,6 +50,11 @@ const AllCoupons = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!seller?._id) {
+            toast.error("Seller information not available");
+            return;
+        }
 
         await axios
             .post(

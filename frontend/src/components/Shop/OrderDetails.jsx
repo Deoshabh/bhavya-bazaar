@@ -17,10 +17,11 @@ const OrderDetails = () => {
   const navigate = useNavigate();
 
   const { id } = useParams();
-
   useEffect(() => {
-    dispatch(getAllOrdersOfShop(seller._id));
-  }, [dispatch, seller._id]);
+    if (seller?._id) {
+      dispatch(getAllOrdersOfShop(seller._id));
+    }
+  }, [dispatch, seller?._id]);
 
   const data = orders && orders.find((item) => item._id === id);
   const orderUpdateHandler = async (e) => {

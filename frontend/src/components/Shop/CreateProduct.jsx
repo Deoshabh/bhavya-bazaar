@@ -45,6 +45,11 @@ const CreateProduct = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (!seller?._id) {
+            console.error("Seller ID not available");
+            return;
+        }
+
         const newForm = new FormData();
 
         images.forEach((image) => {

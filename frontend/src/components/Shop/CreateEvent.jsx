@@ -23,15 +23,48 @@ const CreateEvent = () => {
     const [stock, setStock] = useState();
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Form validation function
+    const validateForm = () => {
+        const errors = [];
+
+        if (!name?.trim()) errors.push("Event name is required");
+        if (!description?.trim()) errors.push("Event description is required");
+        if (!category || category === "Choose a category") errors.push("Please select a category");
+        if (!discountPrice || discountPrice <= 0) errors.push("Valid discount price is required");
+        if (!stock || stock <= 0) errors.push("Valid stock quantity is required");
+        if (!startDate) errors.push("Start date is required");
+        if (!endDate) errors.push("End date is required");
+        if (!images || images.length === 0) errors.push("At least one image is required");
+
+        // Business logic validation
+        if (originalPrice && discountPrice && parseFloat(discountPrice) >= parseFloat(originalPrice)) {
+            errors.push("Discount price must be less than original price");
+        }
+
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const minDuration = 3 * 24 * 60 * 60 * 1000; // 3 days
+            
+            if (end.getTime() - start.getTime() < minDuration) {
+                errors.push("Event must run for at least 3 days");
+            }
+        }
+
+        return errors;
+    };
 
     const handleStartDateChange = (e) => {
         const startDate = new Date(e.target.value);
         const minEndDate = new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000);
         setStartDate(startDate);
         setEndDate(null);
-        document.getElementById("end-date").min = minEndDate.toISOString().slice(0, 10);
-
-
+        const endDateInput = document.getElementById("end-date");
+        if (endDateInput) {
+            endDateInput.min = minEndDate.toISOString().slice(0, 10);
+        }
     }
 
     const handleEndDateChange = (e) => {
@@ -65,6 +98,19 @@ const CreateEvent = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
+
+        const errors = validateForm();
+        if (errors.length > 0) {
+            setIsSubmitting(false);
+            return toast.error(errors.join(", "));
+        }
+
+        if (!seller?._id) {
+            console.error("Seller ID not available");
+            setIsSubmitting(false);
+            return;
+        }
 
         const newForm = new FormData();
 
@@ -255,8 +301,9 @@ const CreateEvent = () => {
                     <div>
                         <input
                             type="submit"
-                            value="Create"
+                            value={isSubmitting ? "Creating..." : "Create"}
                             className="mt-2 cursor-pointer appearance-none text-center block w-full px-3 h-[35px] border border-gray-300 rounded-[3px] placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            disabled={isSubmitting}
                         />
                     </div>
                 </div>
