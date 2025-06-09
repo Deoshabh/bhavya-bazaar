@@ -6,12 +6,27 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 
+// Create Redis client with proper configuration for connect-redis v7
 const redisClient = createClient({
   url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
   password: process.env.REDIS_PASSWORD || undefined,
-  legacyMode: true
+  socket: {
+    reconnectStrategy: (retries) => Math.min(retries * 50, 500)
+  }
 });
-redisClient.connect().catch(console.error);
+
+// Connect to Redis with error handling
+redisClient.connect().catch((err) => {
+  console.error('Redis connection error:', err);
+});
+
+redisClient.on('error', (err) => {
+  console.error('Redis client error:', err);
+});
+
+redisClient.on('connect', () => {
+  console.log('✅ Redis connected for session store');
+});
 
 const isProduction = process.env.NODE_ENV === 'production';
 
