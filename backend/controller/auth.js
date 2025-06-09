@@ -3,6 +3,7 @@ const User = require("../model/user");
 const Shop = require("../model/shop");
 const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
+const SessionManager = require("../utils/sessionManager");
 const JWTManager = require("../utils/jwtToken");
 const { authenticateAny } = require("../middleware/jwtAuth");
 
