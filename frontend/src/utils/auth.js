@@ -164,8 +164,7 @@ export const checkAuthSession = async () => {
       const { userType, user } = response.data;
       
       console.log(`✅ Session valid for ${userType}:`, user?.name || user?.shopName || 'Unknown');
-      
-      // Dispatch appropriate Redux action based on user type
+        // Dispatch appropriate Redux action based on user type
       switch (userType) {
         case 'user':
         case 'admin':
@@ -173,6 +172,11 @@ export const checkAuthSession = async () => {
           Store.dispatch({
             type: 'LoadUserSuccess',
             payload: user
+          });
+          // Clear seller loading state since this is not a seller
+          Store.dispatch({
+            type: 'LoadSellerFail',
+            payload: 'User is not a seller'
           });
           break;
           
@@ -182,10 +186,24 @@ export const checkAuthSession = async () => {
             type: 'LoadSellerSuccess', 
             payload: user // Note: backend returns seller data as 'user'
           });
+          // Clear user loading state 
+          Store.dispatch({
+            type: 'LoadUserFail',
+            payload: 'Seller session - not a regular user'
+          });
           break;
           
         default:
           console.warn('⚠️ Unknown user type:', userType);
+          // Clear both states for unknown types
+          Store.dispatch({
+            type: 'LoadUserFail',
+            payload: 'Unknown user type'
+          });
+          Store.dispatch({
+            type: 'LoadSellerFail',
+            payload: 'Unknown user type'
+          });
       }
       
       return {
