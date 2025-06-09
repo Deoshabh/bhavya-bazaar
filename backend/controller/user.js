@@ -261,7 +261,7 @@ router.put(
   })
 );
 
-// update user avatar
+// update user avatar - Enhanced version with base64 support
 router.put(
   "/update-avatar",
   isAuthenticated,
@@ -269,35 +269,113 @@ router.put(
   catchAsyncErrors(async (req, res, next) => {
     try {
       const existsUser = await User.findById(req.user.id);
+      const fs = require("fs");
 
-      // Only attempt to delete previous avatar if it exists
-      if (existsUser.avatar) {
-        const existAvatarPath = `uploads/${existsUser.avatar}`;
-        
-        // Use fs.existsSync to check if file exists before deleting
-        if (fs.existsSync(existAvatarPath)) {
-          fs.unlinkSync(existAvatarPath); // Delete Previous Image
+      // Handle base64 image data from cropper
+      if (req.body.avatarData) {
+        try {
+          // Extract base64 data
+          const base64Data = req.body.avatarData.replace(/^data:image\/[a-z]+;base64,/, '');
+          const buffer = Buffer.from(base64Data, 'base64');
+          
+          // Generate unique filename
+          const filename = `avatar_${req.user.id}_${Date.now()}.jpg`;
+          const filepath = path.join(__dirname, "..", "uploads", filename);
+          
+          // Ensure uploads directory exists
+          ensureDirectoryExists(path.join(__dirname, "..", "uploads"));
+          
+          // Write file
+          fs.writeFileSync(filepath, buffer);
+          
+          // Delete previous avatar if it exists
+          if (existsUser.avatar) {
+            const existAvatarPath = path.join(__dirname, "..", "uploads", existsUser.avatar);
+            deleteFileIfExists(existAvatarPath);
+          }
+          
+          // Update user with new avatar
+          const user = await User.findByIdAndUpdate(
+            req.user.id, 
+            { avatar: filename },
+            { new: true }
+          );
+
+          return res.status(200).json({
+            success: true,
+            user,
+            message: "Avatar updated successfully!",
+            avatarUrl: filename
+          });
+          
+        } catch (error) {
+          console.error("Error processing base64 avatar:", error);
+          return next(new ErrorHandler("Failed to process avatar image", 500));
         }
       }
 
-      if (!req.file) {
-        return next(new ErrorHandler("No file uploaded", 400));
+      // Handle traditional file upload
+      if (req.file) {
+        // File validation
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const maxSize = 5 * 1024 * 1024; // 5MB limit
+        
+        if (!allowedTypes.includes(req.file.mimetype)) {
+          deleteFileIfExists(req.file.path);
+          return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+        }
+        
+        if (req.file.size > maxSize) {
+          deleteFileIfExists(req.file.path);
+          return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
+        }
+
+        // Delete previous avatar if it exists
+        if (existsUser.avatar) {
+          const existAvatarPath = path.join(__dirname, "..", "uploads", existsUser.avatar);
+          deleteFileIfExists(existAvatarPath);
+        }
+
+        const user = await User.findByIdAndUpdate(
+          req.user.id, 
+          { avatar: req.file.filename },
+          { new: true }
+        );
+
+        return res.status(200).json({
+          success: true,
+          user,
+          message: "Avatar updated successfully!",
+          avatarUrl: req.file.filename
+        });
       }
 
-      const fileUrl = path.join(req.file.filename); // new image
+      // Handle URL-based avatar
+      if (req.body.avatarUrl) {
+        // Delete previous avatar file if it exists (not URL)
+        if (existsUser.avatar && !existsUser.avatar.startsWith('http')) {
+          const existAvatarPath = path.join(__dirname, "..", "uploads", existsUser.avatar);
+          deleteFileIfExists(existAvatarPath);
+        }
 
-      const user = await User.findByIdAndUpdate(
-        req.user.id, 
-        { avatar: fileUrl },
-        { new: true } // Return the updated document
-      );
+        const user = await User.findByIdAndUpdate(
+          req.user.id, 
+          { avatar: req.body.avatarUrl },
+          { new: true }
+        );
 
-      res.status(200).json({
-        success: true,
-        user,
-        avatarUrl: fileUrl, // Explicitly include the new avatar URL
-      });
+        return res.status(200).json({
+          success: true,
+          user,
+          message: "Avatar updated successfully!",
+          avatarUrl: req.body.avatarUrl
+        });
+      }
+
+      return next(new ErrorHandler("No avatar data provided", 400));
+      
     } catch (error) {
+      console.error("Avatar update error:", error);
       return next(new ErrorHandler(error.message, 500));
     }
   })

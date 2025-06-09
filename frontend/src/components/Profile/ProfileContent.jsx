@@ -17,6 +17,7 @@ import {
 } from "../../redux/actions/user";
 import { server } from "../../server";
 import { UserAvatar } from "../common/EnhancedImage";
+import AvatarUploader from "./AvatarUploader";
 import styles from "../../styles/styles";
 
 
@@ -94,33 +95,57 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
     const [name, setName] = useState(user?.name || "");
     const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
     const [password, setPassword] = useState("");
+    const [showAvatarUploader, setShowAvatarUploader] = useState(false);
     const dispatch = useDispatch();
 
-    const handleImage = async (e) => {
-        const file = e.target.files[0];
-
-        const formData = new FormData();
-        formData.append("image", file);
-        
-        setLoading(true);
-        
+    const handleAvatarSave = async (croppedImageBlob, metadata) => {
         try {
-            // Upload the avatar
-            await axios.put(
-                `${server}/user/update-avatar`,
-                formData,
-                { withCredentials: true }
-            );
+            setLoading(true);
             
-            // Refresh user data to get the updated avatar URL
-            dispatch(loadUser());
+            if (metadata.method === 'url') {
+                // For URL-based images, save the URL
+                await axios.put(
+                    `${server}/user/update-avatar`,
+                    { avatarUrl: metadata.url },
+                    { withCredentials: true }
+                );
+            } else {
+                // For file uploads, convert blob to base64 and send
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    try {
+                        await axios.put(
+                            `${server}/user/update-avatar`,
+                            { avatarData: reader.result },
+                            { 
+                                withCredentials: true,
+                                headers: { 'Content-Type': 'application/json' }
+                            }
+                        );
+                        
+                        // Refresh user data
+                        dispatch(loadUser());
+                        toast.success("Avatar updated successfully!");
+                    } catch (error) {
+                        toast.error(error.response?.data?.message || "Error updating avatar");
+                        console.error("Avatar update error:", error);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                reader.readAsDataURL(croppedImageBlob);
+            }
             
-            setLoading(false);
-            toast.success("Avatar updated successfully!");
+            if (metadata.method === 'url') {
+                dispatch(loadUser());
+                toast.success("Avatar updated successfully!");
+                setLoading(false);
+            }
+            
         } catch (error) {
             setLoading(false);
             toast.error(error.response?.data?.message || "Error updating avatar");
-            console.log(error);
+            console.error("Avatar save error:", error);
         }
     };
 
@@ -155,81 +180,115 @@ const ProfileInfo = ({ user, loading, setLoading }) => {
     };
 
     return (
-        <div className="w-full flex justify-center">
-            <div className="relative">
-                {/* Avatar with enhanced UserAvatar component */}
-                <UserAvatar
-                    user={user}
-                    className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
-                    size="150"
-                />
-                <div className="w-[30px] h-[30px] bg-[#E3E9EE] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[5px] right-[5px]">
-                    <input
-                        type="file"
-                        id="image"
-                        className="hidden"
-                        onChange={handleImage}
-                        accept="image/jpeg,image/png,image/jpg"
+        <>
+            <div className="w-full flex justify-center">
+                <div className="relative group">
+                    {/* Enhanced Avatar with hover effect */}
+                    <UserAvatar
+                        user={user}
+                        className="w-[150px] h-[150px] rounded-full object-cover border-4 border-green-400 shadow-lg transition-all duration-300 group-hover:shadow-xl"
+                        size="150"
                     />
-                    <label htmlFor="image">
-                        <AiOutlineCamera />
-                    </label>
+                    
+                    {/* Enhanced Upload Button with Hover Effect */}
+                    <div 
+                        onClick={() => setShowAvatarUploader(true)}
+                        className="absolute bottom-2 right-2 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 border-2 border-white"
+                    >
+                        <AiOutlineCamera className="text-white text-lg" />
+                    </div>
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-full transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+                         onClick={() => setShowAvatarUploader(true)}>
+                        <span className="text-white font-semibold text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
+                            Edit Photo
+                        </span>
+                    </div>
                 </div>
             </div>
             
-            {/* Rest of the profile info form */}
-            <form className="flex flex-col items-center">
-                <div className="w-[100%] flex items-center flex-col 800px:w-[50%] mt-5">
-                    <div className="w-full pl-[3%]">
-                        <label className="block pb-2">Full Name</label>
+            {/* Enhanced Profile Form */}
+            <form className="flex flex-col items-center mt-8 space-y-6 max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    {/* Full Name Field */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                            Full Name
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Enter your full name"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                    />
+
+                    {/* Phone Number Field */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                            Phone Number
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                            required
+                            value={phoneNumber}
+                            maxLength={10}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                setPhoneNumber(value);
+                            }}
+                            placeholder="Enter 10-digit phone number"
+                        />
+                    </div>
                 </div>
-                <div className="w-[100%] flex items-center flex-col 800px:w-[50%] mt-5">
-                    <div className="w-full pl-[3%]">
-                        <label className="block pb-2">Phone Number</label>
-                    </div>
-                    <input
-                        type="text"
-                        className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                        required
-                        value={phoneNumber}
-                        maxLength={10}
-                        onChange={(e) => {
-                            // Only allow digits
-                            const value = e.target.value.replace(/\D/g, '');
-                            setPhoneNumber(value);
-                        }}
-                    />
-                </div>
-                <div className="w-[100%] flex items-center flex-col 800px:w-[50%] mt-5">
-                    <div className="w-full pl-[3%]">
-                        <label className="block pb-2">Password</label>
-                    </div>
+
+                {/* Password Field */}
+                <div className="space-y-2 w-full">
+                    <label className="block text-sm font-semibold text-gray-700">
+                        Password (for verification)
+                    </label>
                     <input
                         type="password"
-                        className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password to confirm changes"
                     />
                 </div>
+
+                {/* Submit Button */}
                 <button
                     type="submit"
-                    className="mt-8 text-white py-3 px-6 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors cursor-pointer"
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                     onClick={handleSubmit}
                     disabled={loading}
                 >
-                    {loading ? "Updating..." : "Update"}
+                    {loading ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Updating...
+                        </div>
+                    ) : (
+                        "Update Profile"
+                    )}
                 </button>
             </form>
-        </div>
+
+            {/* Avatar Uploader Modal */}
+            <AvatarUploader
+                currentAvatar={user?.avatar}
+                onSave={handleAvatarSave}
+                onClose={() => setShowAvatarUploader(false)}
+                isOpen={showAvatarUploader}
+                loading={loading}
+                user={user}
+            />
+        </>
     );
 };
 

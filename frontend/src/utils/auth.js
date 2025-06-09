@@ -70,6 +70,8 @@ export const getCurrentAuthType = () => {
 // Auto-login check using /auth/me endpoint
 export const checkAuthSession = async () => {
   try {
+    console.log('🔍 Checking auth session at /auth/me...');
+    
     const response = await axios.get(
       `${BASE_URL}/auth/me`,
       { 
@@ -77,8 +79,13 @@ export const checkAuthSession = async () => {
         timeout: 10000 // 10 second timeout
       }
     );
-      if (response.data.success) {
+    
+    console.log('📨 Auth session response:', response.status, response.data);
+    
+    if (response.data.success) {
       const { userType, user } = response.data;
+      
+      console.log(`✅ Session valid for ${userType}:`, user?.name || user?.shopName || 'Unknown');
       
       // Dispatch appropriate Redux action based on user type
       switch (userType) {
@@ -100,7 +107,7 @@ export const checkAuthSession = async () => {
           break;
           
         default:
-          console.warn('Unknown user type:', userType);
+          console.warn('⚠️ Unknown user type:', userType);
       }
       
       return {
@@ -110,46 +117,152 @@ export const checkAuthSession = async () => {
       };
     }
     
+    console.log('❌ Auth session check failed: Invalid response');
     return { success: false };
   } catch (error) {
+    console.log('❌ Auth session check error:', error.response?.status, error.response?.data?.message || error.message);
+    
     // If 401 or any auth error, clear all auth state
     if (error.response?.status === 401) {
-      await logoutCurrentUser();
+      console.log('🔄 Clearing auth state due to 401 error...');
+      // Don't call logoutCurrentUser() here as it might cause infinite loops
+      // Just clear the Redux state and cookies
+      Store.dispatch({
+        type: 'LoadUserFail',
+        payload: 'Session expired'
+      });
+      Store.dispatch({
+        type: 'LoadSellerFail',
+        payload: 'Session expired'
+      });
+      
+      // Clear cookies
+      removeCookie('token');
+      removeCookie('seller_token');
+      removeCookie('admin_token');
     }
-    
-    console.warn('Auth session check failed:', error.response?.data?.message || error.message);
-    return { success: false, error: error.response?.data?.message || error.message };
+      return { 
+      success: false, 
+      error: error.response?.data?.message || error.message,
+      status: error.response?.status
+    };
   }
 };
 
 // Authentication persistence for page refresh
 export const initializeAuth = async () => {
   try {
-    // First try the /api/auth/me endpoint for accurate session check
+    console.log('🔄 Starting authentication initialization...');
+    
+    // First try the /auth/me endpoint for accurate session check
     const sessionCheck = await checkAuthSession();
     
     if (sessionCheck.success) {
-      console.log('✅ Auth session restored:', sessionCheck.userType);
-      return sessionCheck;
+      console.log('✅ Auth session restored via /auth/me:', sessionCheck.userType);
+      return {
+        success: true,
+        userType: sessionCheck.userType,
+        user: sessionCheck.user,
+        message: 'Session restored successfully'
+      };
     }
     
-    // Fallback: Check what tokens exist locally and load appropriate user data
+    console.log('ℹ️ /auth/me failed, checking local tokens...');
+    
+    // Fallback: Check what tokens exist locally and try to load user data
     const promises = [];
+    let fallbackSuccess = false;
+    
     if (isUserAuthenticated()) {
-      promises.push(Store.dispatch(loadUser()));
+      console.log('📝 Found user token, attempting to load user...');
+      promises.push(
+        Store.dispatch(loadUser())
+          .then(() => {
+            fallbackSuccess = true;
+            return { type: 'user' };
+          })
+          .catch((error) => {
+            console.warn('Failed to load user:', error);
+            return { type: 'user', error };
+          })
+      );
     }
     
     if (isSellerAuthenticated()) {
-      promises.push(Store.dispatch(loadSeller()));
+      console.log('🏪 Found seller token, attempting to load seller...');
+      promises.push(
+        Store.dispatch(loadSeller())
+          .then(() => {
+            fallbackSuccess = true;
+            return { type: 'seller' };
+          })
+          .catch((error) => {
+            console.warn('Failed to load seller:', error);
+            return { type: 'seller', error };
+          })
+      );
     }
     
-    // Wait for all auth checks to complete
+    // If no tokens found, explicitly clear loading state
+    if (promises.length === 0) {
+      console.log('❌ No authentication tokens found, clearing loading state...');
+      Store.dispatch({
+        type: 'LoadUserFail',
+        payload: 'No authentication found'
+      });
+      Store.dispatch({
+        type: 'LoadSellerFail',
+        payload: 'No authentication found'
+      });
+      return {
+        success: false,
+        message: 'No authentication tokens found'
+      };
+    }
+      // Wait for all auth checks to complete
     await Promise.allSettled(promises);
     
-    return { success: false };
+    if (fallbackSuccess) {
+      console.log('✅ Fallback authentication successful');
+      return {
+        success: true,
+        message: 'Authentication restored via fallback method'
+      };
+    } else {
+      console.log('❌ All authentication methods failed');
+      // Ensure loading state is cleared
+      Store.dispatch({
+        type: 'LoadUserFail',
+        payload: 'Authentication restoration failed'
+      });
+      Store.dispatch({
+        type: 'LoadSellerFail',
+        payload: 'Authentication restoration failed'
+      });
+      return {
+        success: false,
+        message: 'Authentication restoration failed'
+      };
+    }
+    
   } catch (error) {
-    console.error('Auth initialization error:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Auth initialization error:', error);
+    
+    // Ensure loading state is cleared on error
+    Store.dispatch({
+      type: 'LoadUserFail',
+      payload: error.message || 'Authentication initialization failed'
+    });
+    Store.dispatch({
+      type: 'LoadSellerFail',
+      payload: error.message || 'Authentication initialization failed'
+    });
+    
+    return {
+      success: false,
+      error: error.message,
+      message: 'Authentication initialization failed'
+    };
   }
 };
 
@@ -241,6 +354,21 @@ export const logoutCurrentUser = async () => {  try {
   }
 };
 
+// Clear authentication loading states (utility function)
+export const clearAuthLoadingStates = () => {
+  console.log('🔄 Clearing authentication loading states...');
+  
+  Store.dispatch({
+    type: 'LoadUserFail',
+    payload: 'No valid session found'
+  });
+  
+  Store.dispatch({
+    type: 'LoadSellerFail',
+    payload: 'No valid session found'
+  });
+};
+
 // Route protection utility
 export const requireAuth = (authType = 'user') => {
   switch (authType) {
@@ -280,5 +408,6 @@ export default {
   loginAdmin,
   logoutCurrentUser,
   requireAuth,
-  refreshToken
+  refreshToken,
+  clearAuthLoadingStates
 };

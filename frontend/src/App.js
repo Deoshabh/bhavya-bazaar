@@ -107,20 +107,27 @@ const App = () => {
     // Initialize authentication with improved token persistence and loading state
     const initAuth = async () => {
       try {
-        console.log('🔄 Initializing authentication...');
+        console.log('🔄 App: Initializing authentication...');
         const result = await initializeAuth();
         
         if (result.success) {
-          console.log('✅ Authentication restored:', result.userType);
+          console.log('✅ App: Authentication restored:', result.userType || 'unknown');
         } else {
-          console.log('ℹ️ No existing session found');
+          console.log('ℹ️ App: No existing session found:', result.message);
         }
         
+        // Always set as initialized, even if auth failed
         setIsAuthInitialized(true);
+        
+        // Clear any auth error since we've completed the check
+        setAuthError(null);
+        
       } catch (error) {
-        console.error('❌ Authentication initialization failed:', error);
+        console.error('❌ App: Authentication initialization failed:', error);
         setAuthError(error.message);
-        setIsAuthInitialized(true); // Still allow app to load
+        
+        // Still allow app to load even if auth fails
+        setIsAuthInitialized(true);
       }
     };
     

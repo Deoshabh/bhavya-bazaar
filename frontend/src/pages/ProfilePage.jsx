@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../components/Layout/Header";
 import styles from "../styles/styles";
 import ProfileSidebar from "../components/Profile/ProfileSidebar";
@@ -8,16 +8,49 @@ import Loader from "../components/Layout/Loader";
 import { Navigate } from "react-router-dom";
 
 const ProfilePage = () => {
-  const { loading, isAuthenticated } = useSelector((state) => state.user);
+  const { loading, isAuthenticated, user } = useSelector((state) => state.user);
   const [active, setActive] = useState(1);
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
-  if (loading) {
-    return <Loader />;
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading && !isAuthenticated && !user) {
+        console.log('⚠️ ProfilePage: Auth check timeout, assuming not authenticated');
+        setAuthCheckComplete(true);
+      }
+    }, 5000); // 5 second timeout
+
+    // If we have a definitive auth state, clear the timer
+    if (!loading || isAuthenticated || user) {
+      setAuthCheckComplete(true);
+      clearTimeout(timer);
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading, isAuthenticated, user]);
+
+  // Show loading while auth is being checked, but not indefinitely
+  if (loading && !authCheckComplete) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader />
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+  // Redirect to login if not authenticated and auth check is complete
+  if (!loading && !isAuthenticated && authCheckComplete) {
+    console.log('🔄 ProfilePage: Redirecting to login - not authenticated');
+    return <Navigate to="/login" replace />;
+  }
+
+  // If we're still loading but auth check is complete, assume logged out
+  if (loading && authCheckComplete && !isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   return (
