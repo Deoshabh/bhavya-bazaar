@@ -39,7 +39,7 @@ After deployment, check:
 Check browser console for:
 - ✅ No development mode warnings
 - ✅ Successful API connections
-- ✅ WebSocket connection to `wss://api.bhavyabazaar.com/socket.io`
+- ✅ HTTP-based messaging system working (Socket.IO removed)
 - ✅ Session-based authentication working (no JWT tokens in localStorage)
 - ✅ No 401 authentication errors after successful login
 
@@ -49,7 +49,6 @@ Check browser console for:
 The build includes `runtime-config.js` with production settings:
 - API URL: `https://api.bhavyabazaar.com/api/v2`
 - Unified Auth: `https://api.bhavyabazaar.com/api/auth`
-- WebSocket: `wss://api.bhavyabazaar.com/socket.io`
 - Environment: `production`
 
 ### Key Files Modified for Session-Based Authentication
@@ -57,8 +56,8 @@ The build includes `runtime-config.js` with production settings:
 - **Backend Middleware**: `auth.js` - Updated to use SessionManager
 - **Frontend Auth Utils**: `auth.js` - Migrated from JWT to session-based checks
 - **Frontend Redux**: `user.js` actions - Updated to use unified auth endpoints
-- **WebSocket Client**: `SoketiClient.js` - Fixed to use session-based authorization
 - **Frontend Components**: Login forms, route guards - Updated for session authentication
+- **Messaging System**: Converted from Socket.IO to HTTP-only messaging
 
 ## 🐛 Troubleshooting
 
@@ -68,11 +67,11 @@ The build includes `runtime-config.js` with production settings:
 3. Clear all browser data and try again
 4. Check backend SessionManager configuration
 
-### If WebSocket Authorization Fails:
-1. Verify URL is `wss://api.bhavyabazaar.com/socket.io`
-2. Check `/api/pusher/auth` endpoint is accessible
-3. Ensure session cookies are included in WebSocket auth requests
-4. Check backend Socket.IO and SessionManager integration
+### If Messaging System Issues:
+1. Verify HTTP messaging endpoints are accessible
+2. Check session authentication for message API calls
+3. Ensure proper error handling in message components
+4. Check browser console for messaging-related errors
 
 ### If Session Persistence Issues:
 1. Check session configuration in `backend/config/session.js`

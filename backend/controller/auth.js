@@ -337,84 +337,12 @@ router.post(
           message: "Admin session extended"
         });
       }
-      
-      // No valid sessions to extend
+        // No valid sessions to extend
       return next(new ErrorHandler("No valid session found to refresh", 401));
       
     } catch (error) {
       console.error("Session extension error:", error);
       return next(new ErrorHandler("Session extension failed", 500));
-    }
-  })
-);
-
-// WebSocket/Pusher authentication endpoint (session-based)
-router.post(
-  "/pusher/auth",
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      const { socket_id, channel_name } = req.body;
-      
-      if (!socket_id || !channel_name) {
-        return next(new ErrorHandler("Socket ID and channel name are required", 400));
-      }
-      
-      // Check if user has any valid session (user, shop, or admin)
-      let isAuthorized = false;
-      let userInfo = null;
-      
-      // Try to validate user session
-      const userSession = await SessionManager.validateUserSession(req);
-      if (userSession.isValid) {
-        isAuthorized = true;
-        userInfo = { type: 'user', data: userSession.user };
-      }
-      
-      // Try to validate shop session if no user session
-      if (!isAuthorized) {
-        const shopSession = await SessionManager.validateShopSession(req);
-        if (shopSession.isValid) {
-          isAuthorized = true;
-          userInfo = { type: 'shop', data: shopSession.shop };
-        }
-      }
-      
-      // Try to validate admin session if no other sessions
-      if (!isAuthorized) {
-        const adminSession = await SessionManager.validateAdminSession(req);
-        if (adminSession.isValid) {
-          isAuthorized = true;
-          userInfo = { type: 'admin', data: adminSession.user };
-        }
-      }
-      
-      if (!isAuthorized) {
-        return res.status(401).json({
-          error: "Unauthorized",
-          message: "No valid session found for WebSocket authorization"
-        });
-      }
-      
-      // For private/presence channels, generate auth signature
-      // This is a simplified version - in production you might want more sophisticated channel authorization
-      const auth_signature = `${socket_id}:${channel_name}`;
-      
-      console.log(`✅ WebSocket auth granted for ${userInfo.type}: ${userInfo.data.name || userInfo.data.shopName}`);
-      
-      res.status(200).json({
-        auth: auth_signature,
-        channel_data: JSON.stringify({
-          user_id: userInfo.data._id || userInfo.data.id,
-          user_info: {
-            name: userInfo.data.name || userInfo.data.shopName,
-            type: userInfo.type
-          }
-        })
-      });
-      
-    } catch (error) {
-      console.error("Pusher auth error:", error);
-      return next(new ErrorHandler("WebSocket authorization failed", 500));
     }
   })
 );

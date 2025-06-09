@@ -183,11 +183,11 @@ Node.js: Utilizing Node.js as the server-side runtime environment to build scala
 
 Express.js: Harnessing the power of Express.js, a fast and minimalist web application framework, to handle routing and middleware. <Br/>
 
-JWT (JSON Web Tokens): Implementing JWT-based authentication for secure and stateless user sessions. <Br/>
+Session-based Authentication: Implementing session-based authentication using Redis for secure user sessions. <Br/>
 
 MongoDB: Leveraging MongoDB, a NoSQL database, for efficient data storage and retrieval, enabling seamless scalability. <Br/>
 
-Real-time Communication: Utilizing Socket.io to enable real-time communication between buyers, sellers, and the application server. <Br/>
+HTTP-based Messaging: HTTP-only messaging system for communication between buyers and sellers, ensuring reliability and simplicity. <Br/>
 
 Yarn: Employing Yarn as the package manager to manage project dependencies efficiently. <Br/>
 
@@ -319,10 +319,6 @@ Feel free to reach out to me for more information or to explore collaboration op
 - #### `mlter.js` - Sand mail login
 - #### `server.js` - Defines npm behaviors and packages for the client
 - #### `package.json` - Defines npm behaviors like the scripts defined in the next section of the README
-#### `socket` - Socket.io is use to chaing feacher
-  - .env
-  - index.js
-  - package.json
 #### `.gitignore` - Tells git which files to ignore
 #### `README` - This file!
 

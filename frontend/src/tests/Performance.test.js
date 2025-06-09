@@ -197,22 +197,21 @@ describe('Performance Validation Tests', () => {
     };
 
     // Validate error rate is within acceptable limits
-    const currentErrorRate = errorMetrics.errorRate();
-    expect(currentErrorRate).toBeLessThan(1); // < 1% error rate
+    const currentErrorRate = errorMetrics.errorRate();    expect(currentErrorRate).toBeLessThan(1); // < 1% error rate
     expect(currentErrorRate).toBeGreaterThanOrEqual(0);
   });
 
-  test('WebSocket connection performance', () => {
-    const wsMetrics = {
-      connectionTime: 150, // ms to establish connection
-      messageLatency: 25, // ms average message round-trip
-      reconnectAttempts: 1,
-      maxReconnectAttempts: 5
+  test('HTTP messaging performance', () => {
+    const messagingMetrics = {
+      responseTime: 150, // ms for HTTP message requests
+      successRate: 99.5, // % of successful message operations
+      retryAttempts: 1,
+      maxRetryAttempts: 3
     };
 
-    // Validate WebSocket performance
-    expect(wsMetrics.connectionTime).toBeLessThan(1000); // < 1s to connect
-    expect(wsMetrics.messageLatency).toBeLessThan(100); // < 100ms latency
-    expect(wsMetrics.reconnectAttempts).toBeLessThanOrEqual(wsMetrics.maxReconnectAttempts);
+    // Validate HTTP messaging performance
+    expect(messagingMetrics.responseTime).toBeLessThan(1000); // < 1s response time
+    expect(messagingMetrics.successRate).toBeGreaterThan(95); // > 95% success rate
+    expect(messagingMetrics.retryAttempts).toBeLessThanOrEqual(messagingMetrics.maxRetryAttempts);
   });
 });

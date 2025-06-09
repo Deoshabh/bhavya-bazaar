@@ -4,24 +4,18 @@ import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import { TfiGallery } from "react-icons/tfi";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import socketIO from "socket.io-client";
+import UserAvatar from "../UserAvatar";
+import ProductImage from "../ProductImage";
 import { format } from "timeago.js";
-import { SOCKET_URL } from "../../server";
-import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 import styles from "../../styles/styles";
-
-// Initialize socket with better connection handling
-let socket;
 
 const DashboardMessages = () => {
   const { seller } = useSelector((state) => state.seller);
   const [conversations, setConversations] = useState([]);
-  const [arrivalMessage, setArrivalMessage] = useState(null);
   const [currentChat, setCurrentChat] = useState();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [userData, setUserData] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [activeStatus, setActiveStatus] = useState(false);
   const [open, setOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -31,77 +25,64 @@ const DashboardMessages = () => {
   const apiUrl = window.RUNTIME_CONFIG?.API_URL;
 
   useEffect(() => {
-    // Initialize socket connection with more robust connection options
-    try {
-      const socketOptions = {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
-        autoConnect: true,
-        forceNew: true,
-        path: '/socket.io',
-        secure: process.env.NODE_ENV === 'production'
-      };
+    console.log('📋 Real-time messaging disabled - Socket.IO has been removed');
+    console.log('📋 Messages will work without real-time updates');
+  }, [seller]);
 
-      socket = socketIO(SOCKET_URL, socketOptions);
-      
-      console.log("DashboardMessages: Attempting to connect to socket server:", SOCKET_URL);
-      
-      // Socket connection handling
-      socket.on("connect", () => {
-        console.log("DashboardMessages: Socket connected successfully!");
-        if (seller?._id) {
-          socket.emit("addUser", seller._id);
-        }
-      });
-      
-      socket.on("connect_error", (err) => {
-        console.error("DashboardMessages: Socket connection error:", err.message);
-        toast.error("Chat service connection failed. Some features may not work properly.");
-      });
-      
-      socket.on("disconnect", (reason) => {
-        console.log("DashboardMessages: Socket disconnected:", reason);
-        if (reason === "io server disconnect") {
-          // Reconnect if server disconnected us
-          socket.connect();
-        }
-      });
-
-      socket.on("getMessage", (data) => {
-        setArrivalMessage({
-          sender: data.senderId,
-          text: data.text,
-          createdAt: Date.now(),
-        });
-      });
-
-      socket.on("getUsers", (data) => {
-        setOnlineUsers(data);
-      });
-
-      return () => {
-        if (socket) {
-          socket.disconnect();
-        }
-      };
-    } catch (error) {
-      console.error("Error initializing socket:", error);
-      toast.error("Failed to initialize chat service");
+  useEffect(() => {
+    const getConversations = async () => {
+      try {
+        const response = await axios.get(
+          `${window.RUNTIME_CONFIG.API_URL}/conversation/get-all-conversations/${seller?._id}`,
+          {
+            withCredentials: true,
+          }
+        );
+        setConversations(response.data.conversations);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        toast.error("Failed to load conversations");
+      }
+    };
+    
+    if (seller?._id) {
+      getConversations();
     }
   }, [seller]);
 
   useEffect(() => {
-    if (arrivalMessage && currentChat?.members.includes(arrivalMessage.sender)) {
-      setMessages((prev) => [...prev, arrivalMessage]);
-    }
-  }, [arrivalMessage, currentChat]);
+    const getMessages = async () => {
+      if (!currentChat?._id) return;
+      
+      try {
+        const response = await axios.get(
+          `${apiUrl}/message/get-all-messages/${currentChat._id}`,
+          {
+            withCredentials: true,
+          }
+        );
+        setMessages(response.data.messages);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        toast.error("Failed to load messages");
+      }
+    };
+    
+    getMessages();
+  }, [currentChat, apiUrl]);
 
-  useEffect(() => {
-    const getConversations = async () => {
+  // Check if user is online (disabled - no real-time status)
+  const onlineCheck = () => {
+    return false; // Always offline since real-time status is disabled
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadedImage(file);
+      imageSendingHandler(file);
+    }
+  };
             try {
         const response = await axios.get(
           `${window.RUNTIME_CONFIG.API_URL}/conversation/get-all-conversations/${seller?._id}`,
@@ -135,7 +116,7 @@ const DashboardMessages = () => {
     }
   };
 
-  const imageSendingHandler = async (file) => {
+    const imageSendingHandler = async (file) => {
     try {
       const formData = new FormData();
       formData.append("images", file);
@@ -143,23 +124,14 @@ const DashboardMessages = () => {
       formData.append("text", newMessage);
       formData.append("conversationId", currentChat._id);
 
-      const receiverId = currentChat.members.find(
-        (member) => member !== seller._id
-      );
-
-      socket.emit("sendMessage", {
-        senderId: seller._id,
-        receiverId,
-        images: file,
-      });
-
-            const { data } = await axios.post(
+      const { data } = await axios.post(
         `${window.RUNTIME_CONFIG.API_URL}/message/create-new-message`,
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
           },
+          withCredentials: true,
         }
       );
 
@@ -178,20 +150,12 @@ const DashboardMessages = () => {
     if (!newMessage.trim() && !uploadedImage) return;
 
     try {
-      const receiverId = currentChat.members.find(
-        (member) => member !== seller._id
-      );
-
-      socket.emit("sendMessage", {
-        senderId: seller._id,
-        receiverId,
-        text: newMessage,
-      });
-
-            const { data } = await axios.post(`${window.RUNTIME_CONFIG.API_URL}/message/create-new-message`, {
+      const { data } = await axios.post(`${window.RUNTIME_CONFIG.API_URL}/message/create-new-message`, {
         sender: seller._id,
         text: newMessage,
         conversationId: currentChat._id,
+      }, {
+        withCredentials: true,
       });
 
       setMessages([...messages, data.message]);
@@ -205,16 +169,14 @@ const DashboardMessages = () => {
 
   const updateLastMessage = async () => {
     try {
-      socket.emit("updateLastMessage", {
-        lastMessage: newMessage,
-        lastMessageId: seller._id,
-      });
-
       await axios.put(
         `${apiUrl}/conversation/update-last-message/${currentChat._id}`,
         {
           lastMessage: newMessage,
           lastMessageId: seller._id,
+        },
+        {
+          withCredentials: true,
         }
       );
     } catch (error) {
@@ -229,6 +191,9 @@ const DashboardMessages = () => {
         {
           lastMessage: "Photo",
           lastMessageId: seller._id,
+        },
+        {
+          withCredentials: true,
         }
       );
     } catch (error) {
@@ -299,7 +264,10 @@ const MessageList = ({
       try {
         const userId = data.members.find((user) => user !== me);
         const { data: response } = await axios.get(
-          `${window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL}/shop/get-shop-info/${userId}`
+          `${window.RUNTIME_CONFIG?.API_URL || process.env.REACT_APP_API_URL}/shop/get-shop-info/${userId}`,
+          {
+            withCredentials: true,
+          }
         );
         setUserData(response.shop);
       } catch (error) {

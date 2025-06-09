@@ -20,7 +20,7 @@ if [ -d "build" ]; then
     if [ -f "build/runtime-config.js" ]; then
         echo "✅ runtime-config.js present"
         echo "📋 Runtime configuration:"
-        grep -E "(API_URL|SOCKET_URL|NODE_ENV)" build/runtime-config.js
+        grep -E "(API_URL|NODE_ENV)" build/runtime-config.js
     else
         echo "❌ runtime-config.js missing"
     fi

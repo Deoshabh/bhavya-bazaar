@@ -227,24 +227,7 @@ const handlers = [
           },
         ],
       })
-    );
-  }),
-
-  // WebSocket mock endpoints (for testing WebSocket auth)
-  rest.get('/api/v2/websocket/verify-token', (req, res, ctx) => {
-    const token = req.url.searchParams.get('token');
-    if (!token) {
-      return res(ctx.status(401), ctx.json({ valid: false }));
-    }
-    
-    return res(
-      ctx.status(200),
-      ctx.json({
-        valid: true,
-        user: { id: 1, name: 'Test User' },
-      })
-    );
-  }),
+    );  }),
 
   // Health check endpoint
   rest.get('/api/v2/health', (req, res, ctx) => {

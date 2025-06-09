@@ -43,39 +43,8 @@ const getApiBaseUrl = () => {
   return fullUrl.replace('/api/v2', '');
 };
 
-const getWebsocketUrl = () => {
+const getBackendUrl = () => {
   // Check for runtime environment variables first
-  if (window.__RUNTIME_CONFIG__?.SOCKET_URL) {
-    return window.__RUNTIME_CONFIG__.SOCKET_URL;
-  }
-  if (window.RUNTIME_CONFIG?.SOCKET_URL) {
-    return window.RUNTIME_CONFIG.SOCKET_URL;
-  }
-  
-  // Check for environment variable first - this is the preferred method
-  if (process.env.REACT_APP_WS_URL) {
-    return process.env.REACT_APP_WS_URL;
-  }
-    // Default for bhavyabazaar.com production
-  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
-  if (currentDomain === 'bhavyabazaar.com' || currentDomain === 'www.bhavyabazaar.com') {
-    // Use proper WebSocket URL for production through reverse proxy
-    return 'wss://api.bhavyabazaar.com/socket.io';
-  }
-  
-  // For development
-  if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
-    return 'ws://localhost:8000/socket.io';
-  }
-    // Fallback: try to infer from current domain
-  if (currentDomain && currentDomain !== 'localhost') {
-    return `wss://${currentDomain}/socket.io`;
-  }
-    // Final fallback
-  return 'wss://api.bhavyabazaar.com/socket.io';
-};
-
-const getBackendUrl = () => {  // Check for runtime environment variables first
   if (window.RUNTIME_CONFIG?.BACKEND_URL) {
     const url = window.RUNTIME_CONFIG.BACKEND_URL;
     return url.endsWith('/') ? url : `${url}/`;
@@ -87,9 +56,9 @@ const getBackendUrl = () => {  // Check for runtime environment variables first
     return url.endsWith('/') ? url : `${url}/`;
   }
   
-  // Use same as WebSocket URL but ensure trailing slash
-  const wsUrl = getWebsocketUrl();
-  return wsUrl.endsWith('/') ? wsUrl : `${wsUrl}/`;
+  // Fallback to API domain
+  const apiUrl = getApiDomain();
+  return apiUrl.replace('/api/v2', '/');
 };
 
 // Utility function to safely construct image URLs
@@ -145,7 +114,6 @@ export const debugConnection = (url) => {
   console.log(`Connection attempt to: ${url}`);
   console.log(`Environment: ${window.__RUNTIME_CONFIG__?.NODE_ENV || window.RUNTIME_CONFIG?.NODE_ENV || 'development'}`);
   console.log(`API Domain: ${getApiDomain()}`);
-  console.log(`WebSocket URL: ${getWebsocketUrl()}`);
   return url;
 };
 
@@ -204,4 +172,3 @@ export const testConnection = async (url, options = {}) => {
 export const server = getApiDomain();
 export const apiBase = getApiBaseUrl(); // Base URL without /api/v2 for manual endpoint construction
 export const backend_url = getBackendUrl();
-export const SOCKET_URL = getWebsocketUrl();

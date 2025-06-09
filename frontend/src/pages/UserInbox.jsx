@@ -9,65 +9,21 @@ import { format } from "timeago.js";
 import Header from "../components/Layout/Header";
 import { UserAvatar, ProductImage } from "../components/common/EnhancedImage";
 import styles from "../styles/styles";
-import { disconnectSocket, getSocket, initializeSocket } from '../WebSocketClient';
 
 const BASE_URL = window.RUNTIME_CONFIG.API_URL;
 
 const UserInbox = () => {
   const { user } = useSelector((state) => state.user);
   const [conversations, setConversations] = useState([]);
-  const [arrivalMessage, setArrivalMessage] = useState(null);
   const [currentChat, setCurrentChat] = useState();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [activeStatus, setActiveStatus] = useState(false);
   const [open, setOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [images, setImages] = useState(null);  // Fixed: removed extra 'set' prefix
   const scrollRef = useRef(null);
 
-  useEffect(() => {
-    const initChat = async () => {
-      try {
-        const socket = initializeSocket();
-        
-        if (socket && user) {
-          socket.emit("addUser", user._id);
-          
-          socket.on("getUsers", (data) => {
-            setOnlineUsers(data);
-          });
-          
-          socket.on("getMessage", (data) => {
-            setArrivalMessage({
-              sender: data.senderId,
-              text: data.text,
-              createdAt: Date.now(),
-            });
-          });
-        }
-      } catch (error) {
-        console.error("Chat initialization error:", error);
-        toast.error("Failed to connect to chat service");
-      }
-    };
-
-    if (user) {
-      initChat();
-    }
-
-    return () => {
-      disconnectSocket();
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (arrivalMessage && currentChat?.members.includes(arrivalMessage.sender)) {
-      setMessages((prev) => [...prev, arrivalMessage]);
-    }
-  }, [arrivalMessage, currentChat]);
-
+  // Load conversations
   useEffect(() => {
     const getConversations = async () => {
       try {
@@ -89,29 +45,27 @@ const UserInbox = () => {
     }
   }, [user]);
 
-  const onlineCheck = (chat) => {
-    const chatMembers = chat.members.find((member) => member !== user?._id);
-    const online = onlineUsers.find((user) => user.userId === chatMembers);
-
-    return online ? true : false;
-  };
-
-  // get messages
+  // Get messages for current chat
   useEffect(() => {
     const getMessage = async () => {
       try {
         const response = await axios.get(
-          `${BASE_URL}/message/get-all-messages/${currentChat?._id}`
+          `${BASE_URL}/message/get-all-messages/${currentChat?._id}`,
+          {
+            withCredentials: true,
+          }
         );
         setMessages(response.data.messages);
       } catch (error) {
         console.log(error);
       }
     };
-    getMessage();
+    if (currentChat) {
+      getMessage();
+    }
   }, [currentChat]);
 
-  // create new message
+  // Create new message (HTTP-only, no Socket.IO)
   const sendMessageHandler = async (e) => {
     e.preventDefault();
 
@@ -120,104 +74,97 @@ const UserInbox = () => {
       text: newMessage,
       conversationId: currentChat._id,
     };
-    const receiverId = currentChat.members.find(
-      (member) => member !== user?._id
-    );
-
-    const socket = getSocket();
-    socket.emit("sendMessage", {
-      senderId: user?._id,
-      receiverId,
-      text: newMessage,
-    });
 
     try {
       if (newMessage !== "") {
-        await axios
-          .post(`${BASE_URL}/message/create-new-message`, message)
-          .then((res) => {
-            setMessages([...messages, res.data.message]);
-            updateLastMessage();
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+        const response = await axios.post(
+          `${BASE_URL}/message/create-new-message`, 
+          message,
+          {
+            withCredentials: true,
+          }
+        );
+        setMessages([...messages, response.data.message]);
+        updateLastMessage();
       }
     } catch (error) {
       console.log(error);
+      toast.error("Failed to send message");
     }
   };
 
   const updateLastMessage = async () => {
-    const socket = getSocket();
-    socket.emit("updateLastMessage", {
-      lastMessage: newMessage,
-      lastMessageId: user._id,
-    });
-
-    await axios
-      .put(`${BASE_URL}/conversation/update-last-message/${currentChat._id}`, {
-        lastMessage: newMessage,
-        lastMessageId: user._id,
-      })
-      .then((res) => {
-        setNewMessage("");
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    setImages(file);
-    imageSendingHandler(file);
-  };
-
-  const imageSendingHandler = async (e) => {
-    const formData = new FormData();
-
-    formData.append("images", e);
-    formData.append("sender", user._id);
-    formData.append("text", newMessage);
-    formData.append("conversationId", currentChat._id);
-
-    const receiverId = currentChat.members.find(
-      (member) => member !== user._id
-    );
-
-    const socket = getSocket();
-    socket.emit("sendMessage", {
-      senderId: user._id,
-      receiverId,
-      images: e,
-    });
-
     try {
-      await axios
-        .post(`${BASE_URL}/message/create-new-message`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        .then((res) => {
-          setImages();
-          setMessages([...messages, res.data.message]);
-          updateLastMessageForImage();
-        });
+      await axios.put(
+        `${BASE_URL}/conversation/update-last-message/${currentChat._id}`, 
+        {
+          lastMessage: newMessage,
+          lastMessageId: user._id,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      setNewMessage("");
     } catch (error) {
       console.log(error);
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    imageSendingHandler(file);
+  };
+
+  const imageSendingHandler = async (file) => {
+    const formData = new FormData();
+
+    formData.append("images", file);
+    formData.append("sender", user._id);
+    formData.append("text", newMessage);
+    formData.append("conversationId", currentChat._id);
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/message/create-new-message`, 
+        formData, 
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        }
+      );
+      setMessages([...messages, response.data.message]);
+      updateLastMessageForImage();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to send image");
+    }
+  };
+
   const updateLastMessageForImage = async () => {
-    await axios.put(
-      `${BASE_URL}/conversation/update-last-message/${currentChat._id}`,
-      {
-        lastMessage: "Photo",
-        lastMessageId: user._id,
-      }
-    );
+    try {
+      await axios.put(
+        `${BASE_URL}/conversation/update-last-message/${currentChat._id}`,
+        {
+          lastMessage: "Photo",
+          lastMessageId: user._id,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // Simple online check (since we don't have real-time Socket.IO data)
+  const onlineCheck = (chat) => {
+    // Without Socket.IO, we can't determine real-time online status
+    // Return false for now, or implement a periodic HTTP check if needed
+    return false;
   };
 
   useEffect(() => {
