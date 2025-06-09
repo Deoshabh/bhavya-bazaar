@@ -3,7 +3,18 @@ const User = require("../model/user");
 const Shop = require("../model/shop");
 const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-const SessionManager = require("../utils/sessionManager");
+
+// Critical import for session management with error handling
+let SessionManager;
+try {
+  SessionManager = require("../utils/sessionManager");
+  console.log("✅ SessionManager loaded successfully");
+} catch (error) {
+  console.error("❌ CRITICAL: Failed to load SessionManager:", error.message);
+  console.error("Please ensure sessionManager.js exists in utils/ directory");
+  process.exit(1); // Exit if SessionManager cannot be loaded
+}
+
 const JWTManager = require("../utils/jwtToken");
 const { authenticateAny } = require("../middleware/jwtAuth");
 
@@ -248,6 +259,12 @@ router.get(
   "/me",
   catchAsyncErrors(async (req, res, next) => {
     try {
+      // Safety check for SessionManager
+      if (!SessionManager) {
+        console.error("❌ SessionManager not available in /me endpoint");
+        return next(new ErrorHandler("Authentication service unavailable", 500));
+      }
+
       // Try to validate user session first
       const userSession = await SessionManager.validateUserSession(req);
       if (userSession) {
