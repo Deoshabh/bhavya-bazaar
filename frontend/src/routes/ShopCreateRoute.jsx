@@ -5,7 +5,7 @@ import Loader from '../components/Layout/Loader';
 
 const ShopCreateRoute = ({ children }) => {
   const { isAuthenticated, loading: userLoading } = useSelector((state) => state.user);
-  const { isSeller, loading: sellerLoading } = useSelector((state) => state.seller);
+  const { isSeller, isLoading: sellerLoading } = useSelector((state) => state.seller);
   
   if (userLoading || sellerLoading) {
     return <Loader />;
