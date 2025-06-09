@@ -875,6 +875,8 @@ const Address = () => {
             <br />
 
             {user &&
+                user.addresses &&
+                Array.isArray(user.addresses) &&
                 user.addresses.map((item, index) => (
                     <div
                         className="w-full bg-white h-min 800px:h-[70px] rounded-[4px] flex items-center px-3 shadow justify-between pr-10 mb-5"
@@ -904,7 +906,7 @@ const Address = () => {
                 ))}
 
             {
-                user && user.addresses.length === 0 && (
+                user && user.addresses && Array.isArray(user.addresses) && user.addresses.length === 0 && (
                     <h5 className="text-center pt-8 text-[18px]">
                         You not have any saved address!
                     </h5>

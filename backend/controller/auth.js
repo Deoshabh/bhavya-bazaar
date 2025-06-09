@@ -1,4 +1,5 @@
 const express = require("express");
+const express = require("express");
 const User = require("../model/user");
 const Shop = require("../model/shop");
 const ErrorHandler = require("../utils/ErrorHandler");
@@ -293,6 +294,54 @@ router.get(
     } catch (error) {
       console.error("Session verification error:", error);
       return next(new ErrorHandler("Session verification failed", 500));
+    }
+  })
+);
+
+// Get current authenticated user endpoint
+router.get(
+  "/me",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      // Try to validate user session first
+      const userSession = await SessionManager.validateUserSession(req);
+      if (userSession) {
+        return res.status(200).json({
+          success: true,
+          user: userSession,
+          userType: 'user',
+          message: "User session valid"
+        });
+      }
+      
+      // Try to validate shop session
+      const shopSession = await SessionManager.validateShopSession(req);
+      if (shopSession) {
+        return res.status(200).json({
+          success: true,
+          seller: shopSession,
+          userType: 'seller',
+          message: "Shop session valid"
+        });
+      }
+      
+      // Try to validate admin session
+      const adminSession = await SessionManager.validateAdminSession(req);
+      if (adminSession) {
+        return res.status(200).json({
+          success: true,
+          user: adminSession,
+          userType: 'admin',
+          message: "Admin session valid"
+        });
+      }
+      
+      // No valid session found
+      return next(new ErrorHandler("Not authenticated", 401));
+      
+    } catch (error) {
+      console.error("Session validation error:", error);
+      return next(new ErrorHandler("Authentication check failed", 500));
     }
   })
 );

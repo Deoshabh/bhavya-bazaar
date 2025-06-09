@@ -7,7 +7,63 @@ import axios from 'axios';
 import { Store } from '../redux/store';
 import { loadUser, loadSeller } from '../redux/actions/user';
 
-const BASE_URL = process.env.REACT_APP_SERVER;
+// Enhanced BASE_URL resolution with runtime config fallback
+const getBaseUrl = () => {
+  console.log('🔍 Resolving BASE_URL...');
+  
+  // Priority 1: Runtime config (for production deployments)
+  if (window.__RUNTIME_CONFIG__?.API_URL) {
+    const url = window.__RUNTIME_CONFIG__.API_URL.replace('/api/v2', '');
+    console.log('✅ Using __RUNTIME_CONFIG__ API_URL:', url);
+    return url;
+  }
+  if (window.RUNTIME_CONFIG?.API_URL) {
+    const url = window.RUNTIME_CONFIG.API_URL.replace('/api/v2', '');
+    console.log('✅ Using RUNTIME_CONFIG API_URL:', url);
+    return url;
+  }
+  
+  // Priority 2: Environment variables
+  if (process.env.REACT_APP_SERVER) {
+    console.log('✅ Using REACT_APP_SERVER:', process.env.REACT_APP_SERVER);
+    return process.env.REACT_APP_SERVER;
+  }
+  if (process.env.REACT_APP_API_URL) {
+    const url = process.env.REACT_APP_API_URL.replace('/api/v2', '');
+    console.log('✅ Using REACT_APP_API_URL:', url);
+    return url;
+  }
+  
+  // Priority 3: Smart domain detection for production
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    console.log('🌐 Detected hostname:', hostname);
+    
+    if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+      console.log('✅ Using production API URL for bhavyabazaar.com');
+      return 'https://api.bhavyabazaar.com';
+    }
+    
+    // For localhost development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      console.log('✅ Using localhost API URL');
+      return 'http://localhost:8000';
+    }
+      // For other domains, try to infer API URL
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      const inferredUrl = `https://api.${hostname}`;
+      console.log('✅ Using inferred API URL:', inferredUrl);
+      return inferredUrl;
+    }
+  }
+  
+  // Priority 4: Default fallback
+  console.log('⚠️ Using default fallback API URL');
+  return 'https://api.bhavyabazaar.com';
+};
+
+const BASE_URL = getBaseUrl();
+console.log('🔗 Final BASE_URL resolved to:', BASE_URL);
 
 // Cookie utility functions
 export const getCookie = (name) => {
