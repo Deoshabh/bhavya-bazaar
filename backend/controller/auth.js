@@ -179,10 +179,9 @@ router.post(
 // User logout
 router.post(
   "/logout/user",
-  catchAsyncErrors(async (req, res, next) => {
-    try {
+  catchAsyncErrors(async (req, res, next) => {    try {
       // Destroy user session using SessionManager
-      const sessionDestroyed = await SessionManager.destroySession(req);
+      const sessionDestroyed = await SessionManager.destroySession(req, res);
       
       if (!sessionDestroyed) {
         console.warn("Session could not be destroyed or was already invalid");
@@ -204,7 +203,7 @@ router.post(
   catchAsyncErrors(async (req, res, next) => {
     try {
       // Destroy shop session using SessionManager
-      const sessionDestroyed = await SessionManager.destroySession(req);
+      const sessionDestroyed = await SessionManager.destroySession(req, res);
       
       if (!sessionDestroyed) {
         console.warn("Session could not be destroyed or was already invalid");
@@ -226,7 +225,7 @@ router.post(
   catchAsyncErrors(async (req, res, next) => {
     try {
       // Destroy admin session using SessionManager
-      const sessionDestroyed = await SessionManager.destroySession(req);
+      const sessionDestroyed = await SessionManager.destroySession(req, res);
       
       if (!sessionDestroyed) {
         console.warn("Session could not be destroyed or was already invalid");
