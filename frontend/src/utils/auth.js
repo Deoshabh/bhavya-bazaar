@@ -67,13 +67,13 @@ export const getCurrentAuthType = () => {
   return null;
 };
 
-// Auto-login check using /auth/me endpoint
+// Auto-login check using /api/auth/me endpoint
 export const checkAuthSession = async () => {
   try {
-    console.log('🔍 Checking auth session at /auth/me...');
+    console.log('🔍 Checking auth session at /api/auth/me...');
     
     const response = await axios.get(
-      `${BASE_URL}/auth/me`,
+      `${BASE_URL}/api/auth/me`,
       { 
         withCredentials: true,
         timeout: 10000 // 10 second timeout
@@ -154,11 +154,11 @@ export const initializeAuth = async () => {
   try {
     console.log('🔄 Starting authentication initialization...');
     
-    // First try the /auth/me endpoint for accurate session check
+    // First try the /api/auth/me endpoint for accurate session check
     const sessionCheck = await checkAuthSession();
     
     if (sessionCheck.success) {
-      console.log('✅ Auth session restored via /auth/me:', sessionCheck.userType);
+      console.log('✅ Auth session restored via /api/auth/me:', sessionCheck.userType);
       return {
         success: true,
         userType: sessionCheck.userType,
@@ -167,7 +167,7 @@ export const initializeAuth = async () => {
       };
     }
     
-    console.log('ℹ️ /auth/me failed, checking local tokens...');
+    console.log('ℹ️ /api/auth/me failed, checking local tokens...');
     
     // Fallback: Check what tokens exist locally and try to load user data
     const promises = [];
