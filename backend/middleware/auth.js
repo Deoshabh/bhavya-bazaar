@@ -15,12 +15,15 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
     }
     
     req.user = userSession;
-    // Ensure id property is available for consistency
+    // Ensure both id and _id properties are available for consistency
+    if (req.user.id && !req.user._id) {
+      req.user._id = req.user.id;
+    }
     if (!req.user.id && req.user._id) {
       req.user.id = req.user._id.toString();
     }
-    console.log("User authenticated successfully:", req.user._id);
-    console.log("req.user.id set to:", req.user.id);
+    console.log("User authenticated successfully:", req.user.name, "ID:", req.user.id);
+    console.log("req.user:", JSON.stringify(req.user, null, 2));
     next();
   } catch (error) {
     console.error("Auth error:", error);
@@ -40,11 +43,14 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
     }
     
     req.seller = shopSession;
-    // Ensure id property is available for consistency
+    // Ensure both id and _id properties are available for consistency
+    if (req.seller.id && !req.seller._id) {
+      req.seller._id = req.seller.id;
+    }
     if (!req.seller.id && req.seller._id) {
       req.seller.id = req.seller._id.toString();
     }
-    console.log("Seller authenticated successfully:", req.seller._id);
+    console.log("Seller authenticated successfully:", req.seller.name, "ID:", req.seller.id);
     next();
   } catch (error) {
     console.error("Seller auth error:", error);
