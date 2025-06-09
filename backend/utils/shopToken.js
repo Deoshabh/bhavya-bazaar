@@ -13,12 +13,13 @@ const sendShopToken = (seller, statusCode, res) => {
     
     // Enhanced cookie options for production cross-domain setup
     const isProduction = process.env.NODE_ENV === "production";
+    
     const options = {
       expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
       secure: isProduction,
-      // Set domain correctly for bhavyabazaar.com
+      // Set consistent domain for production
       domain: isProduction ? ".bhavyabazaar.com" : undefined
     };
 

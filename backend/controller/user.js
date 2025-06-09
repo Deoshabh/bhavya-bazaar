@@ -207,11 +207,14 @@ router.get(
         }
       }
 
+      const isProduction = process.env.NODE_ENV === "production";
+      
       res.cookie("token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: isProduction ? ".bhavyabazaar.com" : undefined
       });
       
       res.status(201).json({

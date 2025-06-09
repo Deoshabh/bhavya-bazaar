@@ -128,15 +128,20 @@ router.post(
 
       if (!isPasswordValid) {
         return next(new ErrorHandler("Incorrect password", 400));
-      }
-        // Send token with admin_token cookie name for clarity
+      }      // Send token with admin_token cookie name for clarity
       const isProduction = process.env.NODE_ENV === "production";
+      
+      // Simplified domain setting - always use .bhavyabazaar.com for production
+      const cookieDomain = isProduction ? '.bhavyabazaar.com' : undefined;
+      
+      console.log('🍪 Setting admin cookie domain:', cookieDomain, '(production:', isProduction, ')');
+      
       const adminTokenOptions = {
         expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
-        domain: isProduction ? ".bhavyabazaar.com" : undefined
+        domain: cookieDomain
       };
 
       console.log('🍪 Setting admin token cookie with options:', {
@@ -180,13 +185,14 @@ router.post(
           // If token is invalid/expired, still blacklist it for 1 hour as safety measure
           await blacklistToken(token, 3600);
         }
-      }
-
+      }      const isProduction = process.env.NODE_ENV === "production";
+      
       res.cookie("token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: isProduction ? ".bhavyabazaar.com" : undefined
       });
       
       res.status(200).json({
@@ -216,13 +222,14 @@ router.post(
           // If token is invalid/expired, still blacklist it for 1 hour as safety measure
           await blacklistToken(seller_token, 3600);
         }
-      }
-
+      }      const isProduction = process.env.NODE_ENV === "production";
+      
       res.cookie("seller_token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: isProduction ? ".bhavyabazaar.com" : undefined
       });
       
       res.status(200).json({
@@ -252,13 +259,14 @@ router.post(
           // If token is invalid/expired, still blacklist it for 1 hour as safety measure
           await blacklistToken(admin_token, 3600);
         }
-      }
-
+      }      const isProduction = process.env.NODE_ENV === "production";
+      
       res.cookie("admin_token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        domain: isProduction ? ".bhavyabazaar.com" : undefined
       });
       
       res.status(200).json({
@@ -386,12 +394,14 @@ router.post(
         if (!user || user.role !== "Admin") {
           return next(new ErrorHandler("Admin not found", 404));
         }
+          const isProduction = process.env.NODE_ENV === "production";
         
         res.cookie("admin_token", user.getJwtToken(), {
           expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+          secure: isProduction,
+          sameSite: isProduction ? "none" : "lax",
+          domain: isProduction ? ".bhavyabazaar.com" : undefined
         });
 
         res.status(200).json({
