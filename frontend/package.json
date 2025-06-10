@@ -42,9 +42,7 @@
     "redux": "^4.2.1",
     "timeago.js": "^4.0.2",
     "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "prestart": "node ./scripts/fix-source-maps.js",
+  },  "scripts": {
     "start": "cross-env NODE_ENV=development react-app-rewired start",
     "build": "cross-env CI=false GENERATE_SOURCEMAP=false NODE_ENV=production react-app-rewired build --omit=dev",
     "build:prod": "cross-env NODE_ENV=production npm run build",
