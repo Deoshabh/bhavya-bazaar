@@ -134,15 +134,32 @@ if (allowedOrigins.length === 0) {
   if (process.env.NODE_ENV === 'production') {
     allowedOrigins.push(
       "https://bhavyabazaar.com",
-      "https://www.bhavyabazaar.com"
+      "https://www.bhavyabazaar.com",
+      "https://api.bhavyabazaar.com"
     );
   } else {
     allowedOrigins.push(
       "https://bhavyabazaar.com",
       "https://www.bhavyabazaar.com",
-      "http://localhost:3000"
+      "https://api.bhavyabazaar.com",
+      "http://localhost:3000",
+      "http://localhost:3004"
     );
   }
+}
+
+// Ensure required production origins are always included
+if (process.env.NODE_ENV === 'production') {
+  const requiredOrigins = [
+    "https://bhavyabazaar.com",
+    "https://www.bhavyabazaar.com"
+  ];
+  
+  requiredOrigins.forEach(origin => {
+    if (!allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  });
 }
 
 console.log("🌐 Allowed CORS origins:", allowedOrigins);
@@ -153,15 +170,18 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       
+      // Check if origin is in allowed list
       if (allowedOrigins.indexOf(origin) !== -1) {
+        console.log(`✅ CORS allowed origin: ${origin}`);
         return callback(null, true);
       } else {
         console.warn(`❌ CORS blocked request from: ${origin}`);
+        console.warn(`❌ Allowed origins are:`, allowedOrigins);
         return callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: [
       "Content-Type",
       "Authorization", 
@@ -169,14 +189,25 @@ app.use(
       "Accept",
       "Origin",
       "Cache-Control",
+      "X-Correlation-ID",
+      "X-User-ID",
+      "X-Seller-ID"
     ],
-    exposedHeaders: ["Content-Range", "X-Total-Count"],
+    exposedHeaders: [
+      "Content-Range", 
+      "X-Total-Count",
+      "X-RateLimit-Limit", 
+      "X-RateLimit-Remaining", 
+      "X-RateLimit-Reset"
+    ],
   })
 );
 
 // —————————— Logging, Parsing, Static ——————————
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  const timestamp = new Date().toISOString();
+  const origin = req.get('Origin') || 'no-origin';
+  console.log(`${timestamp} | ${req.method} ${req.url} | Origin: ${origin} | IP: ${req.ip}`);
   next();
 });
 app.use(express.json());
