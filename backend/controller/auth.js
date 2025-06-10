@@ -1010,6 +1010,67 @@ const ADMIN_LIMITS = {
   maxSuperAdmins: 1
 };
 
+// Initial admin setup (Only works when no admins exist)
+router.post("/setup-initial-admin",
+  authLimiter,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🔧 Initial admin setup request received");
+      
+      // Check if any admin already exists
+      const existingAdminCount = await Admin.countDocuments({});
+      if (existingAdminCount > 0) {
+        return next(new ErrorHandler("Admin accounts already exist. Use regular creation endpoints.", 400));
+      }
+
+      const { setupKey } = req.body;
+
+      // Special setup key for initial admin creation
+      if (setupKey !== "BHAVYA_INITIAL_SETUP_2024") {
+        return next(new ErrorHandler("Invalid setup key", 401));
+      }
+
+      // Create initial super admin account
+      const superAdmin = await Admin.create({
+        name: "Super Administrator",
+        email: "superadmin@bhavyabazaar.com",
+        password: "SuperAdmin@2024!",
+        role: "superadmin",
+        permissions: [
+          "manage_users",
+          "manage_sellers",
+          "manage_products", 
+          "manage_orders",
+          "manage_system",
+          "view_analytics",
+          "manage_admins",
+          "manage_super_settings"
+        ],
+        isActive: true,
+        createdBy: "system_setup"
+      });
+
+      console.log("✅ Initial super admin created successfully");
+
+      res.status(201).json({
+        success: true,
+        message: "Initial super admin created successfully",
+        adminCredentials: {
+          email: "superadmin@bhavyabazaar.com",
+          password: "SuperAdmin@2024!",
+          role: "superadmin",
+          note: "Please change password after first login"
+        },
+        limits: ADMIN_LIMITS
+      });
+
+    } catch (error) {
+      console.error("❌ Initial admin setup error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 // Reset admin system (DANGER - Only for initial setup)
 router.post("/admin/reset-system", 
   authLimiter,
