@@ -4,15 +4,13 @@ import { Link } from "react-router-dom";
 import { 
   MdPersonOutline, 
   MdStorefront, 
-  MdAdminPanelSettings,
   MdArrowForward
 } from "react-icons/md";
 
 /**
  * Login Selection Page - Choose user role for authentication
  */
-const LoginSelectionPage = () => {
-  const roleOptions = [
+const LoginSelectionPage = () => {  const roleOptions = [
     {
       type: "user",
       title: "Customer Login",
@@ -32,16 +30,6 @@ const LoginSelectionPage = () => {
       color: "green",
       bgGradient: "from-green-500 to-green-600",
       hoverGradient: "from-green-600 to-green-700"
-    },
-    {
-      type: "admin",
-      title: "Admin Login",
-      description: "Administrative access to platform management",
-      icon: <MdAdminPanelSettings className="w-12 h-12" />,
-      path: "/login/admin",
-      color: "red",
-      bgGradient: "from-red-500 to-red-600",
-      hoverGradient: "from-red-600 to-red-700"
     }
   ];
 
@@ -61,10 +49,8 @@ const LoginSelectionPage = () => {
           <p className="text-lg text-gray-600">
             Choose your login type to access your account
           </p>
-        </motion.div>
-
-        {/* Role Selection Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        </motion.div>        {/* Role Selection Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 max-w-2xl mx-auto">
           {roleOptions.map((role, index) => (
             <motion.div
               key={role.type}

@@ -10,13 +10,14 @@ import {
 } from "react-icons/md";
 import { TbAddressBook } from "react-icons/tb";
 import { toast } from "react-toastify";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { logoutUser } from "../../redux/actions/user";
+import useAdminAccess from "../../hooks/useAdminAccess";
 
 const ProfileSidebar = ({ active, setActive }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.user);
+  const { canAccessAdmin, loading: adminLoading } = useAdminAccess();
 
   const logoutHandler = async () => {
     try {
@@ -130,7 +131,8 @@ const ProfileSidebar = ({ active, setActive }) => {
         </span>
       </div>
 
-      {user && user?.role === "Admin" && (
+      {/* Admin Dashboard - Only show if user has admin access */}
+      {canAccessAdmin && !adminLoading && (
         <Link to="/admin/dashboard">
           <div
             className="flex items-center cursor-pointer w-full mb-8"
@@ -138,7 +140,7 @@ const ProfileSidebar = ({ active, setActive }) => {
           >
             <MdOutlineAdminPanelSettings
               size={20}
-              color={active === 7 ? "red" : ""}
+              color={active === 8 ? "red" : ""}
             />
             <span
               className={`pl-3 ${
