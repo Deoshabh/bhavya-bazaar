@@ -29,6 +29,15 @@ const cleanupFile = (filename) => {
   }
 };
 
+// Conditional upload middleware - only process if multipart/form-data
+const conditionalUpload = (req, res, next) => {
+  const contentType = req.get('Content-Type') || '';
+  if (contentType.includes('multipart/form-data')) {
+    return upload.single("avatar")(req, res, next);
+  }
+  next();
+};
+
 // ===================
 // USER AUTHENTICATION
 // ===================
@@ -182,15 +191,6 @@ router.post("/login-user",
 // =====================
 // SELLER AUTHENTICATION (Enhanced from shop.js)
 // =====================
-
-// Conditional upload middleware - only process if multipart/form-data
-const conditionalUpload = (req, res, next) => {
-  const contentType = req.get('Content-Type') || '';
-  if (contentType.includes('multipart/form-data')) {
-    return upload.single("avatar")(req, res, next);
-  }
-  next();
-};
 
 // Seller Registration (Moved from shop.js)
 router.post("/register-seller", 
