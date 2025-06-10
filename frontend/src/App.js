@@ -65,6 +65,8 @@ import {
   RequireAdmin, 
   RequireUserForShopCreate
 } from "./components/Auth/RouteGuards.jsx";
+// Import the correct ShopCreateRoute that allows unauthenticated access
+import ShopCreateRoute from "./routes/ShopCreateRoute.jsx";
 
 import { getAllProducts } from "./redux/actions/product";
 import { getAllEvents } from "./redux/actions/event";
@@ -83,14 +85,8 @@ import {
 } from "./utils/performanceOptimizer";
 import { preloadCriticalImages } from "./utils/imageOptimization";
 
-// Create ShopCreateRoute component for shop creation - now using unified auth
-const ShopCreateRoute = ({ children }) => {
-  return (
-    <RequireUserForShopCreate>
-      {children}
-    </RequireUserForShopCreate>
-  );
-};
+// Import the correct ShopCreateRoute that allows unauthenticated access
+import ShopCreateRoute from "./routes/ShopCreateRoute.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
