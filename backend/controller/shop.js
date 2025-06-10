@@ -155,60 +155,8 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
   }
 });
 
-// Login shop
-router.post(
-  "/login-shop",
-  authLimiter, // Add rate limiting for authentication
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      const { phoneNumber, password } = req.body;
-
-      if (!phoneNumber || !password) {
-        return next(new ErrorHandler("Please provide phone number and password", 400));
-      }
-
-      // Validate phone number format
-      if (!/^\d{10}$/.test(phoneNumber)) {
-        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
-      }
-
-      const shop = await Shop.findOne({ phoneNumber }).select("+password");
-
-      if (!shop) {
-        return next(new ErrorHandler("Shop doesn't exist with this phone number", 400));
-      }
-
-      const isPasswordValid = await shop.comparePassword(password);
-
-      if (!isPasswordValid) {
-        return next(new ErrorHandler("Incorrect password", 400));
-      }
-
-      // Create shop session using SessionManager instead of JWT
-      await SessionManager.createShopSession(req, shop);
-      
-      res.status(201).json({
-        success: true,
-        seller: {
-          id: shop._id,
-          _id: shop._id, // Ensure both id formats are available
-          name: shop.name,
-          phoneNumber: shop.phoneNumber,
-          description: shop.description,
-          avatar: shop.avatar || null,
-          email: shop.email || null,
-          address: shop.address || null,
-          zipCode: shop.zipCode || null
-        },
-        userType: 'seller', // Changed from 'shop' to 'seller' for consistency
-        message: "Shop login successful"
-      });
-      
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
-  })
-);
+// REMOVED: Legacy shop login endpoint - now handled by unified auth controller
+// Login is now handled by /api/auth/login-seller to avoid conflicts
 
 // Load shop
 router.get(

@@ -56,7 +56,7 @@ router.post("/register-user",
       if (email && !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
         if (req.file) cleanupFile(req.file.filename);
         return next(new ErrorHandler("Please provide a valid email address", 400));
-      }// Check for existing user
+      }      // Check for existing user
       const existingUser = await User.findOne({ 
         $or: [
           { phoneNumber },
@@ -68,6 +68,13 @@ router.post("/register-user",
         if (req.file) cleanupFile(req.file.filename);
         const field = existingUser.phoneNumber === phoneNumber ? "phone number" : "email";
         return next(new ErrorHandler(`User already exists with this ${field}`, 400));
+      }
+
+      // Check if seller already exists with this phone number
+      const existingSeller = await Shop.findOne({ phoneNumber });
+      if (existingSeller) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("A seller account already exists with this phone number. Please use a different number or contact support.", 400));
       }
 
       // File validation if uploaded
@@ -194,13 +201,18 @@ router.post("/register-seller",
       if (!/^\d{10}$/.test(phoneNumber)) {
         if (req.file) cleanupFile(req.file.filename);
         return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
-      }
-
-      // Check for existing seller
+      }      // Check for existing seller
       const existingSeller = await Shop.findOne({ phoneNumber });
       if (existingSeller) {
         if (req.file) cleanupFile(req.file.filename);
         return next(new ErrorHandler("Seller already exists with this phone number", 400));
+      }
+
+      // Check if user already exists with this phone number
+      const existingUser = await User.findOne({ phoneNumber });
+      if (existingUser) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("A user account already exists with this phone number. Please use a different number or contact support.", 400));
       }
 
       // File validation (same as original shop.js)

@@ -6,7 +6,6 @@ import { RxAvatar } from 'react-icons/rx';
 import { MdCloudUpload, MdLocationPin } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { server } from "../../server";
 import Card from "../common/Card";
 import Button from "../common/Button";
 import SafeImage from "../common/SafeImage";
@@ -37,37 +36,73 @@ const ShopCreate = () => {
             return toast.error("Phone number must be exactly 10 digits!");
         }
 
-        const config = { headers: { "Content-Type": "multipart/form-data" } };
-        // meaning of uper line is that we are creating a new object with the name of config and the value of config is {headers:{'Content-Type':'multipart/form-data'}}  
+        // Get the base URL properly (same logic as LoginForm and Signup)
+        const getBaseUrl = () => {
+            if (window.RUNTIME_CONFIG?.API_URL) {
+                return window.RUNTIME_CONFIG.API_URL.replace('/api/v2', '');
+            }
+            if (window.__RUNTIME_CONFIG__?.API_URL) {
+                return window.__RUNTIME_CONFIG__.API_URL.replace('/api/v2', '');
+            }
+            // Fallback for development/production
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:8000';
+            }
+            if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+                return 'https://api.bhavyabazaar.com';
+            }
+            return `https://api.${hostname}`;
+        };
+        
+        const baseUrl = getBaseUrl();
+        const apiUrl = `${baseUrl}/api/auth/register-seller`;
+        
+        console.log("🔍 Seller Registration URL:", apiUrl);
+        console.log("🔍 Base URL:", baseUrl);
+
+        const config = { 
+            headers: { "Content-Type": "multipart/form-data" },
+            withCredentials: true 
+        };
 
         const newForm = new FormData();
-        // meaning of uper line is that we are creating a new form data object and we are sending it to the backend with the name of newForm and the value of newForm is new FormData()
-        newForm.append("file", avatar);
-        // meanin of newForm.append("file",avatar) is that we are sending a file to the backend with the name of file and the value of the file is avatar
+        newForm.append("avatar", avatar);
         newForm.append("name", name);
         newForm.append("password", password);
         newForm.append("zipCode", zipCode);
         newForm.append("address", address);
         newForm.append("phoneNumber", phoneNumber);
 
-        axios
-            .post(`${server}/shop/create-shop`, newForm, config)
-            .then((res) => {
-                toast.success(res.data.message);
-                setName("");
-                setPassword("");
-                setAvatar();
-                setZipCode("");
-                setAddress("");
-                setPhoneNumber("");
-
-            })
-
-            .catch((error) => {
+        try {
+            const response = await axios.post(apiUrl, newForm, config);
+            toast.success(response.data.message || "Shop registered successfully!");
+            
+            // Clear form
+            setName("");
+            setPassword("");
+            setAvatar(null);
+            setZipCode("");
+            setAddress("");
+            setPhoneNumber("");
+            
+            // Redirect to shop login
+            navigate("/shop-login");
+        } catch (error) {
+            console.error("❌ Shop registration error:", error);
+            
+            if (error.response?.data?.message) {
                 toast.error(error.response.data.message);
-            });
-        navigate("/shop-login")
-        window.location.reload();
+            } else if (error.code === 'ECONNABORTED') {
+                toast.error("Request timeout. Please check your connection and try again.");
+            } else if (error.response?.status === 429) {
+                toast.error("Too many registration attempts. Please try again later.");
+            } else if (error.response?.status === 404) {
+                toast.error("Registration service not found. Please try again later.");
+            } else {
+                toast.error("Registration failed. Please check your information and try again.");
+            }
+        }
 
 
 

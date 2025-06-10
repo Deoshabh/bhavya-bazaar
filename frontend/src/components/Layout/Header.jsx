@@ -171,17 +171,31 @@ const Header = ({ activeHeading }) => {
           {/* Become a Seller */}
           <div>
             {isAuthenticated ? (
-              <Link to={`${isSeller ? "/dashboard" : "/shop-create"}`}>
-                <Button
-                  variant="primary"
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
-                >
-                  <span className="flex items-center text-white">
-                    {isSeller ? "Go Dashboard" : "Become Seller"}
-                    <IoIosArrowForward className="ml-2" size={16} />
-                  </span>
-                </Button>
-              </Link>
+              isSeller ? (
+                <Link to="/dashboard">
+                  <Button
+                    variant="primary"
+                    className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
+                  >
+                    <span className="flex items-center text-white">
+                      Shop Dashboard
+                      <IoIosArrowForward className="ml-2" size={16} />
+                    </span>
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/shop-create">
+                  <Button
+                    variant="primary"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                  >
+                    <span className="flex items-center text-white">
+                      Become Seller
+                      <IoIosArrowForward className="ml-2" size={16} />
+                    </span>
+                  </Button>
+                </Link>
+              )
             ) : (
               <Link to="/login">
                 <Button

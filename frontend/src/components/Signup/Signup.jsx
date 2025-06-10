@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
 import { MdCloudUpload } from "react-icons/md";
 import axios from "axios";
-import { server } from "../../server";
 import { toast } from "react-toastify";
 import Card from "../common/Card";
 import Button from "../common/Button";
@@ -48,7 +47,7 @@ const Signup = () => {
         }
 
         // Validate email format if provided (optional)
-        if (email && !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+        if (email && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
             toast.error("Please provide a valid email address");
             return;
         }
@@ -86,23 +85,47 @@ const Signup = () => {
             formData.append("avatar", avatar);
         }
 
-        // Use runtime config for API URL with proper fallback chain
-        const BASE_URL = window.__RUNTIME_CONFIG__?.API_URL || 
-                        window.RUNTIME_CONFIG?.API_URL || 
-                        server || 
-                        'https://api.bhavyabazaar.com/api';
-                        
-        // Extract base URL without /api/v2 to avoid duplication
-        const API_BASE = BASE_URL.replace('/api/v2', '').replace('/api', '');
+        // Get the base URL properly (same logic as LoginForm)
+        const getBaseUrl = () => {
+            // Priority 1: Runtime config (for production deployments)
+            if (window.__RUNTIME_CONFIG__?.API_URL) {
+                const url = window.__RUNTIME_CONFIG__.API_URL.replace('/api/v2', '');
+                console.log('✅ Using __RUNTIME_CONFIG__ API_URL:', url);
+                return url;
+            }
+            if (window.RUNTIME_CONFIG?.API_URL) {
+                const url = window.RUNTIME_CONFIG.API_URL.replace('/api/v2', '');
+                console.log('✅ Using RUNTIME_CONFIG API_URL:', url);
+                return url;
+            }
+            
+            // Priority 2: Environment detection
+            const hostname = window.location.hostname;
+            console.log('🌐 Detected hostname:', hostname);
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                console.log('✅ Using localhost API URL');
+                return 'http://localhost:8000';
+            }
+            if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+                console.log('✅ Using production API URL for bhavyabazaar.com');
+                return 'https://api.bhavyabazaar.com';
+            }
+            
+            // Priority 3: Inferred API URL
+            const inferredUrl = `https://api.${hostname}`;
+            console.log('✅ Using inferred API URL:', inferredUrl);
+            return inferredUrl;
+        };
         
-        if (!API_BASE) {
-            console.error('❌ API_URL is not defined.');
-            toast.error("Configuration error. Please contact support.");
-            return;
-        }
+        const baseUrl = getBaseUrl();
         
-        // Use new unified auth endpoint
-        const apiUrl = `${API_BASE}/api/auth/register-user`;
+        // Simple and safe URL construction
+        const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+        const apiUrl = `${cleanBaseUrl}/api/auth/register-user`;
+        
+        console.log("🔍 Registration URL:", apiUrl);
+        console.log("🔍 Base URL:", baseUrl);
         
         try {
             setLoading(true);

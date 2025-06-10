@@ -2,7 +2,8 @@
 // This centralizes all API URL handling logic in one place
 import axios from 'axios';
 
-class ApiService {  constructor() {
+class ApiService {
+  constructor() {
     // Enhanced API URL resolution with better fallback chain
     this.apiBase = this.getApiUrl();
     
@@ -48,10 +49,11 @@ class ApiService {  constructor() {
       }
     }
     
-    // Priority 4: Default fallback
-    const fallbackUrl = 'https://api.bhavyabazaar.com/api/v2';
-    console.log('Using fallback API URL:', fallbackUrl);
-    return fallbackUrl;  }
+      // Priority 4: Default fallback
+      const fallbackUrl = 'http://localhost:8000/api/v2';
+      console.log('Using fallback API URL:', fallbackUrl);
+      return fallbackUrl;
+    }
   
   initializeAxios() {
     // Ensure API URL ends with /api/v2
@@ -110,12 +112,13 @@ class ApiService {  constructor() {
       }
     );
   }
-    // Authentication endpoints (unified)
+
+  // Authentication endpoints (unified)
   async loginUser(phoneNumber, password) {
     // Try unified auth endpoint first
     try {
       const unifiedUrl = this.apiBase.replace('/api/v2', '');
-      return axios.post(`${unifiedUrl}/api/auth/login/user`, { phoneNumber, password }, {
+      return axios.post(`${unifiedUrl}/api/auth/login-user`, { phoneNumber, password }, {
         withCredentials: true
       });
     } catch (error) {
@@ -128,7 +131,7 @@ class ApiService {  constructor() {
     // Try unified auth endpoint first
     try {
       const unifiedUrl = this.apiBase.replace('/api/v2', '');
-      return axios.post(`${unifiedUrl}/api/auth/login/shop`, { phoneNumber, password }, {
+      return axios.post(`${unifiedUrl}/api/auth/login-seller`, { phoneNumber, password }, {
         withCredentials: true
       });
     } catch (error) {
@@ -141,7 +144,7 @@ class ApiService {  constructor() {
     // Try unified auth endpoint first
     try {
       const unifiedUrl = this.apiBase.replace('/api/v2', '');
-      return axios.post(`${unifiedUrl}/api/auth/login/admin`, { phoneNumber, password }, {
+      return axios.post(`${unifiedUrl}/api/auth/login-admin`, { phoneNumber, password }, {
         withCredentials: true
       });
     } catch (error) {
@@ -197,15 +200,17 @@ class ApiService {  constructor() {
       throw new Error('Session extension not available with legacy endpoints');
     }
   }
+
   async getCurrentUser() {
     return this.api.get('/user/getuser');
   }
 
-  // Shop endpoints
+  // Product endpoints
   async getShopInfo(userId) {
     return this.api.get(`/shop/get-shop-info/${userId}`);
   }
-  
+
+  // Event endpoints
   // Product endpoints
   async getAllProducts() {
     return this.api.get('/product/get-all-products');

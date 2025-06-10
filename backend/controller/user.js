@@ -137,58 +137,8 @@ router.post("/create-user", upload.single("file"), async (req, res, next) => {
   }
 });
 
-// login user with phone number (legacy endpoint - redirects to unified auth)
-router.post(
-  "/login-user",
-  authLimiter, // Add rate limiting for authentication
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      const { phoneNumber, password } = req.body;
-
-      if (!phoneNumber || !password) {
-        return next(new ErrorHandler("Please provide phone number and password", 400));
-      }
-      
-      // Validate phone number format
-      if (!/^\d{10}$/.test(phoneNumber)) {
-        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
-      }
-      
-      const user = await User.findOne({ phoneNumber }).select("+password");
-
-      if (!user) {
-        return next(new ErrorHandler("User does not exist", 400));
-      }
-
-      // Compare password with database password
-      const isPasswordValid = await user.comparePassword(password);
-
-      if (!isPasswordValid) {
-        return next(
-          new ErrorHandler("Incorrect password", 400)
-        );
-      }
-      
-      // Create user session using SessionManager
-      await SessionManager.createUserSession(req, user);
-      
-      res.status(201).json({
-        success: true,
-        user: {
-          id: user._id,
-          name: user.name,
-          phoneNumber: user.phoneNumber,
-          role: user.role,
-          avatar: user.avatar || null
-        },
-        userType: 'user',
-        message: "User login successful"
-      });
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
-  })
-);
+// REMOVED: Legacy login endpoint - now handled by unified auth controller
+// Login is now handled by /api/auth/login-user to avoid conflicts
 
 // load user
 router.get(

@@ -90,7 +90,7 @@ const LoginForm = ({
 
     // Validation based on input type
     if (config.inputType === "email") {
-      const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+      const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
       if (!emailRegex.test(email)) {
         return toast.error("Please enter a valid email address!");
       }
@@ -115,13 +115,34 @@ const LoginForm = ({
         ...(config.inputType === "email" ? { email } : { phoneNumber }),
         ...(config.requiresAdminKey && { adminSecretKey })
       };
+        // Get the base URL properly
+      const getBaseUrl = () => {
+        if (window.RUNTIME_CONFIG?.API_URL) {
+          return window.RUNTIME_CONFIG.API_URL.replace('/api/v2', '');
+        }
+        if (window.__RUNTIME_CONFIG__?.API_URL) {
+          return window.__RUNTIME_CONFIG__.API_URL.replace('/api/v2', '');
+        }
+        // Fallback for development/production
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return 'http://localhost:8000';
+        }
+        if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+          return 'https://api.bhavyabazaar.com';
+        }
+        return `https://api.${hostname}`;
+      };
+      
+      const baseUrl = getBaseUrl();
+      console.log(`🔐 ${mode} login attempt to:`, `${baseUrl}${config.endpoint}`);
       
       // Try unified auth endpoint
       const response = await axios.post(
-        `${window.RUNTIME_CONFIG?.API_URL?.replace('/api/v2', '') || 'https://api.bhavyabazaar.com'}${config.endpoint}`,
+        `${baseUrl}${config.endpoint}`,
         requestData,
         { withCredentials: true, timeout: 15000 }
-      );      toast.success(response.data.message || "Login successful!");
+      );toast.success(response.data.message || "Login successful!");
       
       // Load authentication state with improved timing
       setTimeout(async () => {
@@ -143,13 +164,23 @@ const LoginForm = ({
         } catch (loadError) {
           console.error('❌ Error loading auth state after login:', loadError);
           setLoading(false);
-          toast.error("Login successful but failed to load user data. Please refresh the page.");
-        }
+          toast.error("Login successful but failed to load user data. Please refresh the page.");        }
       }, 250); // Increased delay to ensure session establishment
 
     } catch (error) {
       setLoading(false);
       console.error(`❌ ${mode} login error:`, error);
+      
+      // Detailed error logging for debugging
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request made but no response:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
       
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
@@ -157,8 +188,12 @@ const LoginForm = ({
         toast.error("Request timeout. Please check your connection and try again.");
       } else if (error.response?.status === 429) {
         toast.error("Too many login attempts. Please try again later.");
+      } else if (error.response?.status === 404) {
+        toast.error("Authentication service not found. Please try again later.");
+      } else if (error.response?.status === 500) {
+        toast.error("Server error. Please try again later.");
       } else {
-        toast.error("Login failed. Please try again.");
+        toast.error("Login failed. Please check your credentials and try again.");
       }
     }
   };
