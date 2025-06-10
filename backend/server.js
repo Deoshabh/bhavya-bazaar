@@ -226,12 +226,45 @@ if (apiLimiter && typeof apiLimiter === 'function') {
   console.warn("⚠️ API rate limiter not available, proceeding without rate limiting");
 }
 
+// —————————— EMERGENCY CORS & PREFLIGHT HANDLERS ——————————
+// Handle preflight requests explicitly for production debugging
+app.options('*', (req, res) => {
+  const origin = req.get('Origin');
+  console.log(`🔧 CORS Preflight from origin: ${origin}`);
+  
+  // Check if origin is allowed
+  if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Cache-Control,X-Correlation-ID,X-User-ID,X-Seller-ID');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    console.log(`✅ CORS Preflight allowed for: ${origin}`);
+    return res.status(200).end();
+  } else {
+    console.warn(`❌ CORS Preflight blocked for: ${origin}`);
+    return res.status(403).json({ error: 'CORS policy violation' });
+  }
+});
+
+// Emergency CORS debug endpoint
+app.get("/api/cors-debug", (req, res) => {
+  const origin = req.get('Origin');
+  console.log(`🔧 CORS Debug request from: ${origin}`);
+  
+  res.json({
+    requestOrigin: origin,
+    allowedOrigins: allowedOrigins,
+    isOriginAllowed: !origin || allowedOrigins.indexOf(origin) !== -1,
+    corsEnvironment: process.env.CORS_ORIGIN,
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+    headers: req.headers
+  });
+});
+
 // —————————— Debug endpoint for production troubleshooting ——————————
 app.get("/api/v2/debug/env", (req, res) => {
-  if (process.env.NODE_ENV !== 'production') {
-    return res.status(403).json({ error: "Debug endpoint only available in production" });
-  }
-  
   res.json({
     nodeEnv: process.env.NODE_ENV,
     port: process.env.PORT,
@@ -243,6 +276,33 @@ app.get("/api/v2/debug/env", (req, res) => {
     redisPort: process.env.REDIS_PORT,
     hasRedisPassword: !!process.env.REDIS_PASSWORD,
     redisAvailable: global.redisAvailable || false,
+    allowedOrigins: allowedOrigins,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// —————————— Emergency Health Check Endpoints ——————————
+// Simple ping endpoint for immediate health verification
+app.get("/api/ping", (req, res) => {
+  const origin = req.get('Origin');
+  console.log(`🏓 Ping request from: ${origin || 'no-origin'}`);
+  res.json({
+    status: "ok",
+    message: "Backend service is running",
+    timestamp: new Date().toISOString(),
+    origin: origin,
+    environment: process.env.NODE_ENV
+  });
+});
+
+// Auth ping with CORS verification
+app.get("/api/auth/ping", (req, res) => {
+  const origin = req.get('Origin');
+  console.log(`🔐 Auth ping from: ${origin || 'no-origin'}`);
+  res.json({
+    status: "ok",
+    message: "Auth service is accessible",
+    corsAllowed: !origin || allowedOrigins.indexOf(origin) !== -1,
     timestamp: new Date().toISOString()
   });
 });
