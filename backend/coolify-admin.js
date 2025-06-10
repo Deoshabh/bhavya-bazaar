@@ -9,14 +9,41 @@
 
 const mongoose = require('mongoose');
 const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
-// Import models with correct paths for scripts directory
-const Shop = require('../model/shop');
-const Product = require('../model/product');
-const Event = require('../model/event');
-const CoupounCode = require('../model/coupounCode');
-const User = require('../model/user');
+// Smart model loading - try multiple paths to handle different deployment scenarios
+function loadModel(modelName) {
+  const possiblePaths = [
+    `./model/${modelName}`,           // From backend directory
+    `../model/${modelName}`,         // From scripts directory  
+    `../../model/${modelName}`,      // From nested scripts
+    `/app/model/${modelName}`,       // Absolute path in container
+    `/app/backend/model/${modelName}` // Full path in container
+  ];
+  
+  for (const modelPath of possiblePaths) {
+    try {
+      const fullPath = path.resolve(modelPath);
+      if (fs.existsSync(fullPath + '.js')) {
+        return require(modelPath);
+      }
+    } catch (error) {
+      // Continue to next path
+      continue;
+    }
+  }
+  
+  throw new Error(`Could not find model: ${modelName}. Checked paths: ${possiblePaths.join(', ')}`);
+}
+
+// Import models with smart path resolution
+const Shop = loadModel('shop');
+const Product = loadModel('product');
+const Event = loadModel('event');
+const CoupounCode = loadModel('coupounCode');
+const User = loadModel('user');
 
 // Colors for better terminal output
 const colors = {

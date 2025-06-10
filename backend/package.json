@@ -20,7 +20,9 @@
     "admin": "node coolify-admin.js",
     "admin:help": "node coolify-admin.js",
     "admin:test": "node coolify-admin.js test",
-    "admin:system": "node coolify-admin.js system"
+    "admin:system": "node coolify-admin.js system",
+    "admin:wrapper": "node scripts/coolify-admin-wrapper.js",
+    "debug:paths": "node scripts/path-diagnostic.js"
   },
   "author": "Om Prakash Pattjoshi",
   "license": "ISC",

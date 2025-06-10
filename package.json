@@ -9,7 +9,13 @@
     "backend:cleanup:diagnose": "cd backend && npm run cleanup:sellers diagnose",
     "backend:cleanup:fix": "cd backend && npm run cleanup:sellers fix",
     "backend:cleanup:force": "cd backend && npm run cleanup:sellers force",
-    "backend:auth:test": "cd backend && npm run test:auth"
+    "backend:auth:test": "cd backend && npm run test:auth",
+    "test:api:all": "node comprehensive-api-test.js",
+    "test:api:production": "node comprehensive-api-test.js production",
+    "test:api:local": "node comprehensive-api-test.js local",
+    "test:api:staging": "node comprehensive-api-test.js staging",
+    "test:api:critical": "node critical-api-test.js",
+    "test:quick": "node critical-api-test.js"
   },
   "dependencies": {
     "axios": "^1.9.0"
