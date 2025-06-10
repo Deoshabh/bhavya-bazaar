@@ -6,9 +6,12 @@ import { CiMoneyBill } from "react-icons/ci";
 import { Link } from "react-router-dom";
 import { HiOutlineUserGroup } from "react-icons/hi";
 import { BsHandbag } from "react-icons/bs";
-import { MdOutlineLocalOffer } from "react-icons/md";
+import { MdOutlineLocalOffer, MdOutlineAdminPanelSettings } from "react-icons/md";
+import { useAdminAccess } from "../../../hooks/useAdminAccess";
 
 const AdminSideBar = ({ active }) => {
+  const { adminAccess } = useAdminAccess();
+
   const menuItems = [
     {
       id: 1,
@@ -61,6 +64,14 @@ const AdminSideBar = ({ active }) => {
     },
     {
       id: 8,
+      label: "Admin Management",
+      icon: MdOutlineAdminPanelSettings,
+      path: "/admin-management",
+      color: "purple",
+      superAdminOnly: true
+    },
+    {
+      id: 9,
       label: "Settings",
       icon: FiSettings,
       path: "/profile",
@@ -110,7 +121,9 @@ const AdminSideBar = ({ active }) => {
 
       {/* Navigation Menu */}
       <nav className="p-4 space-y-2">
-        {menuItems.map((item) => {
+        {menuItems
+          .filter(item => !item.superAdminOnly || adminAccess?.isSuperAdmin)
+          .map((item) => {
           const IconComponent = item.icon;
           return (
             <Link key={item.id} to={item.path}>

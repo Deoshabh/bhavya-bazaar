@@ -52,6 +52,7 @@ import {
   AdminDashboardProducts,
   AdminDashboardEvents,
   AdminDashboardWithdraw,
+  AdminDashboardManagement,
 } from "./routes/AdminRoutes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -436,6 +437,14 @@ const App = () => {
             element={
               <RequireAdmin>
                 <AdminDashboardWithdraw />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin-management"
+            element={
+              <RequireAdmin>
+                <AdminDashboardManagement />
               </RequireAdmin>
             }
           />

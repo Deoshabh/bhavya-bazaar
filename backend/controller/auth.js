@@ -1006,6 +1006,589 @@ const ADMIN_LIMITS = {
   maxSuperAdmins: 1
 };
 
+// Middleware to verify super admin access
+const verifySuperAdmin = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const sessionData = SessionManager.getSessionData(req);
+    
+    if (!sessionData || !sessionData.isAuthenticated || sessionData.userType !== 'admin') {
+      return next(new ErrorHandler("Access denied. Super admin privileges required.", 403));
+    }
+
+    const admin = await Admin.findById(sessionData.user.id);
+    if (!admin || admin.role !== 'superadmin' || !admin.isActive) {
+      return next(new ErrorHandler("Access denied. Super admin privileges required.", 403));
+    }
+
+    if (!admin.permissions.includes('manage_admins')) {
+      return next(new ErrorHandler("Access denied. Admin management permission required.", 403));
+    }
+
+    req.superAdmin = admin;
+    next();
+  } catch (error) {
+    console.error("❌ Super admin verification error:", error.message);
+    return next(new ErrorHandler("Authentication verification failed", 500));
+  }
+});
+
+// ==============================
+// SUPER ADMIN CRUD OPERATIONS
+// ==============================
+
+// CREATE - Create new admin (Enhanced)
+router.post("/admin/create",
+  authLimiter,
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin creating new admin account");
+      
+      const { name, email, password, role, permissions, isActive } = req.body;
+
+      // Validation
+      if (!name || !email || !password || !role) {
+        return next(new ErrorHandler("Please provide all required fields", 400));
+      }
+
+      // Check role validity
+      if (!['admin', 'superadmin'].includes(role)) {
+        return next(new ErrorHandler("Invalid role. Must be 'admin' or 'superadmin'", 400));
+      }
+
+      // Check admin limits
+      const currentCounts = await Admin.aggregate([
+        { $match: { isActive: true } },
+        {
+          $group: {
+            _id: "$role",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const adminCount = currentCounts.find(c => c._id === 'admin')?.count || 0;
+      const superAdminCount = currentCounts.find(c => c._id === 'superadmin')?.count || 0;
+
+      if (role === 'admin' && adminCount >= ADMIN_LIMITS.maxAdmins) {
+        return next(new ErrorHandler(`Maximum admin limit reached (${ADMIN_LIMITS.maxAdmins})`, 400));
+      }
+
+      if (role === 'superadmin' && superAdminCount >= ADMIN_LIMITS.maxSuperAdmins) {
+        return next(new ErrorHandler(`Maximum super admin limit reached (${ADMIN_LIMITS.maxSuperAdmins})`, 400));
+      }
+
+      // Check if admin already exists
+      const existingAdmin = await Admin.findOne({ email });
+      if (existingAdmin) {
+        return next(new ErrorHandler("Admin with this email already exists", 400));
+      }
+
+      // Default permissions based on role
+      let defaultPermissions = [];
+      if (role === 'superadmin') {
+        defaultPermissions = [
+          'manage_users',
+          'manage_sellers', 
+          'manage_products',
+          'manage_orders',
+          'manage_system',
+          'view_analytics',
+          'manage_admins'
+        ];
+      } else {
+        defaultPermissions = [
+          'manage_users',
+          'manage_sellers',
+          'manage_products',
+          'manage_orders',
+          'view_analytics'
+        ];
+      }
+
+      const newAdmin = await Admin.create({
+        name,
+        email,
+        password,
+        role,
+        permissions: permissions || defaultPermissions,
+        isActive: isActive !== undefined ? isActive : true,
+        createdBy: req.superAdmin._id
+      });
+
+      console.log(`✅ ${role} created successfully by super admin:`, newAdmin.name);
+
+      res.status(201).json({
+        success: true,
+        message: `${role.charAt(0).toUpperCase() + role.slice(1)} created successfully`,
+        admin: {
+          id: newAdmin._id,
+          name: newAdmin.name,
+          email: newAdmin.email,
+          role: newAdmin.role,
+          permissions: newAdmin.permissions,
+          isActive: newAdmin.isActive,
+          createdAt: newAdmin.createdAt
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Admin creation error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// READ - Get all admins with pagination and filtering
+router.get("/admin/list",
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin fetching admin list");
+      
+      const { 
+        page = 1, 
+        limit = 10, 
+        role, 
+        status, 
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = req.query;
+
+      // Build filter query
+      const filter = {};
+      if (role && ['admin', 'superadmin'].includes(role)) {
+        filter.role = role;
+      }
+      if (status && ['active', 'inactive'].includes(status)) {
+        filter.isActive = status === 'active';
+      }
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      // Pagination
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const sortOptions = {};
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+      // Get admins with pagination
+      const admins = await Admin.find(filter)
+        .select('-password -loginAttempts -lockUntil')
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('createdBy', 'name email role');
+
+      const totalAdmins = await Admin.countDocuments(filter);
+
+      // Get counts by role and status
+      const statusCounts = await Admin.aggregate([
+        {
+          $group: {
+            _id: { role: "$role", isActive: "$isActive" },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const summary = {
+        totalAdmins,
+        activeAdmins: statusCounts.filter(s => s._id.isActive).reduce((sum, s) => sum + s.count, 0),
+        inactiveAdmins: statusCounts.filter(s => !s._id.isActive).reduce((sum, s) => sum + s.count, 0),
+        adminCount: statusCounts.filter(s => s._id.role === 'admin').reduce((sum, s) => sum + s.count, 0),
+        superAdminCount: statusCounts.filter(s => s._id.role === 'superadmin').reduce((sum, s) => sum + s.count, 0)
+      };
+
+      res.status(200).json({
+        success: true,
+        data: {
+          admins,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalAdmins / parseInt(limit)),
+            totalRecords: totalAdmins,
+            hasNext: skip + admins.length < totalAdmins,
+            hasPrev: parseInt(page) > 1
+          },
+          summary,
+          limits: ADMIN_LIMITS
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Admin list fetch error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// READ - Get single admin details
+router.get("/admin/:adminId",
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin fetching admin details:", req.params.adminId);
+      
+      const { adminId } = req.params;
+
+      const admin = await Admin.findById(adminId)
+        .select('-password')
+        .populate('createdBy', 'name email role');
+
+      if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+      }
+
+      // Get admin activity stats
+      const activityStats = {
+        lastLogin: admin.lastLogin,
+        loginAttempts: admin.loginAttempts,
+        isLocked: admin.lockUntil && admin.lockUntil > Date.now(),
+        lockUntil: admin.lockUntil
+      };
+
+      res.status(200).json({
+        success: true,
+        admin: {
+          ...admin.toObject(),
+          activityStats
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Admin details fetch error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// UPDATE - Update admin details and permissions
+router.put("/admin/:adminId",
+  authLimiter,
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin updating admin:", req.params.adminId);
+      
+      const { adminId } = req.params;
+      const { name, email, role, permissions, isActive, password } = req.body;
+
+      // Find admin to update
+      const admin = await Admin.findById(adminId);
+      if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+      }
+
+      // Prevent super admin from demoting themselves
+      if (admin._id.toString() === req.superAdmin._id.toString() && 
+          role && role !== 'superadmin') {
+        return next(new ErrorHandler("Cannot change your own role", 400));
+      }
+
+      // Prevent super admin from deactivating themselves
+      if (admin._id.toString() === req.superAdmin._id.toString() && 
+          isActive === false) {
+        return next(new ErrorHandler("Cannot deactivate your own account", 400));
+      }
+
+      // Check role change constraints
+      if (role && role !== admin.role) {
+        if (!['admin', 'superadmin'].includes(role)) {
+          return next(new ErrorHandler("Invalid role", 400));
+        }
+
+        // Check limits for role changes
+        const currentCounts = await Admin.aggregate([
+          { $match: { isActive: true, _id: { $ne: admin._id } } },
+          {
+            $group: {
+              _id: "$role",
+              count: { $sum: 1 }
+            }
+          }
+        ]);
+
+        const adminCount = currentCounts.find(c => c._id === 'admin')?.count || 0;
+        const superAdminCount = currentCounts.find(c => c._id === 'superadmin')?.count || 0;
+
+        if (role === 'admin' && adminCount >= ADMIN_LIMITS.maxAdmins) {
+          return next(new ErrorHandler(`Maximum admin limit reached (${ADMIN_LIMITS.maxAdmins})`, 400));
+        }
+
+        if (role === 'superadmin' && superAdminCount >= ADMIN_LIMITS.maxSuperAdmins) {
+          return next(new ErrorHandler(`Maximum super admin limit reached (${ADMIN_LIMITS.maxSuperAdmins})`, 400));
+        }
+      }
+
+      // Validate email uniqueness if changed
+      if (email && email !== admin.email) {
+        const existingAdmin = await Admin.findOne({ email, _id: { $ne: adminId } });
+        if (existingAdmin) {
+          return next(new ErrorHandler("Email already in use by another admin", 400));
+        }
+      }
+
+      // Update fields
+      const updateFields = {};
+      if (name) updateFields.name = name;
+      if (email) updateFields.email = email;
+      if (role) updateFields.role = role;
+      if (permissions) updateFields.permissions = permissions;
+      if (isActive !== undefined) updateFields.isActive = isActive;
+      if (password) updateFields.password = password;
+
+      updateFields.updatedAt = new Date();
+      updateFields.updatedBy = req.superAdmin._id;
+
+      const updatedAdmin = await Admin.findByIdAndUpdate(
+        adminId,
+        updateFields,
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      console.log(`✅ Admin updated successfully by super admin:`, updatedAdmin.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Admin updated successfully",
+        admin: updatedAdmin
+      });
+
+    } catch (error) {
+      console.error("❌ Admin update error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// UPDATE - Reset admin password
+router.put("/admin/:adminId/reset-password",
+  authLimiter,
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin resetting admin password:", req.params.adminId);
+      
+      const { adminId } = req.params;
+      const { newPassword, forcePasswordChange } = req.body;
+
+      if (!newPassword) {
+        return next(new ErrorHandler("New password is required", 400));
+      }
+
+      if (newPassword.length < 8) {
+        return next(new ErrorHandler("Password must be at least 8 characters long", 400));
+      }
+
+      const admin = await Admin.findById(adminId);
+      if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+      }
+
+      // Update password and related fields
+      admin.password = newPassword;
+      admin.loginAttempts = 0;
+      admin.lockUntil = undefined;
+      if (forcePasswordChange) {
+        admin.mustChangePassword = true;
+      }
+      admin.updatedAt = new Date();
+      admin.updatedBy = req.superAdmin._id;
+
+      await admin.save();
+
+      console.log(`✅ Admin password reset successfully:`, admin.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Admin password reset successfully",
+        adminId: admin._id,
+        adminName: admin.name
+      });
+
+    } catch (error) {
+      console.error("❌ Admin password reset error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// UPDATE - Unlock admin account
+router.put("/admin/:adminId/unlock",
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin unlocking admin account:", req.params.adminId);
+      
+      const { adminId } = req.params;
+
+      const admin = await Admin.findById(adminId);
+      if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+      }
+
+      admin.loginAttempts = 0;
+      admin.lockUntil = undefined;
+      admin.updatedAt = new Date();
+      admin.updatedBy = req.superAdmin._id;
+
+      await admin.save();
+
+      console.log(`✅ Admin account unlocked successfully:`, admin.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Admin account unlocked successfully",
+        adminId: admin._id,
+        adminName: admin.name
+      });
+
+    } catch (error) {
+      console.error("❌ Admin unlock error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// DELETE - Soft delete admin (deactivate)
+router.delete("/admin/:adminId",
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin deactivating admin:", req.params.adminId);
+      
+      const { adminId } = req.params;
+      const { permanent } = req.query;
+
+      const admin = await Admin.findById(adminId);
+      if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+      }
+
+      // Prevent super admin from deleting themselves
+      if (admin._id.toString() === req.superAdmin._id.toString()) {
+        return next(new ErrorHandler("Cannot delete your own account", 400));
+      }
+
+      if (permanent === 'true') {
+        // Permanent deletion - use with extreme caution
+        await Admin.findByIdAndDelete(adminId);
+        console.log(`✅ Admin permanently deleted:`, admin.name);
+        
+        res.status(200).json({
+          success: true,
+          message: "Admin account permanently deleted",
+          deletedAdmin: {
+            id: admin._id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role
+          }
+        });
+      } else {
+        // Soft delete - just deactivate
+        admin.isActive = false;
+        admin.deactivatedAt = new Date();
+        admin.deactivatedBy = req.superAdmin._id;
+        await admin.save();
+
+        console.log(`✅ Admin deactivated:`, admin.name);
+        
+        res.status(200).json({
+          success: true,
+          message: "Admin account deactivated",
+          admin: {
+            id: admin._id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role,
+            isActive: admin.isActive,
+            deactivatedAt: admin.deactivatedAt
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("❌ Admin deletion error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// RESTORE - Reactivate deactivated admin
+router.put("/admin/:adminId/restore",
+  verifySuperAdmin,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin restoring admin:", req.params.adminId);
+      
+      const { adminId } = req.params;
+
+      const admin = await Admin.findById(adminId);
+      if (!admin) {
+        return next(new ErrorHandler("Admin not found", 404));
+      }
+
+      if (admin.isActive) {
+        return next(new ErrorHandler("Admin account is already active", 400));
+      }
+
+      // Check limits before reactivating
+      const currentCounts = await Admin.aggregate([
+        { $match: { isActive: true } },
+        {
+          $group: {
+            _id: "$role",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const adminCount = currentCounts.find(c => c._id === 'admin')?.count || 0;
+      const superAdminCount = currentCounts.find(c => c._id === 'superadmin')?.count || 0;
+
+      if (admin.role === 'admin' && adminCount >= ADMIN_LIMITS.maxAdmins) {
+        return next(new ErrorHandler(`Cannot restore: Maximum admin limit reached (${ADMIN_LIMITS.maxAdmins})`, 400));
+      }
+
+      if (admin.role === 'superadmin' && superAdminCount >= ADMIN_LIMITS.maxSuperAdmins) {
+        return next(new ErrorHandler(`Cannot restore: Maximum super admin limit reached (${ADMIN_LIMITS.maxSuperAdmins})`, 400));
+      }
+
+      admin.isActive = true;
+      admin.restoredAt = new Date();
+      admin.restoredBy = req.superAdmin._id;
+      admin.deactivatedAt = undefined;
+      admin.deactivatedBy = undefined;
+      await admin.save();
+
+      console.log(`✅ Admin restored successfully:`, admin.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Admin account restored successfully",
+        admin: {
+          id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          isActive: admin.isActive,
+          restoredAt: admin.restoredAt
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Admin restore error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 // Emergency admin creation (Only works when no admins exist)
 router.post("/emergency-admin-setup",
   authLimiter,
