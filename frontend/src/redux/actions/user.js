@@ -246,7 +246,7 @@ export const logoutSeller = () => async (dispatch) => {
     dispatch({ type: "LogoutSellerRequest" });
     
     // Use the new session-based logout endpoint
-    await axios.post(`${BASE_URL}/api/auth/logout/shop`, {}, {
+    await axios.post(`${BASE_URL}/api/auth/logout/seller`, {}, {
       withCredentials: true,
       headers: {
         "Content-Type": "application/json",

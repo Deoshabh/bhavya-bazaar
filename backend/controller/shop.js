@@ -237,8 +237,8 @@ router.get(
   "/logout",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      // Use SessionManager to destroy session
-      const sessionDestroyed = await SessionManager.destroySession(req);
+      // Use SessionManager to destroy session with proper parameters
+      const sessionDestroyed = await SessionManager.destroySession(req, res);
       
       if (!sessionDestroyed) {
         console.warn("Session could not be destroyed or was already invalid");

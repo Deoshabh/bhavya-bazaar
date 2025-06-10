@@ -359,14 +359,13 @@ export const loginAdmin = async (phoneNumber, password) => {
 export const logoutCurrentUser = async () => {
   try {
     const authType = await getCurrentAuthType();
-    
-    switch (authType) {
+      switch (authType) {
       case 'admin':
         await axios.post(`${BASE_URL}/api/auth/logout/admin`, {}, { withCredentials: true });
         Store.dispatch({ type: 'LogoutUserSuccess' });
         break;
       case 'seller':
-        await axios.post(`${BASE_URL}/api/auth/logout/shop`, {}, { withCredentials: true });
+        await axios.post(`${BASE_URL}/api/auth/logout/seller`, {}, { withCredentials: true });
         Store.dispatch({ type: 'LogoutSellerSuccess' });
         break;
       case 'user':

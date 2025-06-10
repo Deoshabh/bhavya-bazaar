@@ -380,14 +380,15 @@ router.post("/login-admin",
 );
 
 // ================
-// UNIVERSAL LOGOUT
+// LOGOUT ENDPOINTS
 // ================
 
+// Universal logout endpoint
 router.post("/logout",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      console.log("🚪 Logout request received");
-      await SessionManager.destroySession(req);
+      console.log("🚪 Universal logout request received");
+      await SessionManager.destroySession(req, res);
       
       res.status(200).json({
         success: true,
@@ -395,6 +396,106 @@ router.post("/logout",
       });
     } catch (error) {
       console.error("❌ Logout error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// User-specific logout endpoint
+router.post("/logout/user",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚪 User logout request received");
+      
+      // Validate that this is actually a user session
+      const sessionData = SessionManager.getSessionData(req);
+      if (sessionData && sessionData.userType !== 'user' && sessionData.userType !== 'admin') {
+        return next(new ErrorHandler("Invalid session type for user logout", 400));
+      }
+      
+      await SessionManager.destroySession(req, res);
+      
+      res.status(200).json({
+        success: true,
+        message: "User logout successful"
+      });
+    } catch (error) {
+      console.error("❌ User logout error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Seller-specific logout endpoint
+router.post("/logout/seller",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚪 Seller logout request received");
+      
+      // Validate that this is actually a seller session
+      const sessionData = SessionManager.getSessionData(req);
+      if (sessionData && sessionData.userType !== 'seller') {
+        return next(new ErrorHandler("Invalid session type for seller logout", 400));
+      }
+      
+      await SessionManager.destroySession(req, res);
+      
+      res.status(200).json({
+        success: true,
+        message: "Seller logout successful"
+      });
+    } catch (error) {
+      console.error("❌ Seller logout error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Legacy endpoint for shop logout (redirect to seller logout)
+router.post("/logout/shop",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚪 Shop logout request received (redirecting to seller logout)");
+      
+      // Validate that this is actually a seller session
+      const sessionData = SessionManager.getSessionData(req);
+      if (sessionData && sessionData.userType !== 'seller') {
+        return next(new ErrorHandler("Invalid session type for shop logout", 400));
+      }
+      
+      await SessionManager.destroySession(req, res);
+      
+      res.status(200).json({
+        success: true,
+        message: "Shop logout successful"
+      });
+    } catch (error) {
+      console.error("❌ Shop logout error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Admin-specific logout endpoint
+router.post("/logout/admin",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚪 Admin logout request received");
+      
+      // Validate that this is actually an admin session
+      const sessionData = SessionManager.getSessionData(req);
+      if (sessionData && sessionData.userType !== 'admin') {
+        return next(new ErrorHandler("Invalid session type for admin logout", 400));
+      }
+      
+      await SessionManager.destroySession(req, res);
+      
+      res.status(200).json({
+        success: true,
+        message: "Admin logout successful"
+      });
+    } catch (error) {
+      console.error("❌ Admin logout error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })

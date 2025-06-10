@@ -162,12 +162,11 @@ class ApiService {  constructor() {
       return this.api.get('/user/logout');
     }
   }
-
   async logoutShop() {
     // Try unified auth endpoint first
     try {
       const unifiedUrl = this.apiBase.replace('/api/v2', '');
-      return axios.post(`${unifiedUrl}/api/auth/logout/shop`, {}, {
+      return axios.post(`${unifiedUrl}/api/auth/logout/seller`, {}, {
         withCredentials: true
       });
     } catch (error) {

@@ -6,13 +6,15 @@ import {
   AiOutlineHeart,
   AiOutlineSearch,
   AiOutlineShoppingCart,
+  AiOutlineLogout,
 } from "react-icons/ai";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import { BiMenuAltLeft } from "react-icons/bi";
 import { CgProfile } from "react-icons/cg";
+import { RxPerson } from "react-icons/rx";
 import DropDown from "./DropDown";
 import Navbar from "./Navbar";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 import { RxCross1 } from "react-icons/rx";
@@ -20,8 +22,12 @@ import SafeImage from "../common/SafeImage";
 import { UserAvatar, ProductImage } from "../common/EnhancedImage";
 import Button from "../common/Button";
 import Badge from "../common/Badge";
+import { logoutUser } from "../../redux/actions/user";
+import { toast } from "react-toastify";
 
 const Header = ({ activeHeading }) => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { isSeller } = useSelector((state) => state.seller);
   const { cart } = useSelector((state) => state.cart);
   const { wishlist } = useSelector((state) => state.wishlist);
@@ -34,6 +40,7 @@ const Header = ({ activeHeading }) => {
   const [openCart, setOpenCart] = useState(false);
   const [openWishlist, setOpenWishlist] = useState(false);
   const [open, setOpen] = useState(false); // mobile menu
+  const [showUserDropdown, setShowUserDropdown] = useState(false); // user dropdown
 
   // Handle search change
   const handleSearchChange = (e) => {
@@ -48,6 +55,33 @@ const Header = ({ activeHeading }) => {
       );
     setSearchData(filteredProducts);
   };
+
+  // Handle user logout
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser());
+      toast.success("Logout successful!");
+      navigate("/login");
+      setShowUserDropdown(false);
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Logout failed. Please try again.");
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserDropdown && !event.target.closest('.user-dropdown')) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserDropdown]);
 
   window.addEventListener("scroll", () => {
     if (window.scrollY > 70) {
@@ -240,15 +274,57 @@ const Header = ({ activeHeading }) => {
             </Button>
 
             {/* User Avatar */}
-            <div className="relative">
+            <div className="relative user-dropdown">
               {isAuthenticated ? (
-                <Link to="/profile">
-                  <UserAvatar
-                    user={user}
-                    className="w-10 h-10 rounded-full border-2 border-white/30 hover:border-white/60 transition-colors duration-300"
-                    alt="User avatar"
-                  />
-                </Link>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="flex items-center focus:outline-none"
+                  >
+                    <UserAvatar
+                      user={user}
+                      className="w-10 h-10 rounded-full border-2 border-white/30 hover:border-white/60 transition-colors duration-300"
+                      alt="User avatar"
+                    />
+                    <IoIosArrowDown 
+                      className={`ml-2 text-white transition-transform duration-200 ${
+                        showUserDropdown ? 'rotate-180' : ''
+                      }`} 
+                      size={16} 
+                    />
+                  </button>
+
+                  {/* User Dropdown Menu */}
+                  {showUserDropdown && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user?.name || 'User'}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {user?.email || user?.phoneNumber || ''}
+                        </p>
+                      </div>
+                      
+                      <Link 
+                        to="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                        onClick={() => setShowUserDropdown(false)}
+                      >
+                        <RxPerson className="mr-3" size={16} />
+                        Profile
+                      </Link>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                      >
+                        <AiOutlineLogout className="mr-3" size={16} />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <Link to="/login">
                   <Button
@@ -383,14 +459,29 @@ const Header = ({ activeHeading }) => {
             {/* Mob Login */}
             <div className="flex w-full justify-center">
               {isAuthenticated ? (
-                <div>
-                  <Link to="/profile">
+                <div className="flex flex-col items-center space-y-3 px-4 py-2">
+                  <Link to="/profile" onClick={() => setOpen(false)}>
                     <UserAvatar
                       user={user}
                       className="w-[60px] h-[60px] rounded-full border-[3px] border-[#0eae88]"
                       alt="Profile img"
                     />
                   </Link>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {user?.email || user?.phoneNumber || ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200"
+                  >
+                    <AiOutlineLogout className="mr-2" size={16} />
+                    Logout
+                  </button>
                 </div>
               ) : (
                 <>
