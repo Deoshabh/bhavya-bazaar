@@ -978,8 +978,7 @@ router.get("/current-role",
   catchAsyncErrors(async (req, res, next) => {
     try {
       const sessionData = SessionManager.getSessionData(req);
-      
-      if (!sessionData || !sessionData.isAuthenticated) {
+        if (!sessionData || !sessionData.isAuthenticated) {
         return next(new ErrorHandler("No authenticated session found", 401));
       }
 
@@ -996,6 +995,157 @@ router.get("/current-role",
       });
     } catch (error) {
       console.error("❌ Get current role error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// ==============================
+// ADMIN MANAGEMENT ENDPOINTS
+// ==============================
+
+// Admin limits configuration
+const ADMIN_LIMITS = {
+  maxAdmins: 3,
+  maxSuperAdmins: 1
+};
+
+// Reset admin system (DANGER - Only for initial setup)
+router.post("/admin/reset-system", 
+  authLimiter,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚨 Admin system reset request received");
+      const { confirmationKey } = req.body;
+
+      // Super secure confirmation key for system reset
+      if (confirmationKey !== "RESET_ADMIN_SYSTEM_BHAVYA_2024") {
+        return next(new ErrorHandler("Invalid confirmation key", 401));
+      }
+
+      // Delete ALL existing admin accounts
+      const deleteResult = await Admin.deleteMany({});
+      console.log(`🗑️ Deleted ${deleteResult.deletedCount} existing admin accounts`);
+
+      // Create new Super Admin account
+      const superAdmin = await Admin.create({
+        name: "Super Administrator",
+        email: "superadmin@bhavyabazaar.com",
+        password: "SuperAdmin@2024!",
+        role: "superadmin",
+        permissions: [
+          "manage_users",
+          "manage_sellers",
+          "manage_products", 
+          "manage_orders",
+          "manage_system",
+          "view_analytics",
+          "manage_admins",
+          "manage_super_settings"
+        ],
+        isActive: true,
+        createdBy: "system"
+      });
+
+      console.log("✅ Admin system reset completed");
+
+      res.status(200).json({
+        success: true,
+        message: "Admin system reset successfully",
+        adminCount: 0,
+        superAdminCount: 1,
+        limits: ADMIN_LIMITS,
+        superAdmin: {
+          email: superAdmin.email,
+          name: superAdmin.name,
+          role: superAdmin.role
+        }
+      });
+
+    } catch (error) {
+      console.error("❌ Admin system reset error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Get admin system status
+router.get("/admin/system-status",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const adminCount = await Admin.countDocuments({ role: 'admin' });
+      const superAdminCount = await Admin.countDocuments({ role: 'superadmin' });
+      const totalAdmins = adminCount + superAdminCount;
+
+      const admins = await Admin.find({}, {
+        name: 1,
+        email: 1,
+        role: 1,
+        isActive: 1,
+        createdAt: 1,
+        lastLogin: 1
+      }).sort({ role: -1, createdAt: 1 });
+
+      res.status(200).json({
+        success: true,
+        adminCount,
+        superAdminCount,
+        totalAdmins,
+        limits: ADMIN_LIMITS,
+        canCreateAdmin: adminCount < ADMIN_LIMITS.maxAdmins,
+        canCreateSuperAdmin: superAdminCount < ADMIN_LIMITS.maxSuperAdmins,
+        admins: admins
+      });
+
+    } catch (error) {
+      console.error("❌ Admin system status error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Check if current user is admin/super admin (for frontend visibility)
+router.get("/admin/check-access",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const sessionData = SessionManager.getSessionData(req);
+      
+      if (!sessionData || !sessionData.isAuthenticated) {
+        return res.status(200).json({
+          success: true,
+          isAdmin: false,
+          isSuperAdmin: false,
+          canAccessAdmin: false
+        });
+      }
+
+      const isAdmin = sessionData.userType === 'admin';
+      const isAnyAdmin = isAdmin;
+
+      if (isAdmin) {
+        // Get admin details from database
+        const admin = await Admin.findById(sessionData.user.id);
+        const isSuperAdmin = admin?.role === 'superadmin';
+
+        return res.status(200).json({
+          success: true,
+          isAdmin: true,
+          isSuperAdmin,
+          canAccessAdmin: true,
+          adminRole: admin?.role,
+          permissions: admin?.permissions || []
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        isAdmin: false,
+        isSuperAdmin: false,
+        canAccessAdmin: false
+      });
+
+    } catch (error) {
+      console.error("❌ Admin access check error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
