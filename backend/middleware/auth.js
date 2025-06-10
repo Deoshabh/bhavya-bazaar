@@ -5,16 +5,18 @@ const SessionManager = require("../utils/sessionManager");
 // Check if user is authenticated or not
 exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
   try {
-    console.log("Validating user session...");
+    console.log("🔍 Validating user session...");
     
     const userSession = await SessionManager.validateUserSession(req);
     
-    if (!userSession) {
-      console.log("No valid user session found");
+    if (!userSession || !userSession.isValid) {
+      console.log("❌ No valid user session found");
       return next(new ErrorHandler("Please login to continue", 401));
     }
     
-    req.user = userSession;
+    // Use the user data from session validation
+    req.user = userSession.user;
+    
     // Ensure both id and _id properties are available for consistency
     if (req.user.id && !req.user._id) {
       req.user._id = req.user.id;
@@ -22,27 +24,28 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
     if (!req.user.id && req.user._id) {
       req.user.id = req.user._id.toString();
     }
-    console.log("User authenticated successfully:", req.user.name, "ID:", req.user.id);
-    console.log("req.user:", JSON.stringify(req.user, null, 2));
+    console.log("✅ User authenticated successfully:", req.user.name, "ID:", req.user.id);
     next();
   } catch (error) {
-    console.error("Auth error:", error);
+    console.error("❌ User auth error:", error);
     return next(new ErrorHandler("Authentication error", 401));
   }
 });
 
 exports.isSeller = catchAsyncErrors(async (req, res, next) => {
   try {
-    console.log("Validating shop session...");
+    console.log("🔍 Validating shop session...");
     
     const shopSession = await SessionManager.validateShopSession(req);
     
-    if (!shopSession) {
-      console.log("No valid shop session found");
+    if (!shopSession || !shopSession.isValid) {
+      console.log("❌ No valid shop session found");
       return next(new ErrorHandler("Please login to continue", 401));
     }
     
-    req.seller = shopSession;
+    // Use the shop data from session validation
+    req.seller = shopSession.shop;
+    
     // Ensure both id and _id properties are available for consistency
     if (req.seller.id && !req.seller._id) {
       req.seller._id = req.seller.id;
@@ -50,10 +53,11 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
     if (!req.seller.id && req.seller._id) {
       req.seller.id = req.seller._id.toString();
     }
-    console.log("Seller authenticated successfully:", req.seller.name, "ID:", req.seller.id);
+    
+    console.log("✅ Seller authenticated successfully:", req.seller.name, "ID:", req.seller.id);
     next();
   } catch (error) {
-    console.error("Seller auth error:", error);
+    console.error("❌ Seller auth error:", error);
     return next(new ErrorHandler("Authentication error", 401));
   }
 });

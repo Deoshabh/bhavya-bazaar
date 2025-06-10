@@ -36,11 +36,21 @@ const UserInbox = () => {
         setConversations(response.data.conversations);
       } catch (error) {
         console.error("Error fetching conversations:", error);
-        toast.error("Failed to load conversations");
+        
+        // Don't show error for 404 if user is not authenticated
+        if (error.response?.status === 404 && !user) {
+          console.log("User not authenticated, skipping conversation fetch");
+          return;
+        }
+        
+        // Only show error toast for actual errors, not auth issues
+        if (error.response?.status !== 401) {
+          toast.error("Failed to load conversations");
+        }
       }
     };
 
-    if (user) {
+    if (user?._id) {
       getConversations();
     }
   }, [user]);

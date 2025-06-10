@@ -77,9 +77,10 @@ export const loadSeller = () => async (dispatch) => {
         payload: data.user, // Backend returns seller data as 'user'
       });
     } else {
+      // Clear seller state if not a seller session
       dispatch({
         type: "LoadSellerFail",
-        payload: "Invalid seller session",
+        payload: "No seller session found",
       });
     }
   } catch (error) {
@@ -245,19 +246,22 @@ export const logoutSeller = () => async (dispatch) => {
   try {
     dispatch({ type: "LogoutSellerRequest" });
     
-    // Use the new session-based logout endpoint
+    // Clear local state first to prevent oscillation
+    dispatch({ type: "LogoutSellerSuccess" });
+    
+    // Then call backend logout
     await axios.post(`${BASE_URL}/api/auth/logout/seller`, {}, {
       withCredentials: true,
       headers: {
         "Content-Type": "application/json",
       },
+      timeout: 10000 // Shorter timeout for logout
     });
     
-    dispatch({ type: "LogoutSellerSuccess" });
+    console.log("✅ Seller logout successful");
   } catch (error) {
     console.error("Seller logout error:", error);
-    // Even if backend call fails, clear local state
-    dispatch({ type: "LogoutSellerSuccess" });
+    // State is already cleared, so we don't need to dispatch again
   }
 };
 

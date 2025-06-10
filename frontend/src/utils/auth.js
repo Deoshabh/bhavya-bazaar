@@ -154,7 +154,7 @@ export const checkAuthSession = async () => {
       `${BASE_URL}/api/auth/me`,
       { 
         withCredentials: true,
-        timeout: 10000 // 10 second timeout
+        timeout: 10000 // Reduced timeout to prevent hanging
       }
     );
     
@@ -164,7 +164,21 @@ export const checkAuthSession = async () => {
       const { userType, user } = response.data;
       
       console.log(`✅ Session valid for ${userType}:`, user?.name || user?.shopName || 'Unknown');
-        // Dispatch appropriate Redux action based on user type
+      
+      // Clear both states first to prevent conflicts
+      Store.dispatch({
+        type: 'LoadUserFail',
+        payload: 'Clearing state for session check'
+      });
+      Store.dispatch({
+        type: 'LoadSellerFail',
+        payload: 'Clearing state for session check'
+      });
+      
+      // Small delay to ensure state is cleared
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Dispatch appropriate Redux action based on user type
       switch (userType) {
         case 'user':
         case 'admin':
@@ -172,11 +186,6 @@ export const checkAuthSession = async () => {
           Store.dispatch({
             type: 'LoadUserSuccess',
             payload: user
-          });
-          // Clear seller loading state since this is not a seller
-          Store.dispatch({
-            type: 'LoadSellerFail',
-            payload: 'User is not a seller'
           });
           break;
           
@@ -186,24 +195,11 @@ export const checkAuthSession = async () => {
             type: 'LoadSellerSuccess', 
             payload: user // Note: backend returns seller data as 'user'
           });
-          // Clear user loading state 
-          Store.dispatch({
-            type: 'LoadUserFail',
-            payload: 'Seller session - not a regular user'
-          });
           break;
           
         default:
           console.warn('⚠️ Unknown user type:', userType);
-          // Clear both states for unknown types
-          Store.dispatch({
-            type: 'LoadUserFail',
-            payload: 'Unknown user type'
-          });
-          Store.dispatch({
-            type: 'LoadSellerFail',
-            payload: 'Unknown user type'
-          });
+          // Keep states cleared for unknown types
       }
       
       return {
@@ -221,8 +217,6 @@ export const checkAuthSession = async () => {
     // If 401 or any auth error, clear all auth state
     if (error.response?.status === 401) {
       console.log('🔄 Clearing auth state due to 401 error...');
-      // Don't call logoutCurrentUser() here as it might cause infinite loops
-      // Just clear the Redux state and cookies
       Store.dispatch({
         type: 'LoadUserFail',
         payload: 'Session expired'
@@ -237,7 +231,8 @@ export const checkAuthSession = async () => {
       removeCookie('seller_token');
       removeCookie('admin_token');
     }
-      return { 
+    
+    return { 
       success: false, 
       error: error.response?.data?.message || error.message,
       status: error.response?.status

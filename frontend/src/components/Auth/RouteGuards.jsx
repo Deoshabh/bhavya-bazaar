@@ -27,6 +27,7 @@ export const RequireUser = ({ children, redirectTo = "/login" }) => {
 export const RequireShop = ({ children, redirectTo = "/shop-login" }) => {
   const { isLoading: sellerLoading, isSeller, seller } = useSelector((state) => state.seller);
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
     // Add timeout to prevent infinite loading
@@ -35,10 +36,12 @@ export const RequireShop = ({ children, redirectTo = "/shop-login" }) => {
         console.warn("⚠️ Seller auth loading timeout - proceeding with current state");
         setAuthCheckComplete(true);
       }
-    }, 5000); // 5 second timeout
+    }, 8000); // Increased to 8 seconds for slower connections
 
+    // Mark auth check as complete when loading finishes
     if (!sellerLoading) {
       setAuthCheckComplete(true);
+      setHasCheckedAuth(true);
     }
 
     return () => clearTimeout(timeout);
@@ -56,13 +59,27 @@ export const RequireShop = ({ children, redirectTo = "/shop-login" }) => {
     );
   }
 
-  // Debug logging for authentication state
-  console.log("🔍 RequireShop - isSeller:", isSeller, "seller:", seller?.name, "loading:", sellerLoading);
+  // Debug logging for authentication state (only after initial check)
+  if (hasCheckedAuth) {
+    console.log("🔍 RequireShop - isSeller:", isSeller, "seller:", seller?.name, "loading:", sellerLoading);
+  }
 
   // If not authenticated as seller, redirect to shop login
   if (!isSeller || !seller) {
-    console.log("❌ Seller not authenticated, redirecting to shop login");
-    return <Navigate to={redirectTo} replace />;
+    // Only log and redirect if we've completed the auth check
+    if (hasCheckedAuth) {
+      console.log("❌ Seller not authenticated, redirecting to shop login");
+      return <Navigate to={redirectTo} replace />;
+    }
+    // Still loading, show loader
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader />
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
   }
 
   // Seller is authenticated, render protected content

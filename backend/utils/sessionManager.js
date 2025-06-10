@@ -186,91 +186,97 @@ class SessionManager {
       throw error; // Re-throw to preserve error type
     }
   }
-
   /**
    * Validate user session
    * @param {Object} req - Express request object
-   * @returns {Object|null} User data if valid, null otherwise
+   * @returns {Object} Validation result with user data
    */
   static validateUserSession(req) {
     try {
       if (!req.session || !req.session.isAuthenticated) {
-        return null;
+        return { isValid: false, user: null };
       }
 
       if (req.session.userType !== 'user' && req.session.userType !== 'admin') {
-        return null;
+        return { isValid: false, user: null };
       }
 
       if (!req.session.user) {
-        return null;
+        return { isValid: false, user: null };
       }
 
       // Touch session to extend expiry
       req.session.touch();
 
-      return req.session.user;
+      return { 
+        isValid: true, 
+        user: req.session.user 
+      };
     } catch (error) {
       console.error('❌ Session validation error:', error);
-      return null;
+      return { isValid: false, user: null };
     }
   }
-
   /**
    * Validate shop session
    * @param {Object} req - Express request object
-   * @returns {Object|null} Shop data if valid, null otherwise
+   * @returns {Object} Validation result with shop data
    */
   static validateShopSession(req) {
     try {
       if (!req.session || !req.session.isAuthenticated) {
-        return null;
+        return { isValid: false, shop: null };
       }
 
       if (req.session.userType !== 'seller') {
-        return null;
+        return { isValid: false, shop: null };
       }
 
       if (!req.session.seller) {
-        return null;
+        return { isValid: false, shop: null };
       }
 
       // Touch session to extend expiry
       req.session.touch();
 
-      return req.session.seller;
+      return { 
+        isValid: true, 
+        shop: req.session.seller 
+      };
     } catch (error) {
       console.error('❌ Session validation error:', error);
-      return null;
+      return { isValid: false, shop: null };
     }
   }
-
   /**
    * Validate admin session
    * @param {Object} req - Express request object
-   * @returns {Object|null} Admin data if valid, null otherwise
+   * @returns {Object} Validation result with admin data
    */
   static validateAdminSession(req) {
     try {
       if (!req.session || !req.session.isAuthenticated) {
-        return null;
+        return { isValid: false, user: null };
       }
 
       if (req.session.userType !== 'admin') {
-        return null;
+        return { isValid: false, user: null };
       }
 
       if (!req.session.user || req.session.user.role !== 'Admin') {
-        return null;
+        return { isValid: false, user: null };
       }
 
       // Touch session to extend expiry
       req.session.touch();
 
-      return req.session.user;
+      return { 
+        isValid: true, 
+        user: req.session.user 
+      };
     } catch (error) {
       console.error('❌ Session validation error:', error);
-      return null;
+      return { isValid: false, user: null };
     }
   }
 

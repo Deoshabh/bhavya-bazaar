@@ -27,7 +27,7 @@ const DashboardMessages = () => {
     const getConversations = async () => {
       try {
         const response = await axios.get(
-          `${window.RUNTIME_CONFIG.API_URL}/conversation/get-all-conversations/${seller?._id}`,
+          `${window.RUNTIME_CONFIG.API_URL}/conversation/get-all-conversation-seller/${seller?._id}`,
           {
             withCredentials: true,
           }
