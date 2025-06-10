@@ -11,9 +11,16 @@ import Loader from "../Layout/Loader.jsx";
 // User authentication guard
 export const RequireUser = ({ children, redirectTo = "/login" }) => {
   const { loading, isAuthenticated } = useSelector((state) => state.user);
+  const { isSeller } = useSelector((state) => state.seller);
   
   if (loading) {
     return <Loader />;
+  }
+  
+  // If user is actually a seller, redirect them to their dashboard
+  if (isSeller) {
+    console.log("🔄 Seller trying to access user page, redirecting to dashboard");
+    return <Navigate to="/dashboard" replace />;
   }
   
   if (!isAuthenticated) {

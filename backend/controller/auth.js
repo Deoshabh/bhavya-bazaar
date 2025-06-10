@@ -545,19 +545,33 @@ router.get("/me",
         return next(new ErrorHandler("Not authenticated", 401));
       }
 
+      console.log("🔍 Session data for /me endpoint:", {
+        userType: sessionData.userType,
+        user: sessionData.user ? { id: sessionData.user.id, name: sessionData.user.name } : null
+      });
+
       let userData = null;
+      const userId = sessionData.user?.id;
+      
+      if (!userId) {
+        console.error("❌ No user ID found in session data");
+        return next(new ErrorHandler("Invalid session data", 401));
+      }
       
       if (sessionData.userType === 'user') {
-        userData = await User.findById(sessionData.user.id);
+        userData = await User.findById(userId);
       } else if (sessionData.userType === 'seller') {
-        userData = await Shop.findById(sessionData.user.id);
+        userData = await Shop.findById(userId);
       } else if (sessionData.userType === 'admin') {
-        userData = await Admin.findById(sessionData.user.id);
+        userData = await User.findById(userId);
       }
 
       if (!userData) {
+        console.error("❌ User data not found in database for ID:", userId);
         return next(new ErrorHandler("User not found", 404));
       }
+
+      console.log("✅ Successfully retrieved user data:", userData.name);
 
       res.status(200).json({
         success: true,

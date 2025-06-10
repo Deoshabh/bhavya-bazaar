@@ -128,19 +128,31 @@ const LoginForm = ({
       );
 
       toast.success(response.data.message || "Login successful!");
+        toast.success(response.data.message || "Login successful!");
       
-      // Load authentication state
+      // Load authentication state with improved timing
       setTimeout(async () => {
-        await config.loadAction();
-        setLoading(false);
-        
-        // Call onSuccess callback if provided
-        if (onSuccess) {
-          onSuccess(response.data);
-        } else {
-          navigate(config.successRedirect);
+        try {
+          await config.loadAction();
+          console.log('✅ Auth state loaded successfully after login');
+          
+          // Wait a bit longer to ensure session is fully established
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          setLoading(false);
+          
+          // Call onSuccess callback if provided
+          if (onSuccess) {
+            onSuccess(response.data);
+          } else {
+            navigate(config.successRedirect);
+          }
+        } catch (loadError) {
+          console.error('❌ Error loading auth state after login:', loadError);
+          setLoading(false);
+          toast.error("Login successful but failed to load user data. Please refresh the page.");
         }
-      }, 100);
+      }, 250); // Increased delay to ensure session establishment
 
     } catch (error) {
       setLoading(false);

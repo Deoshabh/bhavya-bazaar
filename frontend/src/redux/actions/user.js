@@ -35,6 +35,18 @@ export const loadUser = () => async (dispatch) => {
         type: "LoadUserSuccess",
         payload: data.user,
       });
+    } else if (data.success && data.userType === 'seller') {
+      // If this loadUser was called but the session is for a seller,
+      // dispatch a seller success instead to avoid confusion
+      console.log("ℹ️ loadUser called but session is for seller, updating seller state");
+      dispatch({
+        type: "LoadSellerSuccess",
+        payload: data.user,
+      });
+      dispatch({
+        type: "LoadUserFail",
+        payload: "Session is for seller account",
+      });
     } else {
       dispatch({
         type: "LoadUserFail",
@@ -75,6 +87,18 @@ export const loadSeller = () => async (dispatch) => {
       dispatch({
         type: "LoadSellerSuccess",
         payload: data.user, // Backend returns seller data as 'user'
+      });
+    } else if (data.success && (data.userType === 'user' || data.userType === 'admin')) {
+      // If this loadSeller was called but the session is for a user,
+      // dispatch a user success instead to avoid confusion
+      console.log("ℹ️ loadSeller called but session is for user, updating user state");
+      dispatch({
+        type: "LoadUserSuccess",
+        payload: data.user,
+      });
+      dispatch({
+        type: "LoadSellerFail",
+        payload: "Session is for user account",
       });
     } else {
       // Clear seller state if not a seller session

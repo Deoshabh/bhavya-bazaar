@@ -29,7 +29,10 @@ const ProfileContent = ({ active }) => {
 
     useEffect(() => {
         if (error) {
-            toast.error(error);
+            // Don't show session-related errors as they are handled by route guards
+            if (!error.includes("session") && !error.includes("Session")) {
+                toast.error(error);
+            }
             dispatch({ type: "clearErrors" });
         }
         if (successMessage) {

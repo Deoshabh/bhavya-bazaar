@@ -154,7 +154,7 @@ export const checkAuthSession = async () => {
       `${BASE_URL}/api/auth/me`,
       { 
         withCredentials: true,
-        timeout: 10000 // Reduced timeout to prevent hanging
+        timeout: 15000 // Increased timeout for better reliability
       }
     );
     
@@ -176,7 +176,7 @@ export const checkAuthSession = async () => {
       });
       
       // Small delay to ensure state is cleared
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Dispatch appropriate Redux action based on user type
       switch (userType) {
