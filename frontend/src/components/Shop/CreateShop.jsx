@@ -65,8 +65,11 @@ const CreateShop = () => {
 
     setLoading(true);
     try {
-      // Create shop directly without verification
-      await axios.post(`${server}/shop/create-shop`, newForm, config);
+      // Create shop directly without verification - with credentials for session support
+      await axios.post(`${server}/shop/create-shop`, newForm, {
+        ...config,
+        withCredentials: true
+      });
 
       toast.success("Shop created successfully!");
       // Load seller data and navigate
@@ -80,7 +83,7 @@ const CreateShop = () => {
       } else {
         toast.error("An error occurred while creating shop");
       }
-      console.log(error);
+      console.log("Shop creation error:", error);
     }
   };
 

@@ -23,31 +23,11 @@ try {
 // Create shop without email verification
 router.post("/create-shop", upload.single("file"), async (req, res, next) => {
   try {
-    const { name, phoneNumber, password, address, zipCode } = req.body;
+    console.log("📝 Shop creation request received");
+    console.log("Request body fields:", Object.keys(req.body));
+    console.log("File upload:", req.file ? "✅ Present" : "❌ Missing");
     
-    // File type validation for security
-    if (req.file) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-      const maxSize = 5 * 1024 * 1024; // 5MB limit
-      
-      if (!allowedTypes.includes(req.file.mimetype)) {
-        const filename = req.file.filename;
-        const filePath = `uploads/${filename}`;
-        fs.unlink(filePath, (err) => {
-          if (err) console.log("Error deleting file:", err);
-        });
-        return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
-      }
-      
-      if (req.file.size > maxSize) {
-        const filename = req.file.filename;
-        const filePath = `uploads/${filename}`;
-        fs.unlink(filePath, (err) => {
-          if (err) console.log("Error deleting file:", err);
-        });
-        return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
-      }
-    }
+    const { name, phoneNumber, password, address, zipCode } = req.body;
     
     // Input validation
     if (!name || !phoneNumber || !password || !address || !zipCode) {
@@ -59,6 +39,7 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
           if (err) console.log("Error deleting file:", err);
         });
       }
+      console.log("❌ Missing required fields:", { name: !!name, phoneNumber: !!phoneNumber, password: !!password, address: !!address, zipCode: !!zipCode });
       return next(new ErrorHandler("Please provide all required fields", 400));
     }
 
@@ -71,36 +52,75 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
           if (err) console.log("Error deleting file:", err);
         });
       }
+      console.log("❌ Invalid phone number format:", phoneNumber);
       return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
     }
 
+    // Check for existing seller
     const existingSeller = await Shop.findOne({ phoneNumber });
     if (existingSeller) {
       // Clean up file
-      const filename = req.file.filename;
-      const filePath = `uploads/${filename}`;
-      fs.unlink(filePath, (err) => {
-        if (err) console.log("Error deleting file:", err);
-      });
+      if (req.file) {
+        const filename = req.file.filename;
+        const filePath = `uploads/${filename}`;
+        fs.unlink(filePath, (err) => {
+          if (err) console.log("Error deleting file:", err);
+        });
+      }
+      console.log("❌ Seller already exists with phone:", phoneNumber);
       return next(new ErrorHandler("Seller already exists with this phone number", 400));
     }
-
-    const filename = req.file.filename;
-    const fileUrl = path.join(filename);
+    
+    // File type validation for security (only if file is provided)
+    let fileUrl = null;
+    if (req.file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      const maxSize = 5 * 1024 * 1024; // 5MB limit
+      
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        const filename = req.file.filename;
+        const filePath = `uploads/${filename}`;
+        fs.unlink(filePath, (err) => {
+          if (err) console.log("Error deleting file:", err);
+        });
+        console.log("❌ Invalid file type:", req.file.mimetype);
+        return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+      }
+      
+      if (req.file.size > maxSize) {
+        const filename = req.file.filename;
+        const filePath = `uploads/${filename}`;
+        fs.unlink(filePath, (err) => {
+          if (err) console.log("Error deleting file:", err);
+        });
+        console.log("❌ File too large:", req.file.size);
+        return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
+      }
+      
+      const filename = req.file.filename;
+      fileUrl = path.join(filename);
+      console.log("✅ File uploaded successfully:", filename);
+    } else {
+      console.log("⚠️ No file uploaded, using default avatar");
+    }
 
     // Create seller directly without verification
     const seller = await Shop.create({
       name,
       phoneNumber,
       password,
-      avatar: fileUrl,
+      avatar: fileUrl, // Can be null if no file uploaded
       address,
       zipCode,
     });
 
+    console.log("✅ Seller created successfully:", seller.name, "ID:", seller._id);
+
     // Send token and log in the seller immediately
     // Create shop session using SessionManager instead of JWT
     await SessionManager.createShopSession(req, seller);
+    
+    console.log("✅ Shop session created for:", seller.name);
     
     res.status(201).json({
       success: true,
@@ -119,6 +139,9 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
     });
     
   } catch (error) {
+    console.error("❌ Shop creation error:", error.message);
+    console.error("Error stack:", error.stack);
+    
     // Clean up file if it exists
     if (req.file) {
       const filename = req.file.filename;
