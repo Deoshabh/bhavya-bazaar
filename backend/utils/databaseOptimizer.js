@@ -379,24 +379,45 @@ class DatabaseOptimizer {
 
 // MongoDB connection optimization
 const optimizeMongoConnection = () => {
-  // Connection pool optimization
-  mongoose.set('maxPoolSize', 10);
-  mongoose.set('minPoolSize', 2);
-  mongoose.set('maxIdleTimeMS', 30000);
-  mongoose.set('serverSelectionTimeoutMS', 5000);
-  mongoose.set('socketTimeoutMS', 45000);
-  
-  // Enable query optimization
-  mongoose.set('strictQuery', true);
-  
-  // Performance monitoring
-  mongoose.connection.on('connected', () => {
-    console.log('📈 MongoDB connection optimized');
-  });
-  
-  // Query logging for development
-  if (process.env.NODE_ENV === 'development') {
-    mongoose.set('debug', true);
+  try {
+    console.log('🔧 Starting MongoDB connection optimization...');
+    
+    // Only set valid mongoose options that work with current version
+    mongoose.set('strictQuery', true);
+    console.log('✅ Strict query mode enabled');
+    
+    // Query logging for development only
+    if (process.env.NODE_ENV === 'development') {
+      mongoose.set('debug', true);
+      console.log('✅ MongoDB debug mode enabled');
+    }
+    
+    // Add connection event listeners for monitoring
+    const connection = mongoose.connection;
+    
+    if (!connection.listenerCount('connected')) {
+      connection.on('connected', () => {
+        console.log('📈 MongoDB connection established and optimized');
+      });
+    }
+    
+    if (!connection.listenerCount('error')) {
+      connection.on('error', (err) => {
+        console.error('❌ MongoDB connection error:', err.message);
+      });
+    }
+    
+    if (!connection.listenerCount('disconnected')) {
+      connection.on('disconnected', () => {
+        console.warn('⚠️ MongoDB disconnected');
+      });
+    }
+    
+    console.log('✅ MongoDB optimization settings applied successfully');
+    
+  } catch (error) {
+    console.warn('⚠️ MongoDB optimization failed:', error.message);
+    // Don't throw the error, just log it and continue
   }
 };
 

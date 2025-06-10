@@ -303,30 +303,44 @@ server.listen(PORT, async () => {
   
   // Initialize performance optimizations
   try {
+    console.log('🔧 Initializing performance optimizations...');
+    
     // Initialize database optimizer
     dbOptimizer.initialize();
+    console.log('✅ Database optimizer initialized');
     
-    // Optimize MongoDB connection settings
-    optimizeMongoConnection();
+    // Skip MongoDB connection optimization to avoid issues
+    console.log('ℹ️ Skipping MongoDB connection optimization (using existing connection)');
     
     // Initialize cache manager
     if (cacheManager && typeof cacheManager.initialize === 'function') {
       await cacheManager.initialize();
       console.log('✅ Cache manager initialized');
+    } else {
+      console.log('ℹ️ Cache manager does not have initialize method');
     }
     
     // Warm up critical caches
     if (cacheManager && typeof cacheManager.warmup === 'function') {
       await cacheManager.warmup();
       console.log('🔥 Cache warmup completed');
+    } else {
+      console.log('ℹ️ Cache manager does not have warmup method');
     }
     
     // Initialize AI recommendation engine
-    await recommendationEngine.initialize();
-    console.log('🤖 AI Recommendation Engine initialized');
+    if (recommendationEngine && typeof recommendationEngine.initialize === 'function') {
+      await recommendationEngine.initialize();
+      console.log('🤖 AI Recommendation Engine initialized');
+    } else {
+      console.log('ℹ️ Recommendation engine does not have initialize method');
+    }
     
-    console.log('🚀 Performance optimizations initialized');
+    console.log('🚀 Performance optimizations initialized successfully');
   } catch (error) {
     console.error('⚠️ Performance optimization initialization failed:', error);
+    console.error('Stack trace:', error.stack);
+    // Continue server startup even if optimizations fail
+    console.log('🔧 Server continuing startup without advanced optimizations');
   }
 });

@@ -1,5 +1,6 @@
 // Optimized product routes with performance enhancements
 const express = require('express');
+const mongoose = require('mongoose');
 const catchAsyncErrors = require('../middleware/catchAsyncErrors');
 const Product = require('../model/product');
 const Shop = require('../model/shop');

@@ -2,11 +2,31 @@ const mongoose = require("mongoose");
 
 const connectDatabase = async () => {
   try {
-    await mongoose.connect(process.env.DB_URI, {
+    // Optimized MongoDB connection settings
+    const connectionOptions = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-    });
+      // Connection pool optimization settings
+      maxPoolSize: 10,        // Maximum connections in pool
+      minPoolSize: 2,         // Minimum connections in pool
+      maxIdleTimeMS: 30000,   // Close connections after 30s of inactivity
+      serverSelectionTimeoutMS: 5000, // How long to try selecting a server
+      socketTimeoutMS: 45000, // How long a socket stays open
+      bufferMaxEntries: 0,    // Disable mongoose buffering
+      bufferCommands: false,  // Disable mongoose buffering for commands
+    };
+
+    await mongoose.connect(process.env.DB_URI, connectionOptions);
     console.log("MongoDB connection is successful!");
+    console.log("✅ Connection pool optimized:", {
+      maxPoolSize: connectionOptions.maxPoolSize,
+      minPoolSize: connectionOptions.minPoolSize,
+      timeouts: {
+        serverSelection: connectionOptions.serverSelectionTimeoutMS,
+        socket: connectionOptions.socketTimeoutMS,
+        maxIdle: connectionOptions.maxIdleTimeMS
+      }
+    });
 
     // Fix the duplicate key issue by dropping all problematic indexes
     const db = mongoose.connection;
