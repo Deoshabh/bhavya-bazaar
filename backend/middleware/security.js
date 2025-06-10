@@ -21,7 +21,6 @@ class SecurityManager {
       expireMs: 15 * 60 * 1000 // 15 minutes
     });
   }
-
   // Enhanced CORS configuration
   getCorsOptions() {
     const allowedOrigins = [
@@ -29,6 +28,9 @@ class SecurityManager {
       'http://localhost:3001',
       'https://bhavya-bazaar.vercel.app',
       'https://bhavya-bazaar-frontend.vercel.app',
+      'https://bhavyabazaar.com',
+      'https://www.bhavyabazaar.com',
+      'https://api.bhavyabazaar.com',
       process.env.FRONTEND_URL,
       process.env.PRODUCTION_URL
     ].filter(Boolean);

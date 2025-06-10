@@ -67,10 +67,19 @@ if (process.env.NODE_ENV === 'production') {
   console.log('⚠️ Trust proxy set to true (development mode)');
 }
 
-// Load additional .env if you have a custom file path (optional):
-require("dotenv").config({
-  path: path.join(__dirname, "config", ".env"),
-});
+// Load environment-specific configuration
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+const envPath = path.join(__dirname, envFile);
+
+// Only load additional config if the file exists
+if (fs.existsSync(envPath)) {
+  require("dotenv").config({
+    path: envPath,
+  });
+  console.log(`✅ Loaded environment configuration from: ${envFile}`);
+} else {
+  console.log(`⚠️ Environment file ${envFile} not found, using default environment variables`);
+}
 
 // Verify critical environment vars
 if (!process.env.JWT_SECRET_KEY || !process.env.ACTIVATION_SECRET) {
@@ -381,16 +390,21 @@ process.on("unhandledRejection", (err) => {
   server.close(() => process.exit(1));
 });
 
-// —————————— Start Listening on PORT=443 ——————————
-const PORT = process.env.PORT || 8000; // Changed default from 443 to 8000
-server.listen(PORT, async () => {
+// —————————— Start Listening on PORT=8000 ——————————
+const PORT = process.env.PORT || 8000;
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server listening on port ${PORT}`);
   console.log(`🌐 API base: https://api.bhavyabazaar.com`);
+  console.log(`🔗 Local access: http://localhost:${PORT}`);
   
   // Log environment details for debugging
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`DB URI: ${process.env.DB_URI ? 'Connected' : 'Not configured'}`);
   console.log(`Redis Host: ${process.env.REDIS_HOST || 'Not configured'}`);
+  console.log(`CORS Origins: ${process.env.CORS_ORIGIN || 'Not configured'}`);
+  
+  // Health check for Coolify
+  console.log(`🩺 Health check available at: http://localhost:${PORT}/api/ping`);
   
   // Initialize performance optimizations
   try {
