@@ -275,13 +275,12 @@ router.get(
           message: "User session valid"
         });
       }
-      
-      // Try to validate shop session
+        // Try to validate shop session
       const shopSession = await SessionManager.validateShopSession(req);
       if (shopSession) {
         return res.status(200).json({
           success: true,
-          seller: shopSession,
+          user: shopSession, // Frontend loadSeller expects data.user
           userType: 'seller',
           message: "Shop session valid"
         });
