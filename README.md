@@ -21,9 +21,6 @@ The MERN Marketplace application will allow users to become sellers, who can man
 ![mongodb]
 ![jwt]
 
-**Realtime Communication:**
-![socketio]
-
 ## 🚀 Features
 
 - User Authentication Pages 🚪
@@ -274,11 +271,11 @@ Withdrawal Management: Provide admins with the ability to verify seller withdraw
 
 Image Management: Enable admins to delete images, ensuring data integrity and storage optimization. <Br/>
 
-🚀 With the power of these cutting-edge technologies, the MERN Marketplace delivers a robust and feature-rich multi-vendor website. It ensures a seamless user experience, efficient data management, real-time communication, and secure transactions. Join me in revolutionizing the e-commerce experience by connecting buyers and sellers in a dynamic and user-friendly environment.
+🚀 With the power of these cutting-edge technologies, the MERN Marketplace delivers a robust and feature-rich multi-vendor website. It ensures a seamless user experience, efficient data management, and secure transactions. Join me in revolutionizing the e-commerce experience by connecting buyers and sellers in a dynamic and user-friendly environment.
 
 Feel free to reach out to me for more information or to explore collaboration opportunities.
 
-#MERNMarketplace #Ecommerce #React #NodeJS #ExpressJS #MongoDB #SocketIO #TailwindCSS #MaterialUI #Innovation #OnlineShopping #RevolutionizingRetail
+#MERNMarketplace #Ecommerce #React #NodeJS #ExpressJS #MongoDB #TailwindCSS #MaterialUI #Innovation #OnlineShopping #RevolutionizingRetail
 
 ## File structure
 #### `client` - Holds the client application

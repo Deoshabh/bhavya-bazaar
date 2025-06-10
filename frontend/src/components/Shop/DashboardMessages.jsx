@@ -24,11 +24,6 @@ const DashboardMessages = () => {
   const apiUrl = window.RUNTIME_CONFIG?.API_URL;
 
   useEffect(() => {
-    console.log('📋 Real-time messaging disabled - Socket.IO has been removed');
-    console.log('📋 Messages will work without real-time updates');
-  }, [seller]);
-
-  useEffect(() => {
     const getConversations = async () => {
       try {
         const response = await axios.get(
@@ -69,11 +64,6 @@ const DashboardMessages = () => {
     
     getMessages();
   }, [currentChat, apiUrl]);
-
-  // Check if user is online (disabled - no real-time status)
-  const onlineCheck = () => {
-    return false; // Always offline since real-time status is disabled
-  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -212,7 +202,7 @@ const DashboardMessages = () => {
               me={seller?._id}
               setUserData={setUserData}
               userData={userData}
-              online={onlineCheck(item)}
+              online={false}
               setActiveStatus={setActiveStatus}
             />
           ))}

@@ -65,7 +65,7 @@ const UserInbox = () => {
     }
   }, [currentChat]);
 
-  // Create new message (HTTP-only, no Socket.IO)
+  // Create new message 
   const sendMessageHandler = async (e) => {
     e.preventDefault();
 
@@ -160,13 +160,6 @@ const UserInbox = () => {
     }
   };
 
-  // Simple online check (since we don't have real-time Socket.IO data)
-  const onlineCheck = (chat) => {
-    // Without Socket.IO, we can't determine real-time online status
-    // Return false for now, or implement a periodic HTTP check if needed
-    return false;
-  };
-
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ beahaviour: "smooth" });
   }, [messages]);
@@ -191,7 +184,7 @@ const UserInbox = () => {
                 me={user?._id}
                 setUserData={setUserData}
                 userData={userData}
-                online={onlineCheck(item)}
+                online={false}
                 setActiveStatus={setActiveStatus}
               />
             ))}

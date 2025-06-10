@@ -193,34 +193,6 @@ if (Test-Path $serverScript) {
         Write-Host "   ❌ Failed to test security headers" -ForegroundColor Red
     }
     
-    # Test 5: WebSocket Connection Test
-    Write-Host "`n🔌 Testing WebSocket configuration..." -ForegroundColor Blue
-    
-    $runtimeConfigPath = "$buildPath\runtime-config.js"
-    if (Test-Path $runtimeConfigPath) {
-        $configContent = Get-Content $runtimeConfigPath -Raw
-        
-        if ($configContent -match "SOKETI") {
-            Write-Host "   ✅ Soketi configuration found" -ForegroundColor Green
-            
-            # Extract Soketi host
-            if ($configContent -match 'HOST:\s*"([^"]+)"') {
-                $soketiHost = $matches[1]
-                Write-Host "   📡 Soketi Host: $soketiHost" -ForegroundColor Blue
-                
-                # Test if Soketi host is reachable
-                try {
-                    $soketiResponse = Invoke-WebRequest -Uri "https://$soketiHost" -Method HEAD -TimeoutSec 5 2>$null
-                    Write-Host "   ✅ Soketi host reachable" -ForegroundColor Green
-                } catch {
-                    Write-Host "   ⚠️ Soketi host not responding (may be normal)" -ForegroundColor Yellow
-                }
-            }
-        } else {
-            Write-Host "   ❌ Soketi configuration missing" -ForegroundColor Red
-        }
-    }
-    
     # Clean up
     Write-Host "`n🛑 Stopping test server..." -ForegroundColor Blue
     Stop-Job $serverJob -Force

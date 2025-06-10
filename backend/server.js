@@ -212,6 +212,10 @@ app.get("/api/v2/debug/env", (req, res) => {
 });
 
 // —————————— Health & Root Routes ——————————
+// Enhanced health check routes
+app.use("/api/v2", require("./routes/health"));
+
+// Legacy health endpoint for backward compatibility
 app.get("/api/v2/health", async (req, res) => {
   try {
     res.status(200).json({
@@ -226,6 +230,7 @@ app.get("/api/v2/health", async (req, res) => {
     });
   }
 });
+
 app.get("/", (req, res) => {
   res.json({
     message: "Bhavya Bazaar API Server",
@@ -239,6 +244,7 @@ app.get("/", (req, res) => {
       event: "/api/v2/event",
       conversation: "/api/v2/conversation",
       message: "/api/v2/message",
+      health: "/api/v2/health/detailed"
     },
     documentation: "https://bhavyabazaar.com/api-docs",
   });
