@@ -1010,6 +1010,73 @@ const ADMIN_LIMITS = {
   maxSuperAdmins: 1
 };
 
+// Emergency admin creation (Only works when no admins exist)
+router.post("/emergency-admin-setup",
+  authLimiter,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚨 Emergency admin setup request received");
+      
+      // Check if any admin already exists
+      const existingAdminCount = await Admin.countDocuments({});
+      if (existingAdminCount > 0) {
+        return next(new ErrorHandler("Admin accounts already exist. Use regular creation endpoints.", 400));
+      }
+
+      const { emergencyKey } = req.body;
+
+      // Emergency setup key
+      if (emergencyKey !== "EMERGENCY_ADMIN_BHAVYA_2024") {
+        return next(new ErrorHandler("Invalid emergency key", 401));      }
+
+      // Create emergency super admin account with minimal validation
+      const adminData = {
+        name: "Super Administrator",
+        email: "superadmin@bhavyabazaar.com",
+        password: "SuperAdmin@2024!",
+        role: "superadmin",
+        permissions: [
+          "manage_users",
+          "manage_sellers",
+          "manage_products", 
+          "manage_orders",
+          "manage_system",
+          "view_analytics",
+          "manage_admins"
+        ],
+        isActive: true,
+        createdBy: "emergency_setup",
+        createdAt: new Date(),
+        loginAttempts: 0,
+        lockUntil: undefined
+      };
+
+      const superAdmin = new Admin(adminData);
+      await superAdmin.save();
+
+      console.log("✅ Emergency super admin created successfully");
+
+      res.status(201).json({
+        success: true,
+        message: "Emergency super admin created successfully",
+        adminCredentials: {
+          email: "superadmin@bhavyabazaar.com",
+          password: "SuperAdmin@2024!",
+          adminSecretKey: "Use the ADMIN_SECRET_KEY from environment",
+          role: "superadmin",
+          note: "Please change password after first login"
+        },
+        limits: ADMIN_LIMITS
+      });
+
+    } catch (error) {
+      console.error("❌ Emergency admin setup error:", error.message);
+      console.error("❌ Error stack:", error.stack);
+      return next(new ErrorHandler(`Emergency admin setup failed: ${error.message}`, 500));
+    }
+  })
+);
+
 // Initial admin setup (Only works when no admins exist)
 router.post("/setup-initial-admin",
   authLimiter,
@@ -1028,9 +1095,7 @@ router.post("/setup-initial-admin",
       // Special setup key for initial admin creation
       if (setupKey !== "BHAVYA_INITIAL_SETUP_2024") {
         return next(new ErrorHandler("Invalid setup key", 401));
-      }
-
-      // Create initial super admin account
+      }      // Create initial super admin account
       const superAdmin = await Admin.create({
         name: "Super Administrator",
         email: "superadmin@bhavyabazaar.com",
@@ -1043,8 +1108,7 @@ router.post("/setup-initial-admin",
           "manage_orders",
           "manage_system",
           "view_analytics",
-          "manage_admins",
-          "manage_super_settings"
+          "manage_admins"
         ],
         isActive: true,
         createdBy: "system_setup"
@@ -1086,9 +1150,7 @@ router.post("/admin/reset-system",
 
       // Delete ALL existing admin accounts
       const deleteResult = await Admin.deleteMany({});
-      console.log(`🗑️ Deleted ${deleteResult.deletedCount} existing admin accounts`);
-
-      // Create new Super Admin account
+      console.log(`🗑️ Deleted ${deleteResult.deletedCount} existing admin accounts`);      // Create new Super Admin account
       const superAdmin = await Admin.create({
         name: "Super Administrator",
         email: "superadmin@bhavyabazaar.com",
@@ -1101,8 +1163,7 @@ router.post("/admin/reset-system",
           "manage_orders",
           "manage_system",
           "view_analytics",
-          "manage_admins",
-          "manage_super_settings"
+          "manage_admins"
         ],
         isActive: true,
         createdBy: "system"

@@ -43,16 +43,14 @@ const resetAdminSystem = async () => {
       name: "Super Administrator",
       email: "superadmin@bhavyabazaar.com",
       password: "SuperAdmin@2024!", // Strong default password
-      role: "superadmin",
-      permissions: [
+      role: "superadmin",      permissions: [
         "manage_users",
         "manage_sellers",
-        "manage_products", 
+        "manage_products",
         "manage_orders",
         "manage_system",
         "view_analytics",
-        "manage_admins",
-        "manage_super_settings"
+        "manage_admins"
       ],
       isActive: true,
       createdBy: "system"
