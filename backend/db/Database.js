@@ -12,8 +12,7 @@ const connectDatabase = async () => {
       maxIdleTimeMS: 30000,   // Close connections after 30s of inactivity
       serverSelectionTimeoutMS: 5000, // How long to try selecting a server
       socketTimeoutMS: 45000, // How long a socket stays open
-      bufferMaxEntries: 0,    // Disable mongoose buffering
-      bufferCommands: false,  // Disable mongoose buffering for commands
+      // Note: bufferMaxEntries and bufferCommands are deprecated in newer MongoDB versions
     };
 
     await mongoose.connect(process.env.DB_URI, connectionOptions);

@@ -2,7 +2,22 @@
 const Product = require('../model/product');
 const Order = require('../model/order');
 const User = require('../model/user');
-const { cacheManager } = require('./cacheManager');
+
+// Safe cache manager import with fallback
+let cacheManager;
+try {
+  const cacheModule = require('./cacheManager');
+  cacheManager = cacheModule.cacheManager || cacheModule;
+} catch (error) {
+  console.warn('Cache manager not available, using fallback:', error.message);
+  // Fallback cache manager
+  cacheManager = {
+    get: async () => null,
+    set: async () => true,
+    del: async () => true,
+    clear: async () => true
+  };
+}
 
 class RecommendationEngine {
   constructor() {
