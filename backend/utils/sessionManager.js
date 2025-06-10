@@ -352,18 +352,31 @@ class SessionManager {
    * @param {Object} res - Express response object
    * @returns {Promise<boolean>} Success status
    */
-  static async destroySession(req, res) {
-    try {
+  static async destroySession(req, res) {    try {
       const sessionInfo = this.getSessionInfo(req);
       
-      // Clear session cookie
-      res.clearCookie('connect.sid', {
+      // Clear all session data first
+      if (req.session) {
+        req.session.user = null;
+        req.session.seller = null;
+        req.session.userType = null;
+        req.session.isAuthenticated = false;
+        req.session.loginTime = null;
+      }
+      
+      // Clear session cookie with multiple attempts for compatibility
+      const cookieOptions = {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         domain: process.env.NODE_ENV === 'production' ? '.bhavyabazaar.com' : undefined
-      });
+      };
+      
+      // Clear multiple cookie variations to ensure cleanup
+      res.clearCookie('connect.sid', cookieOptions);
+      res.clearCookie('session', cookieOptions);
+      res.clearCookie('sessionid', cookieOptions);
 
       // Destroy session
       await new Promise((resolve, reject) => {

@@ -5,11 +5,11 @@
  * Encoding: UTF-8 without BOM
  */
 window.__RUNTIME_CONFIG__ = {
-  API_URL: "https://api.bhavyabazaar.com/api/v2",
-  BACKEND_URL: "https://api.bhavyabazaar.com",
-  FRONTEND_URL: "https://bhavyabazaar.com",
-  NODE_ENV: "production",
-  DEBUG: false,
+  API_URL: "http://localhost:8000/api/v2",
+  BACKEND_URL: "http://localhost:8000",
+  FRONTEND_URL: "http://localhost:3000",
+  NODE_ENV: "development",
+  DEBUG: true,
   VERSION: "2.0.0",
   SERVER_TYPE: "nodejs", // Indicates Node.js server instead of static
   FEATURES: {

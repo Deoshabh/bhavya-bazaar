@@ -168,7 +168,7 @@ try {
   const ipConfig = getClientIpConfig();
   authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // limit each IP to 5 login attempts per windowMs
+    max: 20, // limit each IP to 20 login attempts per windowMs (increased from 5)
     message: {
       error: 'Too many authentication attempts, please try again later.',
       retryAfter: '15 minutes'
@@ -186,11 +186,10 @@ try {
     } : {})
   });
 } catch (error) {
-  console.error('Failed to initialize authLimiter, using fallback:', error.message);
-  // Fallback rate limiter with default memory store
+  console.error('Failed to initialize authLimiter, using fallback:', error.message);  // Fallback rate limiter with default memory store
   authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 20, // increased from 5 to 20
     message: {
       error: 'Too many authentication attempts, please try again later.',
       retryAfter: '15 minutes'
