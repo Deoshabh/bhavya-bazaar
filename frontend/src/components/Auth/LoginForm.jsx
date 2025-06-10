@@ -28,8 +28,7 @@ const LoginForm = ({
   const [loading, setLoading] = useState(false);
 
   // Configuration for different modes
-  const modeConfig = {
-    user: {
+  const modeConfig = {    user: {
       title: "Login to your account",
       subtitle: "Welcome back! Please sign in to continue.",
       icon: <MdPersonOutline className="w-8 h-8 text-blue-600" />,
@@ -39,10 +38,10 @@ const LoginForm = ({
       signupText: "Don't have an account?",
       loadAction: () => dispatch(loadUser()),
       buttonText: "Sign In",
-      inputType: "email",
-      inputLabel: "Email Address",
-      inputPlaceholder: "Enter your email",
-      inputIcon: <MdEmail className="w-5 h-5" />
+      inputType: "phone",
+      inputLabel: "Phone Number",
+      inputPlaceholder: "Enter your phone number",
+      inputIcon: <MdPhone className="w-5 h-5" />
     },
     shop: {
       title: "Login to your shop",

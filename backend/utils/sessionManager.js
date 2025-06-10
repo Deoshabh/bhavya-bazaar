@@ -311,6 +311,42 @@ class SessionManager {
   }
 
   /**
+   * Get session data for authentication endpoints
+   * @param {Object} req - Express request object
+   * @returns {Object|null} Session data if authenticated, null otherwise
+   */
+  static getSessionData(req) {
+    try {
+      if (!req.session || !req.session.isAuthenticated) {
+        return null;
+      }
+
+      const sessionData = {
+        isAuthenticated: true,
+        userType: req.session.userType,
+        sessionId: req.sessionID,
+        loginTime: req.session.loginTime,
+        lastAccess: new Date().toISOString()
+      };
+
+      // Add user data based on session type
+      if (req.session.userType === 'user' || req.session.userType === 'admin') {
+        sessionData.user = req.session.user;
+      } else if (req.session.userType === 'seller') {
+        sessionData.user = req.session.seller;
+      }
+
+      // Touch session to extend expiry
+      req.session.touch();
+
+      return sessionData;
+    } catch (error) {
+      console.error('❌ Failed to get session data:', error);
+      return null;
+    }
+  }
+
+  /**
    * Destroy session (logout)
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object

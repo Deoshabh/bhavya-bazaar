@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from "framer-motion";
-import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser, AiOutlineLock, AiOutlinePhone } from "react-icons/ai";
+import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser, AiOutlineLock, AiOutlinePhone, AiOutlineMail } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
 import { MdCloudUpload } from "react-icons/md";
@@ -13,6 +13,7 @@ import Input from "../common/Input";
 import SafeImage from "../common/SafeImage";
 
 const Signup = () => {
+    const [email, setEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
@@ -31,7 +32,7 @@ const Signup = () => {
 
         // Validation
         if (!name || !phoneNumber || !password) {
-            toast.error("Please fill all the fields");
+            toast.error("Please fill all required fields");
             return;
         }
 
@@ -40,9 +41,15 @@ const Signup = () => {
             return;
         }
 
-        // Strict 10-digit phone number validation
+        // Validate phone number format (mandatory)
         if (!/^\d{10}$/.test(phoneNumber)) {
             toast.error("Phone number must be exactly 10 digits");
+            return;
+        }
+
+        // Validate email format if provided (optional)
+        if (email && !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+            toast.error("Please provide a valid email address");
             return;
         }
 
@@ -70,20 +77,23 @@ const Signup = () => {
         formData.append("name", name);
         formData.append("phoneNumber", phoneNumber);
         formData.append("password", password);
+        if (email) {
+            formData.append("email", email);
+        }
         
         // Only append file if it exists
         if (avatar) {
-            formData.append("file", avatar);
+            formData.append("avatar", avatar);
         }
 
         // Use runtime config for API URL with proper fallback chain
         const BASE_URL = window.__RUNTIME_CONFIG__?.API_URL || 
                         window.RUNTIME_CONFIG?.API_URL || 
                         server || 
-                        'https://api.bhavyabazaar.com/api/v2';
+                        'https://api.bhavyabazaar.com/api';
                         
         // Extract base URL without /api/v2 to avoid duplication
-        const API_BASE = BASE_URL.replace('/api/v2', '');
+        const API_BASE = BASE_URL.replace('/api/v2', '').replace('/api', '');
         
         if (!API_BASE) {
             console.error('❌ API_URL is not defined.');
@@ -91,8 +101,8 @@ const Signup = () => {
             return;
         }
         
-        // Construct proper URL with /api/v2 prefix
-        const apiUrl = `${API_BASE}/api/v2/user/create-user`;
+        // Use new unified auth endpoint
+        const apiUrl = `${API_BASE}/api/auth/register-user`;
         
         try {
             setLoading(true);
@@ -101,6 +111,7 @@ const Signup = () => {
             console.log("Submitting form data:", {
                 name,
                 phoneNumber,
+                email: email || 'not provided',
                 hasAvatar: !!avatar
             });
             
@@ -115,6 +126,7 @@ const Signup = () => {
                 toast.success("Account created successfully!");
                 setName("");
                 setPhoneNumber("");
+                setEmail("");
                 setPassword("");
                 setAvatar(null);
                 setLoading(false);
@@ -190,7 +202,7 @@ const Signup = () => {
                         {/* Full Name */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Full Name
+                                Full Name <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <AiOutlineUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -210,7 +222,7 @@ const Signup = () => {
                         {/* Phone number */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Phone Number
+                                Phone Number <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <AiOutlinePhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -231,10 +243,29 @@ const Signup = () => {
                             </div>
                         </div>
 
+                        {/* Email (Optional) */}
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Email Address (Optional)
+                            </label>
+                            <div className="relative">
+                                <AiOutlineMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                                <Input
+                                    type="email"
+                                    name="email"
+                                    autoComplete="email"
+                                    placeholder="Enter your email address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="pl-10 h-12 border-2 border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
+                                />
+                            </div>
+                        </div>
+
                         {/* Password */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Password
+                                Password <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <AiOutlineLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />

@@ -10,6 +10,14 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: false, // Make email optional
+    validate: {
+      validator: function(v) {
+        // Only validate email format if email is provided
+        if (!v) return true;
+        return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v);
+      },
+      message: props => "Please provide a valid email address!"
+    }
   },
   password: {
     type: String,
@@ -20,6 +28,13 @@ const userSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     required: [true, "Please enter your phone number!"],
+    unique: true,
+    validate: {
+      validator: function(v) {
+        return /^\d{10}$/.test(v); // Strict 10-digit validation
+      },
+      message: props => "Please enter a valid 10-digit phone number!"
+    }
   },
   avatar: {
     type: String,

@@ -3,7 +3,7 @@
  * Intelligent performance monitoring and optimization for Bhavya Bazaar
  */
 
-const redis = require('../config/redis');
+const redis = require('./redisClient');
 const ErrorHandler = require('./ErrorHandler');
 
 class PerformanceOptimizer {

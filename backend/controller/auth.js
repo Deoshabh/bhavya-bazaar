@@ -41,27 +41,32 @@ router.post("/register-user",
     try {
       console.log("📝 User registration request received");
       const { name, email, password, phoneNumber } = req.body;
-      
-      if (!name || !email || !password) {
+        if (!name || !phoneNumber || !password) {
         if (req.file) cleanupFile(req.file.filename);
         return next(new ErrorHandler("Please provide all required fields", 400));
       }
 
-      // Validate email format
-      const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-      if (!emailRegex.test(email)) {
+      // Validate phone number format
+      if (!/^\d{10}$/.test(phoneNumber)) {
         if (req.file) cleanupFile(req.file.filename);
-        return next(new ErrorHandler("Please provide a valid email address", 400));
+        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
       }
 
-      // Check for existing user
+      // Validate email format if provided
+      if (email && !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("Please provide a valid email address", 400));
+      }// Check for existing user
       const existingUser = await User.findOne({ 
-        $or: [{ email }, ...(phoneNumber ? [{ phoneNumber }] : [])]
+        $or: [
+          { phoneNumber },
+          ...(email ? [{ email }] : [])
+        ]
       });
       
       if (existingUser) {
         if (req.file) cleanupFile(req.file.filename);
-        const field = existingUser.email === email ? "email" : "phone number";
+        const field = existingUser.phoneNumber === phoneNumber ? "phone number" : "email";
         return next(new ErrorHandler(`User already exists with this ${field}`, 400));
       }
 
@@ -119,19 +124,24 @@ router.post("/register-user",
   })
 );
 
-// User Login (Enhanced)
+// User Login (Enhanced - Updated to use phone number)
 router.post("/login-user",
   authLimiter,
   catchAsyncErrors(async (req, res, next) => {
     try {
       console.log("🔐 User login request received");
-      const { email, password } = req.body;
+      const { phoneNumber, password } = req.body;
 
-      if (!email || !password) {
-        return next(new ErrorHandler("Please provide email and password", 400));
+      if (!phoneNumber || !password) {
+        return next(new ErrorHandler("Please provide phone number and password", 400));
       }
 
-      const user = await User.findOne({ email }).select("+password");
+      // Validate phone number format
+      if (!/^\d{10}$/.test(phoneNumber)) {
+        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
+      }
+
+      const user = await User.findOne({ phoneNumber }).select("+password");
 
       if (!user || !(await user.comparePassword(password))) {
         return next(new ErrorHandler("Invalid credentials", 401));

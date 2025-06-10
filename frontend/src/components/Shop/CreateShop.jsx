@@ -56,7 +56,7 @@ const CreateShop = () => {
     const config = { headers: { "Content-Type": "multipart/form-data" } };
     const newForm = new FormData();
 
-    newForm.append("file", avatar);
+    newForm.append("avatar", avatar); // Changed from "file" to "avatar" to match auth endpoint
     newForm.append("name", name);
     newForm.append("phoneNumber", phoneNumber);
     newForm.append("password", password);
@@ -65,8 +65,13 @@ const CreateShop = () => {
 
     setLoading(true);
     try {
-      // Create shop directly without verification - with credentials for session support
-      const response = await axios.post(`${server}/shop/create-shop`, newForm, {
+      // Use new unified auth endpoint instead of legacy shop endpoint
+      const API_BASE = window.__RUNTIME_CONFIG__?.API_URL?.replace('/api/v2', '').replace('/api', '') || 
+                      window.RUNTIME_CONFIG?.API_URL?.replace('/api/v2', '').replace('/api', '') || 
+                      server?.replace('/api/v2', '').replace('/api', '') || 
+                      'https://api.bhavyabazaar.com';
+      
+      const response = await axios.post(`${API_BASE}/api/auth/register-seller`, newForm, {
         ...config,
         withCredentials: true
       });

@@ -4,7 +4,6 @@ import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineShop, AiOutlineLock } fro
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import axios from "axios";
-import { server, debugConnection, getFallbackUrl } from "../../server";
 import { toast } from "react-toastify";
 import { loadSeller } from "../../redux/actions/user";
 import Card from "../common/Card";
@@ -33,89 +32,36 @@ const ShopLogin = () => {
 
     try {
       setLoading(true);
-      const apiUrl = debugConnection(`${server}/shop/login-shop`);
       
-      try {
-        const response = await axios.post(
-          apiUrl,
-          {
-            phoneNumber,
-            password,
-          },
-          { withCredentials: true, timeout: 15000 }
-        );
+      // Use new unified auth endpoint
+      const response = await axios.post(
+        `${window.RUNTIME_CONFIG?.API_URL?.replace('/api/v2', '') || 'https://api.bhavyabazaar.com'}/api/auth/login-seller`,
+        {
+          phoneNumber,
+          password,
+        },
+        { withCredentials: true, timeout: 15000 }
+      );
 
-        if (response.data.success) {
-          toast.success("Login Success!");
-          
-          // Add timing delay for session establishment in production
-          setTimeout(async () => {
-            try {
-              // Load seller data and wait for authentication state
-              await dispatch(loadSeller());
-              console.log("✅ Seller data loaded after login");
-              setLoading(false);
-              navigate("/dashboard");
-            } catch (loadError) {
-              console.error("Error loading seller after login:", loadError);
-              setLoading(false);
-              toast.error("Login successful but failed to load user data. Please refresh the page.");
-              navigate("/dashboard"); // Still try to navigate
-            }
-          }, 150); // Slightly increased delay
-        } else {
-          throw new Error(response.data.message || "Login failed");
-        }
-      } catch (mainError) {
-        console.error("Main shop login error:", mainError.message);
+      if (response.data.success) {
+        toast.success(response.data.message || "Login Success!");
         
-        // If there's a certificate error or network error, try fallback URL
-        if (mainError.message.includes("certificate") || 
-            mainError.message.includes("network") ||
-            mainError.message.includes("SSL") ||
-            !mainError.response) {
-            
-          const fallbackUrl = debugConnection(getFallbackUrl(apiUrl));
-          console.log(`Certificate/network error detected, trying fallback URL: ${fallbackUrl}`);
-          
+        // Add timing delay for session establishment
+        setTimeout(async () => {
           try {
-            const response = await axios.post(
-              fallbackUrl,
-              {
-                phoneNumber,
-                password,
-              },
-              { withCredentials: true }
-            );
-            
-            if (response.data.success) {
-              toast.success("Login successful (using fallback connection)!");
-              
-              // Add timing delay for session establishment in production
-              setTimeout(async () => {
-                try {
-                  // Load seller data and wait for authentication state
-                  await dispatch(loadSeller());
-                  console.log("✅ Seller data loaded after fallback login");
-                  setLoading(false);
-                  navigate("/dashboard");
-                } catch (loadError) {
-                  console.error("Error loading seller after fallback login:", loadError);
-                  setLoading(false);
-                  toast.error("Login successful but failed to load user data. Please refresh the page.");
-                  navigate("/dashboard"); // Still try to navigate
-                }
-              }, 150);
-              return;
-            } else {
-              throw new Error(response.data.message || "Fallback login failed");
-            }
-          } catch (fallbackError) {
-            console.error("Fallback shop login error:", fallbackError);
-            throw fallbackError;
+            await dispatch(loadSeller());
+            console.log("✅ Seller data loaded after login");
+            setLoading(false);
+            navigate("/dashboard");
+          } catch (loadError) {
+            console.error("Error loading seller after login:", loadError);
+            setLoading(false);
+            toast.error("Login successful but failed to load user data. Please refresh the page.");
+            navigate("/dashboard");
           }
-        }
-        throw mainError;
+        }, 150);
+      } else {
+        throw new Error(response.data.message || "Login failed");
       }
     } catch (err) {
       setLoading(false);

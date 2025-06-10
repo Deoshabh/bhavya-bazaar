@@ -3,7 +3,7 @@
  * Provides comprehensive caching strategies for improved performance
  */
 
-const redis = require('../config/redis');
+const redisClient = require('./redisClient');
 
 class CacheManager {
   constructor() {
@@ -16,11 +16,10 @@ class CacheManager {
   generateKey(type, identifier, suffix = '') {
     return `bhavya:${type}:${identifier}${suffix ? ':' + suffix : ''}`;
   }
-
   // Generic get method with error handling
   async get(key) {
     try {
-      const result = await redis.get(key);
+      const result = await redisClient.get(key);
       if (result) {
         return JSON.parse(result);
       }
@@ -30,35 +29,32 @@ class CacheManager {
       return null;
     }
   }
-
   // Generic set method with error handling
   async set(key, value, ttl = this.defaultTTL) {
     try {
-      await redis.setex(key, ttl, JSON.stringify(value));
+      await redisClient.setex(key, ttl, JSON.stringify(value));
       return true;
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error.message);
       return false;
     }
   }
-
   // Generic delete method
   async del(key) {
     try {
-      await redis.del(key);
+      await redisClient.del(key);
       return true;
     } catch (error) {
       console.error(`Cache delete error for key ${key}:`, error.message);
       return false;
     }
   }
-
   // Delete multiple keys with pattern
   async deletePattern(pattern) {
     try {
-      const keys = await redis.keys(pattern);
+      const keys = await redisClient.keys(pattern);
       if (keys.length > 0) {
-        await redis.del(...keys);
+        await redisClient.del(...keys);
       }
       return keys.length;
     } catch (error) {
@@ -196,14 +192,13 @@ class CacheManager {
     const key = this.generateKey('analytics', `${type}_${identifier}`, period);
     return await this.set(key, data, this.defaultTTL);
   }
-
   // Rate limiting helpers
   async incrementRateLimit(identifier, window = 3600) {
     try {
       const key = this.generateKey('rate_limit', identifier);
-      const current = await redis.incr(key);
+      const current = await redisClient.incr(key);
       if (current === 1) {
-        await redis.expire(key, window);
+        await redisClient.expire(key, window);
       }
       return current;
     } catch (error) {
@@ -211,11 +206,10 @@ class CacheManager {
       return 0;
     }
   }
-
   async getRateLimit(identifier) {
     try {
       const key = this.generateKey('rate_limit', identifier);
-      const count = await redis.get(key);
+      const count = await redisClient.get(key);
       return parseInt(count) || 0;
     } catch (error) {
       console.error(`Rate limit get error for ${identifier}:`, error.message);
@@ -258,12 +252,11 @@ class CacheManager {
       console.error('❌ Cache warming failed:', error.message);
     }
   }
-
   // Cache statistics
   async getCacheStats() {
     try {
-      const info = await redis.info('memory');
-      const keys = await redis.dbsize();
+      const info = await redisClient.info('memory');
+      const keys = await redisClient.dbsize();
       
       return {
         totalKeys: keys,
@@ -278,12 +271,11 @@ class CacheManager {
       };
     }
   }
-
   // Health check
   async healthCheck() {
     try {
       const start = Date.now();
-      await redis.ping();
+      await redisClient.ping();
       const responseTime = Date.now() - start;
       
       return {

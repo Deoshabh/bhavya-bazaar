@@ -5,7 +5,7 @@
 
 const crypto = require('crypto');
 const ErrorHandler = require('./ErrorHandler');
-const redis = require('../config/redis');
+const redis = require('./redisClient');
 
 class SessionSecurity {
   
