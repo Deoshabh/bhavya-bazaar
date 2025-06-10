@@ -62,8 +62,7 @@ import { useDispatch } from "react-redux";
 import { 
   RequireUser, 
   RequireShop, 
-  RequireAdmin, 
-  RequireUserForShopCreate
+  RequireAdmin
 } from "./components/Auth/RouteGuards.jsx";
 // Import the correct ShopCreateRoute that allows unauthenticated access
 import ShopCreateRoute from "./routes/ShopCreateRoute.jsx";
@@ -79,14 +78,9 @@ import Wishlist from "./components/Wishlist/Wishlist";
 
 // Import performance optimization utilities
 import { 
-  initializePerformanceOptimization,
-  PerformanceMonitor,
-  CriticalResourcePreloader 
+  initializePerformanceOptimization
 } from "./utils/performanceOptimizer";
 import { preloadCriticalImages } from "./utils/imageOptimization";
-
-// Import the correct ShopCreateRoute that allows unauthenticated access
-import ShopCreateRoute from "./routes/ShopCreateRoute.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
