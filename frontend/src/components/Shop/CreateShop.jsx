@@ -66,16 +66,31 @@ const CreateShop = () => {
     setLoading(true);
     try {
       // Create shop directly without verification - with credentials for session support
-      await axios.post(`${server}/shop/create-shop`, newForm, {
+      const response = await axios.post(`${server}/shop/create-shop`, newForm, {
         ...config,
         withCredentials: true
       });
 
-      toast.success("Shop created successfully!");
-      // Load seller data and navigate
-      dispatch(loadSeller());
-      setLoading(false);
-      navigate("/dashboard");
+      if (response.data.success) {
+        toast.success("Shop created successfully!");
+        
+        // Wait a bit for session to be properly set
+        setTimeout(async () => {
+          try {
+            // Load seller data to update Redux state
+            await dispatch(loadSeller());
+            console.log("✅ Seller data loaded after shop creation");
+            setLoading(false);
+            navigate("/dashboard");
+          } catch (loadError) {
+            console.error("Error loading seller after creation:", loadError);
+            setLoading(false);
+            // Still navigate to login if loading fails
+            toast.info("Please login to access your dashboard");
+            navigate("/shop-login");
+          }
+        }, 200); // Increased delay for session setup
+      }
     } catch (error) {
       setLoading(false);
       if (error.response && error.response.data) {

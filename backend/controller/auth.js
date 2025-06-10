@@ -113,17 +113,17 @@ router.post(
 
       // Create shop session
       await SessionManager.createShopSession(req, shop);
-      
-      res.status(201).json({
+        res.status(201).json({
         success: true,
         seller: {
           id: shop._id,
+          _id: shop._id, // Ensure both id formats are available
           name: shop.name,
           phoneNumber: shop.phoneNumber,
           description: shop.description,
           avatar: shop.avatar || null
         },
-        userType: 'shop',
+        userType: 'seller', // Changed from 'shop' to 'seller' for consistency
         message: "Shop login successful"
       });
       

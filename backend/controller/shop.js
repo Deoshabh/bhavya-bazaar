@@ -120,23 +120,22 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
     // Create shop session using SessionManager instead of JWT
     await SessionManager.createShopSession(req, seller);
     
-    console.log("✅ Shop session created for:", seller.name);
-    
-    res.status(201).json({
-      success: true,
-      seller: {
-        id: seller._id,
-        name: seller.name,
-        phoneNumber: seller.phoneNumber,
-        description: seller.description,
-        avatar: seller.avatar || null,
-        email: seller.email || null,
-        address: seller.address || null,
-        zipCode: seller.zipCode || null
-      },
-      userType: 'shop',
-      message: "Shop created and logged in successfully"
-    });
+    console.log("✅ Shop session created for:", seller.name);      res.status(201).json({
+        success: true,
+        seller: {
+          id: seller._id,
+          _id: seller._id, // Ensure both id formats are available
+          name: seller.name,
+          phoneNumber: seller.phoneNumber,
+          description: seller.description,
+          avatar: seller.avatar || null,
+          email: seller.email || null,
+          address: seller.address || null,
+          zipCode: seller.zipCode || null
+        },
+        userType: 'seller', // Changed from 'shop' to 'seller' for consistency
+        message: "Shop created and logged in successfully"
+      });
     
   } catch (error) {
     console.error("❌ Shop creation error:", error.message);
@@ -190,6 +189,7 @@ router.post(
         success: true,
         seller: {
           id: shop._id,
+          _id: shop._id, // Ensure both id formats are available
           name: shop.name,
           phoneNumber: shop.phoneNumber,
           description: shop.description,
@@ -198,7 +198,7 @@ router.post(
           address: shop.address || null,
           zipCode: shop.zipCode || null
         },
-        userType: 'shop',
+        userType: 'seller', // Changed from 'shop' to 'seller' for consistency
         message: "Shop login successful"
       });
       

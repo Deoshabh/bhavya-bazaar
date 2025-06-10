@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import Loader from "../Layout/Loader.jsx";
@@ -25,16 +25,48 @@ export const RequireUser = ({ children, redirectTo = "/login" }) => {
 
 // Shop authentication guard
 export const RequireShop = ({ children, redirectTo = "/shop-login" }) => {
-  const { isLoading, isSeller } = useSelector((state) => state.seller);
-  
-  if (isLoading) {
-    return <Loader />;
+  const { isLoading: sellerLoading, isSeller, seller } = useSelector((state) => state.seller);
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+
+  useEffect(() => {
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (sellerLoading) {
+        console.warn("⚠️ Seller auth loading timeout - proceeding with current state");
+        setAuthCheckComplete(true);
+      }
+    }, 5000); // 5 second timeout
+
+    if (!sellerLoading) {
+      setAuthCheckComplete(true);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [sellerLoading]);
+
+  // Show loader while authentication is being verified
+  if (sellerLoading && !authCheckComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader />
+          <p className="mt-4 text-gray-600">Verifying seller authentication...</p>
+        </div>
+      </div>
+    );
   }
-  
-  if (!isSeller) {
+
+  // Debug logging for authentication state
+  console.log("🔍 RequireShop - isSeller:", isSeller, "seller:", seller?.name, "loading:", sellerLoading);
+
+  // If not authenticated as seller, redirect to shop login
+  if (!isSeller || !seller) {
+    console.log("❌ Seller not authenticated, redirecting to shop login");
     return <Navigate to={redirectTo} replace />;
   }
-  
+
+  // Seller is authenticated, render protected content
+  console.log("✅ Seller authenticated, rendering protected content");
   return children;
 };
 

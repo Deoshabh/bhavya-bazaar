@@ -36,7 +36,7 @@ const ShopLogin = () => {
       const apiUrl = debugConnection(`${server}/shop/login-shop`);
       
       try {
-        await axios.post(
+        const response = await axios.post(
           apiUrl,
           {
             phoneNumber,
@@ -45,15 +45,27 @@ const ShopLogin = () => {
           { withCredentials: true, timeout: 15000 }
         );
 
-        toast.success("Login Success!");
-        
-        // Add timing delay for cookie setting in production
-        setTimeout(async () => {
-          // Load seller data and wait for authentication state
-          await dispatch(loadSeller());
-          setLoading(false);
-          navigate("/dashboard");
-        }, 100);
+        if (response.data.success) {
+          toast.success("Login Success!");
+          
+          // Add timing delay for session establishment in production
+          setTimeout(async () => {
+            try {
+              // Load seller data and wait for authentication state
+              await dispatch(loadSeller());
+              console.log("✅ Seller data loaded after login");
+              setLoading(false);
+              navigate("/dashboard");
+            } catch (loadError) {
+              console.error("Error loading seller after login:", loadError);
+              setLoading(false);
+              toast.error("Login successful but failed to load user data. Please refresh the page.");
+              navigate("/dashboard"); // Still try to navigate
+            }
+          }, 150); // Slightly increased delay
+        } else {
+          throw new Error(response.data.message || "Login failed");
+        }
       } catch (mainError) {
         console.error("Main shop login error:", mainError.message);
         
@@ -67,7 +79,7 @@ const ShopLogin = () => {
           console.log(`Certificate/network error detected, trying fallback URL: ${fallbackUrl}`);
           
           try {
-            await axios.post(
+            const response = await axios.post(
               fallbackUrl,
               {
                 phoneNumber,
@@ -75,16 +87,29 @@ const ShopLogin = () => {
               },
               { withCredentials: true }
             );
-            toast.success("Login successful (using fallback connection)!");
             
-            // Add timing delay for cookie setting in production
-            setTimeout(async () => {
-              // Load seller data and wait for authentication state
-              await dispatch(loadSeller());
-              setLoading(false);
-              navigate("/dashboard");
-            }, 100);
-            return;
+            if (response.data.success) {
+              toast.success("Login successful (using fallback connection)!");
+              
+              // Add timing delay for session establishment in production
+              setTimeout(async () => {
+                try {
+                  // Load seller data and wait for authentication state
+                  await dispatch(loadSeller());
+                  console.log("✅ Seller data loaded after fallback login");
+                  setLoading(false);
+                  navigate("/dashboard");
+                } catch (loadError) {
+                  console.error("Error loading seller after fallback login:", loadError);
+                  setLoading(false);
+                  toast.error("Login successful but failed to load user data. Please refresh the page.");
+                  navigate("/dashboard"); // Still try to navigate
+                }
+              }, 150);
+              return;
+            } else {
+              throw new Error(response.data.message || "Fallback login failed");
+            }
           } catch (fallbackError) {
             console.error("Fallback shop login error:", fallbackError);
             throw fallbackError;
