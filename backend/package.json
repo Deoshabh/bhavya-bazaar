@@ -16,7 +16,11 @@
     "cleanup:sellers": "node seller-cleanup-production.js",
     "cleanup:diagnose": "node seller-cleanup-production.js diagnose",
     "cleanup:fix": "node seller-cleanup-production.js fix",
-    "cleanup:force": "node seller-cleanup-production.js force"
+    "cleanup:force": "node seller-cleanup-production.js force",
+    "admin": "node coolify-admin.js",
+    "admin:help": "node coolify-admin.js",
+    "admin:test": "node coolify-admin.js test",
+    "admin:system": "node coolify-admin.js system"
   },
   "author": "Om Prakash Pattjoshi",
   "license": "ISC",

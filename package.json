@@ -1,4 +1,16 @@
 {
+  "scripts": {
+    "admin": "cd backend && node coolify-admin.js",
+    "admin:test": "cd backend && node coolify-admin.js test",
+    "admin:system": "cd backend && node coolify-admin.js system",
+    "admin:list": "cd backend && node coolify-admin.js list",
+    "backend:test": "cd backend && npm run test:auth",
+    "backend:cleanup:list": "cd backend && npm run cleanup:sellers list",
+    "backend:cleanup:diagnose": "cd backend && npm run cleanup:sellers diagnose",
+    "backend:cleanup:fix": "cd backend && npm run cleanup:sellers fix",
+    "backend:cleanup:force": "cd backend && npm run cleanup:sellers force",
+    "backend:auth:test": "cd backend && npm run test:auth"
+  },
   "dependencies": {
     "axios": "^1.9.0"
   }
