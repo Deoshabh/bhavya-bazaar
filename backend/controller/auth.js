@@ -461,18 +461,14 @@ router.post("/create-super-admin",
         name,
         email,
         password,
-        role: 'superadmin',
-        permissions: [
+        role: 'superadmin',        permissions: [
           'manage_users',
           'manage_sellers',
           'manage_products', 
           'manage_orders',
           'manage_system',
           'view_analytics',
-          'manage_admins',
-          'create_admins',
-          'delete_admins',
-          'system_config'
+          'manage_admins'
         ],
         isActive: true
       });
