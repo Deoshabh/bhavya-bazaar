@@ -24,7 +24,7 @@ try {
 }
 
 /**
- * Basic health check endpoint
+ * Enhanced health check endpoint with service dependency checks
  */
 router.get("/health", async (req, res) => {
   try {
@@ -38,13 +38,69 @@ router.get("/health", async (req, res) => {
       memory: {
         used: process.memoryUsage(),
         free: os.freemem(),
-        total: os.totalmem()
+        total: os.totalmem(),
+        usage_percentage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100)
       },
       cpu: {
         count: os.cpus().length,
-        loadAverage: os.loadavg()
-      }
+        loadAverage: os.loadavg(),
+        platform: os.platform(),
+        arch: os.arch()
+      },
+      services: {}
     };
+
+    // Check MongoDB connection
+    try {
+      const mongoState = mongoose.connection.readyState;
+      healthData.services.mongodb = {
+        status: mongoState === 1 ? 'connected' : 'disconnected',
+        state: mongoState,
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+        collections: {
+          users: await User.countDocuments(),
+          shops: await Shop.countDocuments(),
+          products: await Product.countDocuments()
+        }
+      };
+    } catch (error) {
+      healthData.services.mongodb = {
+        status: 'error',
+        error: error.message
+      };
+      healthData.status = 'degraded';
+    }
+
+    // Check Redis connection if available
+    if (redisClient) {
+      try {
+        await redisClient.ping();
+        healthData.services.redis = {
+          status: 'connected',
+          host: redisClient.options?.host || 'localhost',
+          port: redisClient.options?.port || 6379
+        };
+      } catch (error) {
+        healthData.services.redis = {
+          status: 'error',
+          error: error.message
+        };
+        // Redis is optional, so don't mark as degraded
+      }
+    } else {
+      healthData.services.redis = {
+        status: 'not_configured',
+        message: 'Redis client not available'
+      };
+    }
+
+    // Determine overall status
+    const criticalServicesDown = healthData.services.mongodb?.status !== 'connected';
+    if (criticalServicesDown) {
+      healthData.status = 'unhealthy';
+      return res.status(503).json(healthData);
+    }
 
     res.status(200).json(healthData);
   } catch (error) {

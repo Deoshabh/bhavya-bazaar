@@ -12,6 +12,11 @@ const connectDatabase = require("./db/Database");
 const { ensureDirectoryExists } = require("./utils/fileSystem");
 const redisClient = require("./utils/redisClient");
 
+// Import performance optimization utilities
+const { dbOptimizer, optimizeMongoConnection } = require("./utils/databaseOptimizer");
+const { cacheManager } = require("./utils/cacheManager");
+const { recommendationEngine } = require("./utils/recommendationEngine");
+
 // Import rate limiters with fallback
 let apiLimiter, authLimiter;
 try {
@@ -267,6 +272,12 @@ app.use("/api/v2/payment", require("./controller/payment"));
 app.use("/api/v2/withdraw", require("./controller/withdraw"));
 app.use("/api/v2/cart", require("./controller/cart"));
 
+// Add AI-powered recommendation routes
+app.use("/api/v2/recommendations", require("./routes/recommendations"));
+
+// Add optimized product routes (alongside existing product routes)
+app.use("/api/v2/products", require("./routes/optimizedProduct"));
+
 // —————————— Error Handling & Unhandled Exceptions ——————————
 app.use(ErrorHandler);
 
@@ -290,6 +301,32 @@ server.listen(PORT, async () => {
   console.log(`DB URI: ${process.env.DB_URI ? 'Connected' : 'Not configured'}`);
   console.log(`Redis Host: ${process.env.REDIS_HOST || 'Not configured'}`);
   
-  // Initialize cache warming on server startup
-  console.log("🔥 Cache functionality has been removed");
+  // Initialize performance optimizations
+  try {
+    // Initialize database optimizer
+    dbOptimizer.initialize();
+    
+    // Optimize MongoDB connection settings
+    optimizeMongoConnection();
+    
+    // Initialize cache manager
+    if (cacheManager && typeof cacheManager.initialize === 'function') {
+      await cacheManager.initialize();
+      console.log('✅ Cache manager initialized');
+    }
+    
+    // Warm up critical caches
+    if (cacheManager && typeof cacheManager.warmup === 'function') {
+      await cacheManager.warmup();
+      console.log('🔥 Cache warmup completed');
+    }
+    
+    // Initialize AI recommendation engine
+    await recommendationEngine.initialize();
+    console.log('🤖 AI Recommendation Engine initialized');
+    
+    console.log('🚀 Performance optimizations initialized');
+  } catch (error) {
+    console.error('⚠️ Performance optimization initialization failed:', error);
+  }
 });

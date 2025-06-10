@@ -1,6 +1,16 @@
 {
-  "short_name": "Bhavya Bazaar",
   "name": "Bhavya Bazaar - Multi-vendor E-commerce Platform",
+  "short_name": "Bhavya Bazaar",
+  "description": "Your favorite e-commerce marketplace for quality products",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3B82F6",
+  "background_color": "#ffffff",
+  "categories": ["shopping", "business", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
   "icons": [
     {
       "src": "favicon.webp",
@@ -10,16 +20,46 @@
     {
       "src": "main.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "main.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#3B82F6",
-  "background_color": "#ffffff"
+  "shortcuts": [
+    {
+      "name": "Search Products",
+      "short_name": "Search",
+      "description": "Search for products",
+      "url": "/search",
+      "icons": [{ "src": "main.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Cart",
+      "short_name": "Cart",
+      "description": "View shopping cart",
+      "url": "/cart",
+      "icons": [{ "src": "main.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Orders",
+      "short_name": "Orders",
+      "description": "Track your orders",
+      "url": "/user/orders",
+      "icons": [{ "src": "main.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Seller Dashboard",
+      "short_name": "Sell",
+      "description": "Manage your store",
+      "url": "/dashboard",
+      "icons": [{ "src": "main.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

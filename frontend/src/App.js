@@ -73,6 +73,14 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import Cart from "./components/cart/Cart";
 import Wishlist from "./components/Wishlist/Wishlist";
 
+// Import performance optimization utilities
+import { 
+  initializePerformanceOptimization,
+  PerformanceMonitor,
+  CriticalResourcePreloader 
+} from "./utils/performanceOptimizer";
+import { preloadCriticalImages } from "./utils/imageOptimization";
+
 // Create ShopCreateRoute component for shop creation - now using unified auth
 const ShopCreateRoute = ({ children }) => {
   return (
@@ -92,6 +100,16 @@ const App = () => {
     const initAuth = async () => {
       try {
         console.log('🔄 App: Initializing authentication...');
+        
+        // Initialize performance optimization
+        initializePerformanceOptimization();
+        
+        // Preload critical images
+        preloadCriticalImages();
+        
+        // Start performance monitoring
+        const pageLoadMeasure = PerformanceMonitor.measurePageLoad('App');
+        
         const result = await initializeAuth();
         
         if (result.success) {
@@ -99,6 +117,9 @@ const App = () => {
         } else {
           console.log('ℹ️ App: No existing session found:', result.message);
         }
+        
+        // Finish performance measurement
+        pageLoadMeasure.finish();
         
         // Always set as initialized, even if auth failed
         setIsAuthInitialized(true);

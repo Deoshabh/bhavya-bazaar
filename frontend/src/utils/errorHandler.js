@@ -328,17 +328,155 @@ export class PerformanceMonitor {
   }
 }
 
-// Initialize global error handling
-if (typeof window !== 'undefined') {
-  GlobalErrorHandler.initialize();
+/**
+ * Advanced Performance & Error Analytics
+ */
+export class PerformanceAnalytics {
+  static metrics = {
+    pageLoads: 0,
+    apiCalls: 0,
+    errors: 0,
+    slowOperations: 0,
+    networkFailures: 0
+  };
+
+  static initialize() {
+    // Track page performance
+    if (typeof window !== 'undefined' && window.performance) {
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const perfData = window.performance.getEntriesByType('navigation')[0];
+          if (perfData) {
+            this.logPageLoad(perfData);
+          }
+        }, 0);
+      });
+    }
+
+    // Track user interactions
+    if (typeof window !== 'undefined') {
+      window.addEventListener('click', this.trackUserInteraction.bind(this));
+      window.addEventListener('scroll', this.throttle(this.trackScrollBehavior.bind(this), 1000));
+    }
+  }
+
+  static logPageLoad(perfData) {
+    this.metrics.pageLoads++;
+    
+    const loadTime = perfData.loadEventEnd - perfData.navigationStart;
+    const domReady = perfData.domContentLoadedEventEnd - perfData.navigationStart;
+    
+    console.log(`📊 Page Load Performance:
+      - Total Load Time: ${loadTime}ms
+      - DOM Ready: ${domReady}ms
+      - DNS Lookup: ${perfData.domainLookupEnd - perfData.domainLookupStart}ms
+      - Connection: ${perfData.connectEnd - perfData.connectStart}ms
+    `);
+
+    // Log slow page loads
+    if (loadTime > 3000) {
+      ErrorLogger.logError(new Error('Slow page load detected'), {
+        type: 'performance',
+        loadTime,
+        domReady,
+        url: window.location.href
+      });
+    }
+  }
+  static trackUserInteraction(event) {
+    const target = event.target;
+    
+    // Track specific interactions
+    if (target.closest('button')) {
+      this.trackButtonClick(target.closest('button'));
+    } else if (target.closest('a')) {
+      this.trackLinkClick(target.closest('a'));
+    }
+  }
+
+  static trackButtonClick(button) {
+    const buttonText = button.textContent.trim();
+    const category = button.dataset.category || 'general';
+    
+    console.log(`🔘 Button Click: ${buttonText} (${category})`);
+    
+    // Track important actions
+    const importantActions = ['Add to Cart', 'Checkout', 'Login', 'Register', 'Buy Now'];
+    if (importantActions.some(action => buttonText.includes(action))) {
+      console.log(`⭐ Important action tracked: ${buttonText}`);
+    }
+  }
+
+  static trackLinkClick(link) {
+    const href = link.href;
+    const text = link.textContent.trim();
+    
+    console.log(`🔗 Link Click: ${text} -> ${href}`);
+  }
+
+  static trackScrollBehavior() {
+    const scrollPercent = Math.round(
+      (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
+    );
+    
+    if (scrollPercent > 0 && scrollPercent % 25 === 0) {
+      console.log(`📜 Scroll Progress: ${scrollPercent}%`);
+    }
+  }
+
+  static trackApiCall(url, method, duration) {
+    this.metrics.apiCalls++;
+    
+    if (duration > 2000) {
+      this.metrics.slowOperations++;
+      console.warn(`🐌 Slow API call detected: ${method} ${url} (${duration}ms)`);
+    }
+  }
+
+  static trackNetworkFailure(error, url) {
+    this.metrics.networkFailures++;
+    console.error(`🌐 Network failure: ${url}`, error);
+  }
+
+  static throttle(func, limit) {
+    let inThrottle;
+    return function() {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
+
+  static getMetrics() {
+    return {
+      ...this.metrics,
+      timestamp: new Date().toISOString(),
+      sessionDuration: Date.now() - (window.sessionStartTime || Date.now()),
+      url: window.location.href
+    };
+  }
 }
 
-export default {
+// Initialize global error handling and performance analytics
+if (typeof window !== 'undefined') {
+  GlobalErrorHandler.initialize();
+  PerformanceAnalytics.initialize();
+  window.sessionStartTime = Date.now();
+}
+
+const ErrorHandlerModule = {
   ErrorLogger,
   GlobalErrorHandler,
   UserErrorHandler,
   ApiErrorHandler,
   PerformanceMonitor,
+  PerformanceAnalytics,
   ERROR_TYPES,
   ERROR_SEVERITY
 };
+
+export default ErrorHandlerModule;

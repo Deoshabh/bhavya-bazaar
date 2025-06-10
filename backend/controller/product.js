@@ -9,6 +9,10 @@ const { upload } = require("../multer");
 const ErrorHandler = require("../utils/ErrorHandler");
 const fs = require("fs");
 
+// Import performance optimization utilities
+const { dbOptimizer } = require("../utils/databaseOptimizer");
+const { cacheManager } = require("../utils/cacheManager");
+
 // create product
 router.post(
   "/create-product",
@@ -224,6 +228,271 @@ router.get(
         success: true,
         products,
       });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Optimized get all products with advanced filtering and caching
+router.get(
+  "/get-all-products-optimized",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const {
+        page = 1,
+        limit = 12,
+        category,
+        minPrice,
+        maxPrice,
+        ratings,
+        sortBy = 'newest',
+        search,
+        inStock
+      } = req.query;
+
+      // Create cache key for this specific query
+      const cacheKey = `products:optimized:${JSON.stringify(req.query)}`;
+      
+      // Try to get from cache first
+      let cachedResult = await cacheManager.get(cacheKey);
+      
+      if (cachedResult) {
+        return res.status(200).json({
+          success: true,
+          ...cachedResult,
+          cached: true
+        });
+      }
+
+      // Prepare filters for the aggregation pipeline
+      const filters = {};
+      
+      if (category && category !== 'all') {
+        filters.category = category;
+      }
+      
+      if (minPrice || maxPrice) {
+        filters.priceRange = {
+          min: parseInt(minPrice) || 0,
+          max: parseInt(maxPrice) || Number.MAX_SAFE_INTEGER
+        };
+      }
+      
+      if (ratings) {
+        filters.ratings = parseFloat(ratings);
+      }
+      
+      if (search) {
+        filters.search = search;
+      }
+      
+      if (inStock === 'true') {
+        filters.inStock = true;
+      }
+      
+      // Create optimized aggregation pipeline
+      const pipeline = dbOptimizer.createOptimizedProductPipeline(filters, {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        sortBy,
+        fieldsOnly: true
+      });
+      
+      // Execute optimized query
+      const products = await dbOptimizer.cachedQuery(Product, pipeline, {
+        aggregation: true
+      });
+      
+      // Get total count for pagination (with separate optimized query)
+      const countFilters = {};
+      
+      if (category && category !== 'all') {
+        countFilters.category = category;
+      }
+      
+      if (minPrice || maxPrice) {
+        countFilters.discountPrice = {
+          $gte: parseInt(minPrice) || 0,
+          $lte: parseInt(maxPrice) || Number.MAX_SAFE_INTEGER
+        };
+      }
+      
+      if (ratings) {
+        countFilters.ratings = { $gte: parseFloat(ratings) };
+      }
+      
+      if (search) {
+        countFilters.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } }
+        ];
+      }
+      
+      if (inStock === 'true') {
+        countFilters.stock = { $gt: 0 };
+      }
+      
+      const totalProducts = await Product.countDocuments(countFilters);
+      
+      const result = {
+        products,
+        totalProducts,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalProducts / parseInt(limit)),
+        hasNextPage: parseInt(page) < Math.ceil(totalProducts / parseInt(limit)),
+        hasPrevPage: parseInt(page) > 1
+      };
+      
+      // Cache the results for 5 minutes
+      await cacheManager.set(cacheKey, result, 300);
+      
+      res.status(200).json({
+        success: true,
+        ...result
+      });
+      
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Optimized search products with relevance scoring
+router.get(
+  "/search-products-optimized",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { q, page = 1, limit = 12, sortBy = 'relevance' } = req.query;
+      
+      if (!q || q.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Search query is required'
+        });
+      }
+      
+      const cacheKey = `search:optimized:${q}:${page}:${limit}:${sortBy}`;
+      let searchResults = await cacheManager.get(cacheKey);
+      
+      if (searchResults) {
+        return res.status(200).json({
+          success: true,
+          ...searchResults,
+          cached: true
+        });
+      }
+      
+      const pipeline = [
+        {
+          $match: {
+            $or: [
+              { name: { $regex: q, $options: 'i' } },
+              { description: { $regex: q, $options: 'i' } },
+              { tags: { $in: [new RegExp(q, 'i')] } },
+              { category: { $regex: q, $options: 'i' } }
+            ]
+          }
+        },
+        {
+          $addFields: {
+            // Calculate relevance score
+            relevanceScore: {
+              $add: [
+                { $cond: [{ $regexMatch: { input: '$name', regex: q, options: 'i' } }, 10, 0] },
+                { $cond: [{ $regexMatch: { input: '$description', regex: q, options: 'i' } }, 5, 0] },
+                { $cond: [{ $in: [new RegExp(q, 'i'), '$tags'] }, 7, 0] },
+                { $cond: [{ $regexMatch: { input: '$category', regex: q, options: 'i' } }, 8, 0] }
+              ]
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: 'shops',
+            localField: 'shopId',
+            foreignField: '_id',
+            as: 'shop',
+            pipeline: [
+              { $project: { name: 1, avatar: 1, ratings: 1 } }
+            ]
+          }
+        },
+        { $unwind: '$shop' }
+      ];
+      
+      // Add sorting based on sortBy parameter
+      switch (sortBy) {
+        case 'price_asc':
+          pipeline.push({ $sort: { discountPrice: 1 } });
+          break;
+        case 'price_desc':
+          pipeline.push({ $sort: { discountPrice: -1 } });
+          break;
+        case 'rating':
+          pipeline.push({ $sort: { ratings: -1 } });
+          break;
+        case 'newest':
+          pipeline.push({ $sort: { createdAt: -1 } });
+          break;
+        default: // relevance
+          pipeline.push({ $sort: { relevanceScore: -1, ratings: -1 } });
+      }
+      
+      // Add pagination
+      pipeline.push(
+        { $skip: (parseInt(page) - 1) * parseInt(limit) },
+        { $limit: parseInt(limit) }
+      );
+      
+      // Project only necessary fields
+      pipeline.push({
+        $project: {
+          name: 1,
+          description: 1,
+          discountPrice: 1,
+          originalPrice: 1,
+          images: { $slice: ['$images', 1] },
+          ratings: 1,
+          numOfReviews: 1,
+          sold_out: 1,
+          stock: 1,
+          shop: 1,
+          category: 1,
+          relevanceScore: 1,
+          createdAt: 1
+        }
+      });
+      
+      const products = await Product.aggregate(pipeline);
+      
+      // Get total count for search results
+      const totalCount = await Product.countDocuments({
+        $or: [
+          { name: { $regex: q, $options: 'i' } },
+          { description: { $regex: q, $options: 'i' } },
+          { tags: { $in: [new RegExp(q, 'i')] } },
+          { category: { $regex: q, 'options': 'i' } }
+        ]
+      });
+      
+      searchResults = {
+        products,
+        totalResults: totalCount,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        query: q
+      };
+      
+      // Cache search results for 5 minutes
+      await cacheManager.set(cacheKey, searchResults, 300);
+      
+      res.status(200).json({
+        success: true,
+        ...searchResults
+      });
+      
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
