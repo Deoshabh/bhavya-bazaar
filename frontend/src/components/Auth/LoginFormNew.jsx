@@ -7,6 +7,9 @@ import { useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { loadUser, loadSeller } from "../../redux/actions/user";
+import Card from "../common/Card";
+import Button from "../common/Button";
+import Input from "../common/Input";
 
 /**
  * Shared LoginForm component for unified authentication
@@ -163,7 +166,7 @@ const LoginForm = ({
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        <div className="bg-white p-8 shadow-xl border-0 rounded-lg">
+        <Card className="p-8 shadow-xl border-0">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
@@ -188,7 +191,7 @@ const LoginForm = ({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   {config.inputIcon}
                 </div>
-                <input
+                <Input
                   type={config.inputType === "email" ? "email" : "tel"}
                   value={config.inputType === "email" ? email : phoneNumber}
                   onChange={(e) => {
@@ -203,7 +206,7 @@ const LoginForm = ({
                     }
                   }}
                   placeholder={config.inputPlaceholder}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10"
                   required
                 />
               </div>
@@ -218,12 +221,12 @@ const LoginForm = ({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <AiOutlineLock className="w-5 h-5" />
                 </div>
-                <input
+                <Input
                   type={visible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-10"
                   required
                 />
                 <button
@@ -246,12 +249,12 @@ const LoginForm = ({
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <MdVpnKey className="w-5 h-5" />
                   </div>
-                  <input
+                  <Input
                     type="password"
                     value={adminSecretKey}
                     onChange={(e) => setAdminSecretKey(e.target.value)}
                     placeholder="Enter admin secret key"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10"
                     required
                   />
                 </div>
@@ -259,13 +262,14 @@ const LoginForm = ({
             )}
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full"
+              loading={loading}
               disabled={loading}
             >
               {loading ? "Signing in..." : config.buttonText}
-            </button>
+            </Button>
           </form>
 
           {/* Sign up link */}
@@ -292,7 +296,7 @@ const LoginForm = ({
               ← Choose different login type
             </Link>
           </div>
-        </div>
+        </Card>
       </motion.div>
     </div>
   );

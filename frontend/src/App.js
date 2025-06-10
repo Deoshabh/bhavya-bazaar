@@ -24,6 +24,8 @@ import {
 import NewLoginPage from "./pages/Auth/LoginPage.jsx";
 import NewShopLoginPage from "./pages/Auth/ShopLoginPage.jsx"; 
 import AdminLoginPage from "./pages/Auth/AdminLoginPage.jsx";
+import LoginSelectionPage from "./pages/Auth/LoginSelectionPage.jsx";
+import RegistrationSelectionPage from "./pages/Auth/RegistrationSelectionPage.jsx";
 // Import auth utilities
 import { initializeAuth } from "./utils/auth";
 import {
@@ -188,16 +190,25 @@ const App = () => {
           <Routes>
           <Route path="/" element={<HomePage />} />
           
+          {/* Login Selection and Auth Routes */}
+          <Route path="/login" element={<LoginSelectionPage />} />
+          <Route path="/login/user" element={<NewLoginPage />} />
+          <Route path="/login/seller" element={<NewShopLoginPage />} />
+          <Route path="/login/admin" element={<AdminLoginPage />} />
+          
           {/* Legacy auth routes (keep for backward compatibility) */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login-legacy" element={<LoginPage />} />
           <Route path="/shop-login" element={<ShopLoginPage />} />
           
-          {/* New unified auth routes */}
+          {/* Additional auth routes */}
           <Route path="/auth/login" element={<NewLoginPage />} />
           <Route path="/shop/login" element={<NewShopLoginPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           
+          {/* Registration and Sign up Routes */}
+          <Route path="/register" element={<RegistrationSelectionPage />} />
           <Route path="/sign-up" element={<SignupPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route
             path="/activation/:activation_token"
             element={<ActivationPage />}

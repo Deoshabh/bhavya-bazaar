@@ -1,22 +1,14 @@
 const express = require("express");
+const router = express.Router();
 const User = require("../model/user");
 const Shop = require("../model/shop");
-const ErrorHandler = require("../utils/ErrorHandler");
+const Admin = require("../model/admin");
+const SessionManager = require("../utils/sessionManager");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
-
-// Critical import for session management with error handling
-let SessionManager;
-try {
-  SessionManager = require("../utils/sessionManager");
-  console.log("✅ SessionManager loaded successfully");
-} catch (error) {
-  console.error("❌ CRITICAL: Failed to load SessionManager:", error.message);
-  console.error("Please ensure sessionManager.js exists in utils/ directory");
-  process.exit(1); // Exit if SessionManager cannot be loaded
-}
-
-const JWTManager = require("../utils/jwtToken");
-const { authenticateAny } = require("../middleware/jwtAuth");
+const ErrorHandler = require("../utils/ErrorHandler");
+const { upload } = require("../multer");
+const fs = require("fs");
+const path = require("path");
 
 // Import authLimiter with fallback
 let authLimiter;
@@ -25,69 +17,246 @@ try {
   authLimiter = rateLimiters.authLimiter;
 } catch (error) {
   console.error("Failed to load authLimiter in auth controller:", error.message);
-  // Create a pass-through middleware as fallback
   authLimiter = (req, res, next) => next();
 }
 
-const router = express.Router();
+// Helper function to clean up uploaded files
+const cleanupFile = (filename) => {
+  if (filename) {
+    fs.unlink(`uploads/${filename}`, (err) => {
+      if (err) console.log("Error deleting file:", err);
+    });
+  }
+};
 
-// Unified login endpoints - Session-based authentication
-// User login endpoint
-router.post(
-  "/login/user",
+// ===================
+// USER AUTHENTICATION
+// ===================
+
+// User Registration
+router.post("/register-user", 
   authLimiter,
+  upload.single("avatar"),
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { phoneNumber, password } = req.body;
-
-      if (!phoneNumber || !password) {
-        return next(new ErrorHandler("Please provide phone number and password", 400));
-      }
+      console.log("📝 User registration request received");
+      const { name, email, password, phoneNumber } = req.body;
       
-      // Validate phone number format
-      if (!/^\d{10}$/.test(phoneNumber)) {
-        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
+      if (!name || !email || !password) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("Please provide all required fields", 400));
       }
 
-      const user = await User.findOne({ phoneNumber }).select("+password");
-
-      if (!user) {
-        return next(new ErrorHandler("User does not exist", 400));
+      // Validate email format
+      const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+      if (!emailRegex.test(email)) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("Please provide a valid email address", 400));
       }
 
-      const isPasswordValid = await user.comparePassword(password);
-
-      if (!isPasswordValid) {
-        return next(new ErrorHandler("Incorrect password", 400));
-      }
+      // Check for existing user
+      const existingUser = await User.findOne({ 
+        $or: [{ email }, ...(phoneNumber ? [{ phoneNumber }] : [])]
+      });
       
-      // Create user session
+      if (existingUser) {
+        if (req.file) cleanupFile(req.file.filename);
+        const field = existingUser.email === email ? "email" : "phone number";
+        return next(new ErrorHandler(`User already exists with this ${field}`, 400));
+      }
+
+      // File validation if uploaded
+      let avatarUrl = null;
+      if (req.file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const maxSize = 5 * 1024 * 1024; // 5MB limit
+        
+        if (!allowedTypes.includes(req.file.mimetype)) {
+          cleanupFile(req.file.filename);
+          return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+        }
+        
+        if (req.file.size > maxSize) {
+          cleanupFile(req.file.filename);
+          return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
+        }
+        
+        avatarUrl = req.file.filename;
+      }
+
+      const user = await User.create({
+        name,
+        email,
+        password,
+        phoneNumber,
+        avatar: avatarUrl,
+        role: 'user'
+      });
+
       await SessionManager.createUserSession(req, user);
       
+      console.log("✅ User registered successfully:", user.name, "ID:", user._id);
+
       res.status(201).json({
         success: true,
         user: {
           id: user._id,
+          _id: user._id,
           name: user.name,
+          email: user.email,
           phoneNumber: user.phoneNumber,
-          role: user.role,
-          avatar: user.avatar || null
+          avatar: user.avatar || null,
+          role: 'user'
         },
         userType: 'user',
-        message: "User login successful"
+        message: "User registered successfully"
       });
     } catch (error) {
+      if (req.file) cleanupFile(req.file.filename);
+      console.error("❌ User registration error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
 
-// Shop login endpoint
-router.post(
-  "/login/shop",
+// User Login (Enhanced)
+router.post("/login-user",
   authLimiter,
   catchAsyncErrors(async (req, res, next) => {
     try {
+      console.log("🔐 User login request received");
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return next(new ErrorHandler("Please provide email and password", 400));
+      }
+
+      const user = await User.findOne({ email }).select("+password");
+
+      if (!user || !(await user.comparePassword(password))) {
+        return next(new ErrorHandler("Invalid credentials", 401));
+      }
+
+      await SessionManager.createUserSession(req, user);
+      
+      console.log("✅ User login successful:", user.name, "ID:", user._id);
+
+      res.status(200).json({
+        success: true,
+        user: {
+          id: user._id,
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          avatar: user.avatar || null,
+          role: 'user'
+        },
+        userType: 'user',
+        message: "User login successful"
+      });
+    } catch (error) {
+      console.error("❌ User login error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// =====================
+// SELLER AUTHENTICATION (Enhanced from shop.js)
+// =====================
+
+// Seller Registration (Moved from shop.js)
+router.post("/register-seller", 
+  authLimiter,
+  upload.single("avatar"), 
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("📝 Seller registration request received");
+      const { name, phoneNumber, password, address, zipCode } = req.body;
+      
+      if (!name || !phoneNumber || !password || !address || !zipCode) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("Please provide all required fields", 400));
+      }
+
+      // Validate phone number - enforce 10 digits
+      if (!/^\d{10}$/.test(phoneNumber)) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
+      }
+
+      // Check for existing seller
+      const existingSeller = await Shop.findOne({ phoneNumber });
+      if (existingSeller) {
+        if (req.file) cleanupFile(req.file.filename);
+        return next(new ErrorHandler("Seller already exists with this phone number", 400));
+      }
+
+      // File validation (same as original shop.js)
+      let fileUrl = null;
+      if (req.file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        const maxSize = 5 * 1024 * 1024; // 5MB limit
+        
+        if (!allowedTypes.includes(req.file.mimetype)) {
+          cleanupFile(req.file.filename);
+          return next(new ErrorHandler("Invalid file type. Only JPEG, PNG, and WebP images are allowed.", 400));
+        }
+        
+        if (req.file.size > maxSize) {
+          cleanupFile(req.file.filename);
+          return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
+        }
+        
+        fileUrl = req.file.filename;
+      }
+
+      const seller = await Shop.create({
+        name,
+        phoneNumber,
+        password,
+        avatar: fileUrl,
+        address,
+        zipCode,
+        role: 'seller'
+      });
+
+      await SessionManager.createShopSession(req, seller);
+      
+      console.log("✅ Seller registered successfully:", seller.name, "ID:", seller._id);
+      
+      res.status(201).json({
+        success: true,
+        seller: {
+          id: seller._id,
+          _id: seller._id,
+          name: seller.name,
+          phoneNumber: seller.phoneNumber,
+          description: seller.description,
+          avatar: seller.avatar || null,
+          email: seller.email || null,
+          address: seller.address || null,
+          zipCode: seller.zipCode || null,
+          role: 'seller'
+        },
+        userType: 'seller',
+        message: "Seller registered successfully"
+      });
+    } catch (error) {
+      if (req.file) cleanupFile(req.file.filename);
+      console.error("❌ Seller registration error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Seller Login (Enhanced from shop.js)
+router.post("/login-seller",
+  authLimiter,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🔐 Seller login request received");
       const { phoneNumber, password } = req.body;
 
       if (!phoneNumber || !password) {
@@ -101,257 +270,193 @@ router.post(
 
       const shop = await Shop.findOne({ phoneNumber }).select("+password");
 
-      if (!shop) {
-        return next(new ErrorHandler("Shop doesn't exist with this phone number", 400));
+      if (!shop || !(await shop.comparePassword(password))) {
+        return next(new ErrorHandler("Invalid credentials", 401));
       }
 
-      const isPasswordValid = await shop.comparePassword(password);
-
-      if (!isPasswordValid) {
-        return next(new ErrorHandler("Incorrect password", 400));
-      }
-
-      // Create shop session
       await SessionManager.createShopSession(req, shop);
-        res.status(201).json({
+      
+      console.log("✅ Seller login successful:", shop.name, "ID:", shop._id);
+      
+      res.status(200).json({
         success: true,
         seller: {
           id: shop._id,
-          _id: shop._id, // Ensure both id formats are available
+          _id: shop._id,
           name: shop.name,
           phoneNumber: shop.phoneNumber,
           description: shop.description,
-          avatar: shop.avatar || null
+          avatar: shop.avatar || null,
+          email: shop.email || null,
+          address: shop.address || null,
+          zipCode: shop.zipCode || null,
+          role: 'seller'
         },
-        userType: 'seller', // Changed from 'shop' to 'seller' for consistency
-        message: "Shop login successful"
+        userType: 'seller',
+        message: "Seller login successful"
       });
-      
     } catch (error) {
+      console.error("❌ Seller login error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
 
-// Admin login endpoint - uses user model but checks for Admin role
-router.post(
-  "/login/admin",
+// ====================
+// ADMIN AUTHENTICATION
+// ====================
+
+// Admin Login (No registration - admins created manually)
+router.post("/login-admin",
   authLimiter,
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { phoneNumber, password } = req.body;
+      console.log("🔐 Admin login request received");
+      const { email, password, adminKey } = req.body;
 
-      if (!phoneNumber || !password) {
-        return next(new ErrorHandler("Please provide phone number and password", 400));
-      }
-      
-      // Validate phone number format
-      if (!/^\d{10}$/.test(phoneNumber)) {
-        return next(new ErrorHandler("Please provide a valid 10-digit phone number", 400));
+      if (!email || !password || !adminKey) {
+        return next(new ErrorHandler("Please provide email, password, and admin key", 400));
       }
 
-      const user = await User.findOne({ phoneNumber }).select("+password");
-
-      if (!user) {
-        return next(new ErrorHandler("User does not exist", 400));
+      // Verify admin key
+      if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+        console.warn("❌ Invalid admin key attempt for email:", email);
+        return next(new ErrorHandler("Invalid admin key", 401));
       }
 
-      if (user.role !== "Admin") {
-        return next(new ErrorHandler("Access denied. Admin privileges required.", 403));
+      const admin = await Admin.findOne({ email }).select("+password");
+
+      if (!admin) {
+        return next(new ErrorHandler("Invalid admin credentials", 401));
       }
 
-      const isPasswordValid = await user.comparePassword(password);
+      // Check if account is locked
+      if (admin.isLocked()) {
+        return next(new ErrorHandler("Account is temporarily locked due to too many failed login attempts", 423));
+      }
+
+      const isPasswordValid = await admin.comparePassword(password);
 
       if (!isPasswordValid) {
-        return next(new ErrorHandler("Incorrect password", 400));
+        await admin.incLoginAttempts();
+        return next(new ErrorHandler("Invalid admin credentials", 401));
       }
-      
-      // Create admin session
-      await SessionManager.createAdminSession(req, user);
 
-      res.status(201).json({
+      // Reset login attempts on successful login
+      await admin.resetLoginAttempts();
+
+      await SessionManager.createAdminSession(req, admin);
+      
+      console.log("✅ Admin login successful:", admin.name, "ID:", admin._id);
+
+      res.status(200).json({
         success: true,
-        user: {
-          id: user._id,
-          name: user.name,
-          phoneNumber: user.phoneNumber,
-          role: user.role,
-          avatar: user.avatar || null
+        admin: {
+          id: admin._id,
+          _id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          permissions: admin.permissions || []
         },
         userType: 'admin',
         message: "Admin login successful"
       });
-      
     } catch (error) {
+      console.error("❌ Admin login error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
 
-// Unified logout endpoints
-// User logout
-router.post(
-  "/logout/user",
-  catchAsyncErrors(async (req, res, next) => {    try {
-      // Destroy user session using SessionManager
-      const sessionDestroyed = await SessionManager.destroySession(req, res);
-      
-      if (!sessionDestroyed) {
-        console.warn("Session could not be destroyed or was already invalid");
-      }
+// ================
+// UNIVERSAL LOGOUT
+// ================
+
+router.post("/logout",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🚪 Logout request received");
+      await SessionManager.destroySession(req);
       
       res.status(200).json({
         success: true,
-        message: "User logout successful!",
+        message: "Logout successful"
       });
     } catch (error) {
+      console.error("❌ Logout error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
 
-// Shop logout
-router.post(
-  "/logout/shop",
+// ====================
+// SESSION STATUS CHECK
+// ====================
+
+router.get("/session-status",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      // Destroy shop session using SessionManager
-      const sessionDestroyed = await SessionManager.destroySession(req, res);
+      const sessionData = await SessionManager.getSessionData(req);
       
-      if (!sessionDestroyed) {
-        console.warn("Session could not be destroyed or was already invalid");
+      if (!sessionData) {
+        return res.status(200).json({
+          success: true,
+          authenticated: false,
+          userType: null,
+          user: null
+        });
       }
-      
+
       res.status(200).json({
         success: true,
-        message: "Shop logout successful!",
+        authenticated: true,
+        userType: sessionData.userType,
+        user: sessionData.user
       });
     } catch (error) {
+      console.error("❌ Session status error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
 
-// Admin logout
-router.post(
-  "/logout/admin",
+// ===================
+// GET CURRENT USER DATA
+// ===================
+
+router.get("/me",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      // Destroy admin session using SessionManager
-      const sessionDestroyed = await SessionManager.destroySession(req, res);
+      const sessionData = await SessionManager.getSessionData(req);
       
-      if (!sessionDestroyed) {
-        console.warn("Session could not be destroyed or was already invalid");
+      if (!sessionData) {
+        return next(new ErrorHandler("Not authenticated", 401));
       }
+
+      let userData = null;
       
+      if (sessionData.userType === 'user') {
+        userData = await User.findById(sessionData.user.id);
+      } else if (sessionData.userType === 'seller') {
+        userData = await Shop.findById(sessionData.user.id);
+      } else if (sessionData.userType === 'admin') {
+        userData = await Admin.findById(sessionData.user.id);
+      }
+
+      if (!userData) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+
       res.status(200).json({
         success: true,
-        message: "Admin logout successful!",
+        user: userData,
+        userType: sessionData.userType,
+        authenticated: true
       });
     } catch (error) {
+      console.error("❌ Get current user error:", error.message);
       return next(new ErrorHandler(error.message, 500));
-    }
-  })
-);
-
-// Get current authenticated user endpoint
-router.get(
-  "/me",
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      // Safety check for SessionManager
-      if (!SessionManager) {
-        console.error("❌ SessionManager not available in /me endpoint");
-        return next(new ErrorHandler("Authentication service unavailable", 500));
-      }
-
-      // Try to validate user session first
-      const userSession = await SessionManager.validateUserSession(req);
-      if (userSession) {
-        return res.status(200).json({
-          success: true,
-          user: userSession,
-          userType: 'user',
-          message: "User session valid"
-        });
-      }
-        // Try to validate shop session
-      const shopSession = await SessionManager.validateShopSession(req);
-      if (shopSession) {
-        return res.status(200).json({
-          success: true,
-          user: shopSession, // Frontend loadSeller expects data.user
-          userType: 'seller',
-          message: "Shop session valid"
-        });
-      }
-      
-      // Try to validate admin session
-      const adminSession = await SessionManager.validateAdminSession(req);
-      if (adminSession) {
-        return res.status(200).json({
-          success: true,
-          user: adminSession,
-          userType: 'admin',
-          message: "Admin session valid"
-        });
-      }
-      
-      // No valid session found
-      return next(new ErrorHandler("Not authenticated", 401));
-      
-    } catch (error) {
-      console.error("Session validation error:", error);
-      return next(new ErrorHandler("Authentication check failed", 500));
-    }
-  })
-);
-
-// Session extension endpoint - extends active sessions
-router.post(
-  "/refresh",
-  catchAsyncErrors(async (req, res, next) => {
-    try {      // Try to extend user session
-      const userSession = await SessionManager.validateUserSession(req);
-      if (userSession) {
-        await SessionManager.extendSession(req);
-        return res.status(200).json({
-          success: true,
-          user: userSession,
-          userType: 'user',
-          message: "User session extended"
-        });
-      }
-      
-      // Try to extend shop session
-      const shopSession = await SessionManager.validateShopSession(req);
-      if (shopSession) {
-        await SessionManager.extendSession(req);
-        return res.status(200).json({
-          success: true,
-          seller: shopSession,
-          userType: 'seller',
-          message: "Shop session extended"
-        });
-      }
-      
-      // Try to extend admin session
-      const adminSession = await SessionManager.validateAdminSession(req);
-      if (adminSession) {
-        await SessionManager.extendSession(req);
-        return res.status(200).json({
-          success: true,
-          user: adminSession,
-          userType: 'admin',
-          message: "Admin session extended"
-        });
-      }
-        // No valid sessions to extend
-      return next(new ErrorHandler("No valid session found to refresh", 401));
-      
-    } catch (error) {
-      console.error("Session extension error:", error);
-      return next(new ErrorHandler("Session extension failed", 500));
     }
   })
 );

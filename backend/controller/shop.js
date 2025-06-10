@@ -120,7 +120,9 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
     // Create shop session using SessionManager instead of JWT
     await SessionManager.createShopSession(req, seller);
     
-    console.log("✅ Shop session created for:", seller.name);      res.status(201).json({
+    console.log("✅ Shop session created for:", seller.name);
+    
+    res.status(201).json({
         success: true,
         seller: {
           id: seller._id,
