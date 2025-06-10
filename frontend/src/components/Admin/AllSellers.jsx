@@ -18,6 +18,7 @@ const AllSellers = () => {
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredSellers, setFilteredSellers] = useState([]);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, seller: null });
 
   useEffect(() => {
     dispatch(getAllSellers());
@@ -36,7 +37,7 @@ const AllSellers = () => {
 
   const handleDelete = async (id) => {
     try {
-      const { data } = await axios.delete(`${BASE_URL}/shop/delete-seller/${id}`, {
+      const { data } = await axios.delete(`${BASE_URL}/api/v2/shop/delete-seller/${id}`, {
         withCredentials: true,
       });
       toast.success(data.message);

@@ -10,7 +10,13 @@
     "start": "node server.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false",
     "seed": "node scripts/seed-database.js",
-    "db:seed": "npm run seed"
+    "db:seed": "npm run seed",
+    "test:auth": "node test-auth-production.js",
+    "test:auth-prod": "API_URL=https://api.bhavyabazaar.com node test-auth-production.js",
+    "cleanup:sellers": "node seller-cleanup-production.js",
+    "cleanup:diagnose": "node seller-cleanup-production.js diagnose",
+    "cleanup:fix": "node seller-cleanup-production.js fix",
+    "cleanup:force": "node seller-cleanup-production.js force"
   },
   "author": "Om Prakash Pattjoshi",
   "license": "ISC",

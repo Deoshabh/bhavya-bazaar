@@ -3,6 +3,9 @@ const path = require("path");
 const router = express.Router();
 const fs = require("fs");
 const Shop = require("../model/shop");
+const Product = require("../model/product");
+const Event = require("../model/event");
+const CoupounCode = require("../model/coupounCode");
 const { isAuthenticated, isSeller, isAdmin } = require("../middleware/auth");
 const { upload } = require("../multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
@@ -358,19 +361,66 @@ router.delete(
   isAdmin("Admin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const seller = await Shop.findById(req.params.id);
+      const sellerId = req.params.id;
+      console.log(`🗑️ Admin deleting seller: ${sellerId}`);
+      
+      const seller = await Shop.findById(sellerId);
 
       if (!seller) {
         return next(new ErrorHandler("Seller not found with this id", 400));
       }
 
-      await Shop.findByIdAndDelete(req.params.id);
+      // Clean up related data before deleting seller
+      console.log(`🧹 Cleaning up data for seller: ${seller.name}`);
+      
+      // Delete all products belonging to this seller
+      const deletedProducts = await Product.deleteMany({ shopId: sellerId });
+      console.log(`📦 Deleted ${deletedProducts.deletedCount} products`);
+      
+      // Delete all events belonging to this seller  
+      const deletedEvents = await Event.deleteMany({ shopId: sellerId });
+      console.log(`🎉 Deleted ${deletedEvents.deletedCount} events`);
+      
+      // Delete all coupons belonging to this seller
+      const deletedCoupons = await CoupounCode.deleteMany({ shopId: sellerId });
+      console.log(`🎫 Deleted ${deletedCoupons.deletedCount} coupons`);
+      
+      // Note: Orders are kept for record-keeping purposes
+      // but you might want to mark them as "seller_deleted" if needed
+      
+      // TODO: Invalidate any active sessions for this seller
+      // This would require session store access to remove seller sessions
+      
+      // Finally delete the seller
+      const deletionResult = await Shop.findByIdAndDelete(sellerId);
+      
+      if (!deletionResult) {
+        console.log(`❌ Failed to delete seller: ${sellerId}`);
+        return next(new ErrorHandler("Failed to delete seller from database", 500));
+      }
+      
+      console.log(`✅ Seller deleted successfully: ${seller.name}`);
+      
+      // Verify deletion
+      const verifyDeletion = await Shop.findById(sellerId);
+      if (verifyDeletion) {
+        console.log(`⚠️ WARNING: Seller still exists after deletion attempt`);
+        return next(new ErrorHandler("Seller deletion verification failed", 500));
+      }
+      
+      console.log(`✅ Seller deletion verified: ${seller.name} no longer exists`);
 
-      res.status(201).json({
+      res.status(200).json({
         success: true,
-        message: "Seller deleted successfully!",
+        message: "Seller and all related data deleted successfully!",
+        deletedData: {
+          products: deletedProducts.deletedCount,
+          events: deletedEvents.deletedCount,
+          coupons: deletedCoupons.deletedCount
+        }
       });
     } catch (error) {
+      console.error("❌ Error deleting seller:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
@@ -472,6 +522,27 @@ router.get(
       res.status(200).json({
         success: true,
         seller,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Get shop info by phone number (for diagnosis)
+router.get(
+  "/get-shop-info-by-phone/:phoneNumber",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const shop = await Shop.findOne({ phoneNumber: req.params.phoneNumber });
+      
+      if (!shop) {
+        return next(new ErrorHandler("Shop not found with this phone number", 404));
+      }
+      
+      res.status(200).json({
+        success: true,
+        shop,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));

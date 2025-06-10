@@ -5,8 +5,8 @@
 
 const axios = require('axios');
 
-// Configuration
-const BASE_URL = process.env.API_URL || 'http://localhost:8000';
+// Configuration - Testing PRODUCTION endpoints
+const BASE_URL = process.env.API_URL || 'https://api.bhavyabazaar.com';
 const API_BASE = `${BASE_URL}/api/auth`;
 
 console.log('🧪 Testing Authentication Endpoints');
