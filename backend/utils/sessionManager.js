@@ -131,10 +131,10 @@ class SessionManager {
    * @param {Object} req - Express request object
    * @param {Object} user - User document with Admin role
    * @param {Object} options - Additional options
-   */
-  static async createAdminSession(req, user, options = {}) {
+   */  static async createAdminSession(req, user, options = {}) {
     try {
-      if (user.role !== 'Admin') {
+      // Check for both admin roles (admin, superadmin)
+      if (!['admin', 'superadmin', 'Admin'].includes(user.role)) {
         throw new ErrorHandler('Access denied. Admin privileges required.', 403);
       }
 
@@ -252,8 +252,7 @@ class SessionManager {
    * Validate admin session
    * @param {Object} req - Express request object
    * @returns {Object} Validation result with admin data
-   */
-  static validateAdminSession(req) {
+   */  static validateAdminSession(req) {
     try {
       if (!req.session || !req.session.isAuthenticated) {
         return { isValid: false, user: null };
@@ -263,7 +262,8 @@ class SessionManager {
         return { isValid: false, user: null };
       }
 
-      if (!req.session.user || req.session.user.role !== 'Admin') {
+      // Check for both admin roles (admin, superadmin, Admin)
+      if (!req.session.user || !['admin', 'superadmin', 'Admin'].includes(req.session.user.role)) {
         return { isValid: false, user: null };
       }
 
@@ -518,6 +518,85 @@ class SessionManager {
       console.error('❌ Failed to get session stats:', error);
       return { hasSession: false, error: error.message };
     }
+  }
+  /**
+   * Enable seller customer mode (allows sellers to act as customers)
+   * @param {Object} req - Express request object
+   * @returns {Object} Session modification result
+   */
+  static enableSellerCustomerMode(req) {
+    try {
+      if (!req.session || !req.session.isAuthenticated || req.session.userType !== 'seller') {
+        return { success: false, message: 'No valid seller session found' };
+      }
+
+      // Add customer mode flag to existing seller session
+      req.session.customerMode = true;
+      req.session.touch(); // Extend session expiry
+
+      console.log(`✅ Customer mode enabled for seller: ${req.session.seller?.name}`);
+      return { success: true, message: 'Customer mode enabled' };
+    } catch (error) {
+      console.error('❌ Failed to enable customer mode:', error);
+      return { success: false, message: 'Failed to enable customer mode' };
+    }
+  }
+
+  /**
+   * Disable seller customer mode (back to seller-only mode)
+   * @param {Object} req - Express request object
+   * @returns {Object} Session modification result
+   */
+  static disableSellerCustomerMode(req) {
+    try {
+      if (!req.session || !req.session.isAuthenticated || req.session.userType !== 'seller') {
+        return { success: false, message: 'No valid seller session found' };
+      }
+
+      // Remove customer mode flag
+      req.session.customerMode = false;
+      req.session.touch(); // Extend session expiry
+
+      console.log(`✅ Customer mode disabled for seller: ${req.session.seller?.name}`);
+      return { success: true, message: 'Customer mode disabled' };
+    } catch (error) {
+      console.error('❌ Failed to disable customer mode:', error);
+      return { success: false, message: 'Failed to disable customer mode' };
+    }
+  }
+
+  /**
+   * Check if seller is in customer mode
+   * @param {Object} req - Express request object
+   * @returns {Boolean} Whether seller is in customer mode
+   */
+  static isSellerInCustomerMode(req) {
+    return req.session?.userType === 'seller' && req.session?.customerMode === true;
+  }
+
+  /**
+   * Get current active role for session
+   * @param {Object} req - Express request object
+   * @returns {String} Current active role
+   */
+  static getCurrentActiveRole(req) {
+    if (!req.session || !req.session.isAuthenticated) {
+      return null;
+    }
+
+    if (req.session.userType === 'user') {
+      return 'customer';
+    }
+    
+    if (req.session.userType === 'admin') {
+      return 'admin';
+    }
+    
+    if (req.session.userType === 'seller') {
+      return req.session.customerMode ? 'customer' : 'seller';
+    }
+
+    return req.session.userType;
   }
 }
 

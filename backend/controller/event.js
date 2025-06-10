@@ -5,7 +5,7 @@ const Shop = require("../model/shop");
 const Event = require("../model/event");
 const Order = require("../model/order");
 const ErrorHandler = require("../utils/ErrorHandler");
-const { isSeller, isAdmin, isAuthenticated } = require("../middleware/auth");
+const { isSeller, isAdmin, isAuthenticated, isAdminAuthenticated } = require("../middleware/auth");
 const router = express.Router();
 const fs = require("fs");
 
@@ -153,8 +153,8 @@ router.delete(
 // all events --- for admin
 router.get(
   "/admin-all-events",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const events = await Event.find().sort({

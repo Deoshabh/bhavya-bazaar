@@ -306,8 +306,7 @@ class CompleteApiTester {
           password: 'TestPass123!',
         }
       },
-      // Admin Authentication
-      {
+      // Admin Authentication      {
         name: 'Admin Login',
         endpoint: '/api/auth/login-admin',
         method: 'POST',

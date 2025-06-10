@@ -6,7 +6,7 @@ const { ensureDirectoryExists, deleteFileIfExists } = require("../utils/fileSyst
 const path = require("path");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const SessionManager = require("../utils/sessionManager");
-const { isAuthenticated, isAdmin } = require("../middleware/auth");
+const { isAuthenticated, isAdmin, isAdminAuthenticated } = require("../middleware/auth");
 
 // Import authLimiter with fallback
 let authLimiter;
@@ -468,8 +468,8 @@ router.get(
 // all users --- for admin
 router.get(
   "/admin-all-users",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const users = await User.find().sort({
@@ -488,8 +488,8 @@ router.get(
 // delete users --- admin
 router.delete(
   "/delete-user/:id",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const user = await User.findById(req.params.id);

@@ -53,21 +53,24 @@ const withAuth = (WrappedComponent, options = {}) => {
           </div>
         </div>
       );
-    }
-
-    // Check authentication based on type
+    }    // Check authentication based on type
     const isAuthenticated = (() => {
       switch (authType) {
         case 'admin':
-          return userState.isAuthenticated && userState.user?.role === 'Admin';
+          return userState.isAuthenticated && userState.user?.role === 'admin';
         case 'seller':
           return sellerState.isSeller;
         case 'user':
         default:
           if (requireExactAuth) {
-            return userState.isAuthenticated && (!userState.user?.role || userState.user?.role === 'user');
+            // For exact auth, allow only pure users OR sellers in customer mode
+            return userState.isAuthenticated && (
+              (!userState.user?.role || userState.user?.role === 'user') ||
+              userState.user?.role === 'seller_as_customer'
+            );
           }
-          return userState.isAuthenticated;
+          // For general user auth, allow users AND sellers acting as customers
+          return userState.isAuthenticated || (sellerState.isSeller && userState.isAuthenticated);
       }
     })();
 

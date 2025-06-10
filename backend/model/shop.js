@@ -36,6 +36,12 @@ const shopSchema = new mongoose.Schema({
     type: String,
     default: "Seller",
   },
+  customerId: {
+    type: mongoose.Schema.ObjectId,
+    ref: "User",
+    required: false,
+    default: null
+  },
   avatar: {
     type: String,
     required: true,

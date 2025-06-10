@@ -57,8 +57,7 @@ const LoginForm = ({
       inputLabel: "Phone Number",
       inputPlaceholder: "Enter your phone number",
       inputIcon: <MdPhone className="w-5 h-5" />
-    },
-    admin: {
+    },    admin: {
       title: "Admin Login",
       subtitle: "Administrative access to Bhavya Bazaar.",
       icon: <MdAdminPanelSettings className="w-8 h-8 text-red-600" />,
@@ -99,9 +98,7 @@ const LoginForm = ({
       if (!/^\d{10}$/.test(phoneNumber)) {
         return toast.error("Phone number must be exactly 10 digits!");
       }
-    }
-
-    // Admin secret key validation
+    }    // Admin secret key validation
     if (config.requiresAdminKey && !adminSecretKey) {
       return toast.error("Admin secret key is required!");
     }
@@ -113,7 +110,7 @@ const LoginForm = ({
       const requestData = {
         password,
         ...(config.inputType === "email" ? { email } : { phoneNumber }),
-        ...(config.requiresAdminKey && { adminSecretKey })
+        ...(config.requiresAdminKey && { adminKey: adminSecretKey })
       };
         // Get the base URL properly
       const getBaseUrl = () => {

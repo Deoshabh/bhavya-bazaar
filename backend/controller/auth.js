@@ -206,17 +206,30 @@ router.post("/register-seller",
       if (existingSeller) {
         if (req.file) cleanupFile(req.file.filename);
         return next(new ErrorHandler("Seller already exists with this phone number", 400));
-      }
-
-      // Check if user already exists with this phone number
+      }      // Check if user already exists with this phone number
       const existingUser = await User.findOne({ phoneNumber });
+      
+      // DUAL ROLE SYSTEM: If user exists, check if they want to become a seller
+      let customerUser = existingUser;
+      
       if (existingUser) {
-        if (req.file) cleanupFile(req.file.filename);
-        return next(new ErrorHandler("A user account already exists with this phone number. Please use a different number or contact support.", 400));
+        // User exists - they want to add seller role to their existing customer account
+        console.log("👤 Existing customer wants to become seller:", existingUser.name);
+      } else {
+        // Create new customer account first (sellers are also customers)
+        console.log("👤 Creating customer account for new seller...");
+        customerUser = await User.create({
+          name,
+          phoneNumber,
+          password,
+          avatar: fileUrl,
+          role: 'user'
+        });
+        console.log("✅ Customer account created:", customerUser.name, "ID:", customerUser._id);
       }
 
       // File validation (same as original shop.js)
-      let fileUrl = null;
+      let avatarUrl = null;
       if (req.file) {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
         const maxSize = 5 * 1024 * 1024; // 5MB limit
@@ -231,22 +244,25 @@ router.post("/register-seller",
           return next(new ErrorHandler("File too large. Maximum size is 5MB.", 400));
         }
         
-        fileUrl = req.file.filename;
+        avatarUrl = req.file.filename;
       }
 
+      // Create seller account (linked to customer account)
       const seller = await Shop.create({
         name,
         phoneNumber,
         password,
-        avatar: fileUrl,
+        avatar: avatarUrl,
         address,
         zipCode,
-        role: 'seller'
+        role: 'seller',
+        customerId: customerUser._id // Link seller to customer account
       });
 
       await SessionManager.createShopSession(req, seller);
       
       console.log("✅ Seller registered successfully:", seller.name, "ID:", seller._id);
+      console.log("🔗 Linked to customer account:", customerUser._id);
       
       res.status(201).json({
         success: true,
@@ -260,10 +276,17 @@ router.post("/register-seller",
           email: seller.email || null,
           address: seller.address || null,
           zipCode: seller.zipCode || null,
-          role: 'seller'
+          role: 'seller',
+          customerId: customerUser._id
+        },
+        customer: {
+          id: customerUser._id,
+          name: customerUser.name,
+          phoneNumber: customerUser.phoneNumber,
+          role: 'user'
         },
         userType: 'seller',
-        message: "Seller registered successfully"
+        message: "Seller registered successfully with dual role access"
       });
     } catch (error) {
       if (req.file) cleanupFile(req.file.filename);
@@ -328,28 +351,33 @@ router.post("/login-seller",
 // ADMIN AUTHENTICATION
 // ====================
 
-// Admin Login (No registration - admins created manually)
+// Admin Login (Enhanced to handle both admin and superadmin)
 router.post("/login-admin",
   authLimiter,
   catchAsyncErrors(async (req, res, next) => {
     try {
       console.log("🔐 Admin login request received");
-      const { email, password, adminKey } = req.body;
+      const { email, password, adminSecretKey } = req.body;
 
-      if (!email || !password || !adminKey) {
-        return next(new ErrorHandler("Please provide email, password, and admin key", 400));
+      if (!email || !password || !adminSecretKey) {
+        return next(new ErrorHandler("Please provide email, password, and admin secret key", 400));
       }
 
-      // Verify admin key
-      if (adminKey !== process.env.ADMIN_SECRET_KEY) {
-        console.warn("❌ Invalid admin key attempt for email:", email);
-        return next(new ErrorHandler("Invalid admin key", 401));
+      // Verify admin secret key
+      if (adminSecretKey !== process.env.ADMIN_SECRET_KEY) {
+        console.warn("❌ Invalid admin secret key attempt for email:", email);
+        return next(new ErrorHandler("Invalid admin secret key", 401));
       }
 
       const admin = await Admin.findOne({ email }).select("+password");
 
       if (!admin) {
         return next(new ErrorHandler("Invalid admin credentials", 401));
+      }
+
+      // Check if account is active
+      if (!admin.isActive) {
+        return next(new ErrorHandler("Admin account is deactivated", 401));
       }
 
       // Check if account is locked
@@ -367,9 +395,13 @@ router.post("/login-admin",
       // Reset login attempts on successful login
       await admin.resetLoginAttempts();
 
+      // Update last login
+      admin.lastLogin = new Date();
+      await admin.save();
+
       await SessionManager.createAdminSession(req, admin);
       
-      console.log("✅ Admin login successful:", admin.name, "ID:", admin._id);
+      console.log(`✅ ${admin.role} login successful:`, admin.name, "ID:", admin._id);
 
       res.status(200).json({
         success: true,
@@ -379,13 +411,136 @@ router.post("/login-admin",
           name: admin.name,
           email: admin.email,
           role: admin.role,
-          permissions: admin.permissions || []
+          permissions: admin.permissions || [],
+          avatar: admin.avatar
         },
         userType: 'admin',
-        message: "Admin login successful"
+        message: `${admin.role} login successful`
       });
     } catch (error) {
       console.error("❌ Admin login error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Super Admin Creation (Only accessible by existing super admin)
+router.post("/create-super-admin",
+  authLimiter,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👑 Super admin creation request received");
+      const { name, email, password, superAdminKey } = req.body;
+
+      if (!name || !email || !password || !superAdminKey) {
+        return next(new ErrorHandler("Please provide all required fields", 400));
+      }
+
+      // Verify super admin key (different from regular admin key)
+      if (superAdminKey !== process.env.SUPER_ADMIN_SECRET_KEY) {
+        console.warn("❌ Invalid super admin key attempt");
+        return next(new ErrorHandler("Invalid super admin secret key", 401));
+      }
+
+      // Check if admin already exists
+      const existingAdmin = await Admin.findOne({ email });
+      if (existingAdmin) {
+        return next(new ErrorHandler("Admin with this email already exists", 400));
+      }
+
+      const superAdmin = await Admin.create({
+        name,
+        email,
+        password,
+        role: 'superadmin',
+        permissions: [
+          'manage_users',
+          'manage_sellers',
+          'manage_products', 
+          'manage_orders',
+          'manage_system',
+          'view_analytics',
+          'manage_admins',
+          'create_admins',
+          'delete_admins',
+          'system_config'
+        ],
+        isActive: true
+      });
+
+      console.log("✅ Super admin created successfully:", superAdmin.name);
+
+      res.status(201).json({
+        success: true,
+        message: "Super admin created successfully",
+        admin: {
+          id: superAdmin._id,
+          name: superAdmin.name,
+          email: superAdmin.email,
+          role: superAdmin.role,
+          permissions: superAdmin.permissions
+        }
+      });
+    } catch (error) {
+      console.error("❌ Super admin creation error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Regular Admin Creation (Only by super admin)
+router.post("/create-admin",
+  authLimiter,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🛡️ Admin creation request received");
+      const { name, email, password, permissions, adminSecretKey } = req.body;
+
+      if (!name || !email || !password || !adminSecretKey) {
+        return next(new ErrorHandler("Please provide all required fields", 400));
+      }
+
+      // Verify admin secret key
+      if (adminSecretKey !== process.env.ADMIN_SECRET_KEY) {
+        return next(new ErrorHandler("Invalid admin secret key", 401));
+      }
+
+      // Check if admin already exists
+      const existingAdmin = await Admin.findOne({ email });
+      if (existingAdmin) {
+        return next(new ErrorHandler("Admin with this email already exists", 400));
+      }
+
+      const admin = await Admin.create({
+        name,
+        email,
+        password,
+        role: 'admin',
+        permissions: permissions || [
+          'manage_users',
+          'manage_sellers',
+          'manage_products',
+          'manage_orders',
+          'view_analytics'
+        ],
+        isActive: true
+      });
+
+      console.log("✅ Regular admin created successfully:", admin.name);
+
+      res.status(201).json({
+        success: true,
+        message: "Admin created successfully",
+        admin: {
+          id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          permissions: admin.permissions
+        }
+      });
+    } catch (error) {
+      console.error("❌ Admin creation error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
@@ -529,9 +684,7 @@ router.get("/session-status",
           userType: null,
           user: null
         });
-      }
-
-      res.status(200).json({
+      }      res.status(200).json({
         success: true,
         authenticated: true,
         userType: sessionData.userType,
@@ -539,6 +692,141 @@ router.get("/session-status",
       });
     } catch (error) {
       console.error("❌ Session status error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// ====================
+// DUAL ROLE SYSTEM
+// ====================
+
+// Switch between customer and seller roles (for sellers who are also customers)
+router.post("/switch-role",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🔄 Role switching request received");
+      const { targetRole } = req.body;
+      
+      if (!['user', 'seller'].includes(targetRole)) {
+        return next(new ErrorHandler("Invalid target role. Use 'user' or 'seller'", 400));
+      }
+
+      const currentSession = SessionManager.getSessionData(req);
+      if (!currentSession || !currentSession.isAuthenticated) {
+        return next(new ErrorHandler("Please login first", 401));
+      }
+
+      const phoneNumber = currentSession.user?.phoneNumber;
+      if (!phoneNumber) {
+        return next(new ErrorHandler("Invalid session data", 400));
+      }
+
+      if (targetRole === 'seller') {
+        // Switch to seller mode - check if user has seller account
+        const seller = await Shop.findOne({ phoneNumber });
+        if (!seller) {
+          return next(new ErrorHandler("You don't have a seller account. Please register as a seller first.", 400));
+        }
+
+        // Create seller session
+        await SessionManager.createShopSession(req, seller);
+        
+        console.log("✅ Switched to seller mode:", seller.name);
+        
+        res.status(200).json({
+          success: true,
+          userType: 'seller',
+          seller: {
+            id: seller._id,
+            name: seller.name,
+            phoneNumber: seller.phoneNumber,
+            role: 'seller'
+          },
+          message: "Switched to seller mode"
+        });
+        
+      } else if (targetRole === 'user') {
+        // Switch to customer mode - check if user has customer account
+        const user = await User.findOne({ phoneNumber });
+        if (!user) {
+          return next(new ErrorHandler("Customer account not found", 400));
+        }
+
+        // Create user session
+        await SessionManager.createUserSession(req, user);
+        
+        console.log("✅ Switched to customer mode:", user.name);
+        
+        res.status(200).json({
+          success: true,
+          userType: 'user',
+          user: {
+            id: user._id,
+            name: user.name,
+            phoneNumber: user.phoneNumber,
+            role: 'user'
+          },
+          message: "Switched to customer mode"
+        });
+      }
+      
+    } catch (error) {
+      console.error("❌ Role switching error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Check available roles for current user
+router.get("/available-roles",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("📋 Available roles check request received");
+      
+      const currentSession = SessionManager.getSessionData(req);
+      if (!currentSession || !currentSession.isAuthenticated) {
+        return next(new ErrorHandler("Please login first", 401));
+      }
+
+      const phoneNumber = currentSession.user?.phoneNumber;
+      if (!phoneNumber) {
+        return next(new ErrorHandler("Invalid session data", 400));
+      }
+
+      const availableRoles = [];
+      
+      // Check for customer account
+      const user = await User.findOne({ phoneNumber });
+      if (user) {
+        availableRoles.push({
+          role: 'user',
+          name: 'Customer',
+          accountId: user._id,
+          current: currentSession.userType === 'user'
+        });
+      }
+
+      // Check for seller account
+      const seller = await Shop.findOne({ phoneNumber });
+      if (seller) {
+        availableRoles.push({
+          role: 'seller',
+          name: 'Seller',
+          accountId: seller._id,
+          current: currentSession.userType === 'seller'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        availableRoles,
+        currentRole: currentSession.userType,
+        canSwitch: availableRoles.length > 1
+      });
+      
+    } catch (error) {
+      console.error("❌ Available roles check error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
@@ -569,13 +857,23 @@ router.get("/me",
         console.error("❌ No user ID found in session data");
         return next(new ErrorHandler("Invalid session data", 401));
       }
-      
-      if (sessionData.userType === 'user') {
+        if (sessionData.userType === 'user') {
         userData = await User.findById(userId);
       } else if (sessionData.userType === 'seller') {
         userData = await Shop.findById(userId);
+        
+        // If seller is in customer mode, modify the response
+        if (SessionManager.isSellerInCustomerMode(req)) {
+          userData = {
+            ...userData.toObject(),
+            role: 'seller_as_customer',
+            originalRole: 'seller',
+            shopId: userData._id,
+            isDualRole: true
+          };
+        }
       } else if (sessionData.userType === 'admin') {
-        userData = await User.findById(userId);
+        userData = await Admin.findById(userId);
       }
 
       if (!userData) {
@@ -593,6 +891,102 @@ router.get("/me",
       });
     } catch (error) {
       console.error("❌ Get current user error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// ============================
+// DUAL-ROLE FUNCTIONALITY
+// ============================
+
+// Enable customer mode for sellers (allows sellers to shop as customers)
+router.post("/seller/enable-customer-mode",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🔄 Enabling customer mode for seller");
+      
+      const sessionData = SessionManager.getSessionData(req);
+      
+      if (!sessionData || sessionData.userType !== 'seller') {
+        return next(new ErrorHandler("Only sellers can enable customer mode", 401));
+      }
+
+      const result = SessionManager.enableSellerCustomerMode(req);
+      
+      if (result.success) {
+        res.status(200).json({
+          success: true,
+          message: "Customer mode enabled successfully",
+          activeRole: 'customer',
+          userType: 'seller',
+          customerModeEnabled: true
+        });
+      } else {
+        return next(new ErrorHandler(result.message, 400));
+      }
+    } catch (error) {
+      console.error("❌ Enable customer mode error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Disable customer mode for sellers (back to seller-only mode)
+router.post("/seller/disable-customer-mode",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🔄 Disabling customer mode for seller");
+      
+      const sessionData = SessionManager.getSessionData(req);
+      
+      if (!sessionData || sessionData.userType !== 'seller') {
+        return next(new ErrorHandler("Only sellers can disable customer mode", 401));
+      }
+
+      const result = SessionManager.disableSellerCustomerMode(req);
+      
+      if (result.success) {
+        res.status(200).json({
+          success: true,
+          message: "Customer mode disabled successfully",
+          activeRole: 'seller',
+          userType: 'seller',
+          customerModeEnabled: false
+        });
+      } else {
+        return next(new ErrorHandler(result.message, 400));
+      }
+    } catch (error) {
+      console.error("❌ Disable customer mode error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Get current active role and session info
+router.get("/current-role",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const sessionData = SessionManager.getSessionData(req);
+      
+      if (!sessionData || !sessionData.isAuthenticated) {
+        return next(new ErrorHandler("No authenticated session found", 401));
+      }
+
+      const activeRole = SessionManager.getCurrentActiveRole(req);
+      const isSellerInCustomerMode = SessionManager.isSellerInCustomerMode(req);
+
+      res.status(200).json({
+        success: true,
+        userType: sessionData.userType,
+        activeRole: activeRole,
+        customerModeEnabled: isSellerInCustomerMode,
+        canSwitchToCustomer: sessionData.userType === 'seller',
+        sessionValid: true
+      });
+    } catch (error) {
+      console.error("❌ Get current role error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })

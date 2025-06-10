@@ -6,7 +6,7 @@ const Shop = require("../model/shop");
 const Product = require("../model/product");
 const Event = require("../model/event");
 const CoupounCode = require("../model/coupounCode");
-const { isAuthenticated, isSeller, isAdmin } = require("../middleware/auth");
+const { isAuthenticated, isSeller, isAdmin, isAdminAuthenticated } = require("../middleware/auth");
 const { upload } = require("../multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
@@ -337,8 +337,8 @@ router.put(
 // All sellers --- for admin
 router.get(
   "/admin-all-sellers",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const sellers = await Shop.find().sort({
@@ -357,8 +357,8 @@ router.get(
 // Delete seller --- admin
 router.delete(
   "/delete-seller/:id",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const sellerId = req.params.id;
@@ -477,8 +477,8 @@ router.delete(
 // Update seller status --- admin
 router.put(
   "/update-seller-status/:id",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { status } = req.body;
@@ -509,8 +509,8 @@ router.put(
 // Get seller for admin view with safe error handling
 router.get(
   "/admin-get-seller/:id",
-  isAuthenticated,
-  isAdmin("Admin"),
+  isAdminAuthenticated,
+  isAdmin("admin", "superadmin"),
   catchAsyncErrors(async (req, res, next) => {
     try {
       const seller = await Shop.findById(req.params.id);

@@ -103,9 +103,7 @@ const LoginForm = ({
       if (!/^\d{10}$/.test(phoneNumber)) {
         return toast.error("Phone number must be exactly 10 digits!");
       }
-    }
-
-    // Admin secret key validation
+    }    // Admin secret key validation
     if (config.requiresAdminKey && !adminSecretKey) {
       return toast.error("Admin secret key is required!");
     }
@@ -117,7 +115,7 @@ const LoginForm = ({
       const requestData = {
         password,
         ...(config.inputType === "email" ? { email } : { phoneNumber }),
-        ...(config.requiresAdminKey && { adminSecretKey })
+        ...(config.requiresAdminKey && { adminKey: adminSecretKey })
       };
       
       // Try unified auth endpoint

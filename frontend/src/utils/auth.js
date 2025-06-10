@@ -104,11 +104,56 @@ export const checkSessionValidity = async (sessionType = 'user') => {
   }
 };
 
-// Authentication state checkers (now session-based)
+// Dual-role management functions for sellers
+export const enableSellerCustomerMode = async () => {
+  try {
+    const response = await axios.post(`${BASE_URL}/api/auth/seller/enable-customer-mode`, {}, { withCredentials: true });
+    if (response.data.success) {
+      // Refresh auth state to reflect the change
+      await checkAuthSession();
+      return response.data;
+    }
+    throw new Error(response.data.message || 'Failed to enable customer mode');
+  } catch (error) {
+    console.error('Error enabling customer mode:', error);
+    throw error;
+  }
+};
+
+export const disableSellerCustomerMode = async () => {
+  try {
+    const response = await axios.post(`${BASE_URL}/api/auth/seller/disable-customer-mode`, {}, { withCredentials: true });
+    if (response.data.success) {
+      // Refresh auth state to reflect the change
+      await checkAuthSession();
+      return response.data;
+    }
+    throw new Error(response.data.message || 'Failed to disable customer mode');
+  } catch (error) {
+    console.error('Error disabling customer mode:', error);
+    throw error;
+  }
+};
+
+export const getCurrentRole = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/api/auth/current-role`, { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting current role:', error);
+    return { success: false, activeRole: null };
+  }
+};
+
+// Enhanced authentication state checkers with dual-role support
 export const isUserAuthenticated = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/api/auth/me`, { withCredentials: true });
-    return response.data.success && response.data.userType === 'user';
+    // Customer can be either regular user OR seller in customer mode
+    return response.data.success && (
+      response.data.userType === 'user' || 
+      (response.data.userType === 'seller' && response.data.user?.role === 'seller_as_customer')
+    );
   } catch (error) {
     return false;
   }
@@ -177,8 +222,7 @@ export const checkAuthSession = async () => {
       
       // Small delay to ensure state is cleared
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Dispatch appropriate Redux action based on user type
+        // Dispatch appropriate Redux action based on user type
       switch (userType) {
         case 'user':
         case 'admin':
@@ -195,6 +239,18 @@ export const checkAuthSession = async () => {
             type: 'LoadSellerSuccess', 
             payload: user // Note: backend returns seller data as 'user'
           });
+          
+          // If seller is in customer mode, also populate user state for dual access
+          if (user.role === 'seller_as_customer') {
+            Store.dispatch({
+              type: 'LoadUserSuccess',
+              payload: {
+                ...user,
+                isDualRole: true,
+                originalRole: 'seller'
+              }
+            });
+          }
           break;
           
         default:
@@ -444,7 +500,10 @@ const authUtils = {
   logoutCurrentUser,
   requireAuth,
   extendSession,
-  clearAuthLoadingStates
+  clearAuthLoadingStates,
+  enableSellerCustomerMode,
+  disableSellerCustomerMode,
+  getCurrentRole
 };
 
 export default authUtils;
