@@ -206,29 +206,7 @@ router.post("/register-seller",
       if (existingSeller) {
         if (req.file) cleanupFile(req.file.filename);
         return next(new ErrorHandler("Seller already exists with this phone number", 400));
-      }      // Check if user already exists with this phone number
-      const existingUser = await User.findOne({ phoneNumber });
-      
-      // DUAL ROLE SYSTEM: If user exists, check if they want to become a seller
-      let customerUser = existingUser;
-      
-      if (existingUser) {
-        // User exists - they want to add seller role to their existing customer account
-        console.log("👤 Existing customer wants to become seller:", existingUser.name);
-      } else {
-        // Create new customer account first (sellers are also customers)
-        console.log("👤 Creating customer account for new seller...");
-        customerUser = await User.create({
-          name,
-          phoneNumber,
-          password,
-          avatar: fileUrl,
-          role: 'user'
-        });
-        console.log("✅ Customer account created:", customerUser.name, "ID:", customerUser._id);
-      }
-
-      // File validation (same as original shop.js)
+      }      // File validation first (before creating user accounts)
       let avatarUrl = null;
       if (req.file) {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
@@ -245,6 +223,28 @@ router.post("/register-seller",
         }
         
         avatarUrl = req.file.filename;
+      }
+
+      // Check if user already exists with this phone number
+      const existingUser = await User.findOne({ phoneNumber });
+      
+      // DUAL ROLE SYSTEM: If user exists, check if they want to become a seller
+      let customerUser = existingUser;
+      
+      if (existingUser) {
+        // User exists - they want to add seller role to their existing customer account
+        console.log("👤 Existing customer wants to become seller:", existingUser.name);
+      } else {
+        // Create new customer account first (sellers are also customers)
+        console.log("👤 Creating customer account for new seller...");
+        customerUser = await User.create({
+          name,
+          phoneNumber,
+          password,
+          avatar: avatarUrl,
+          role: 'user'
+        });
+        console.log("✅ Customer account created:", customerUser.name, "ID:", customerUser._id);
       }
 
       // Create seller account (linked to customer account)
