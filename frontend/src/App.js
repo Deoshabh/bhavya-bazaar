@@ -78,7 +78,8 @@ import Wishlist from "./components/Wishlist/Wishlist";
 
 // Import performance optimization utilities
 import { 
-  initializePerformanceOptimization
+  initializePerformanceOptimization,
+  PerformanceMonitor
 } from "./utils/performanceOptimizer";
 import { preloadCriticalImages } from "./utils/imageOptimization";
 

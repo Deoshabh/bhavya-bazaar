@@ -14,7 +14,6 @@ const withAuth = (WrappedComponent, options = {}) => {
     requireExactAuth = false, // If true, requires exact auth type match
     showLoader = true
   } = options;
-
   return function ProtectedRoute(props) {
     const location = useLocation();
     const [isInitializing, setIsInitializing] = useState(true);
@@ -22,9 +21,7 @@ const withAuth = (WrappedComponent, options = {}) => {
 
     // Get Redux state based on auth type
     const userState = useSelector((state) => state.user);
-    const sellerState = useSelector((state) => state.seller);
-
-    useEffect(() => {
+    const sellerState = useSelector((state) => state.seller);    useEffect(() => {
       const initAuth = async () => {
         try {
           setIsInitializing(true);
@@ -39,10 +36,23 @@ const withAuth = (WrappedComponent, options = {}) => {
       };
 
       initAuth();
-    }, []);
-
-    // Show loader while initializing authentication
-    if (isInitializing || !authChecked) {
+      
+      // Safety timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        console.warn('Auth initialization timeout reached, proceeding without session');
+        setAuthChecked(true);
+        setIsInitializing(false);
+      }, 15000); // 15 second timeout for slower connections
+      
+      return () => clearTimeout(timeout);
+    }, []);    // Show loader while initializing authentication
+    // Improved logic to prevent getting stuck in loading state
+    const isReduxLoading = (authType === 'user' && userState.loading) || 
+                          (authType === 'seller' && sellerState.isLoading);
+    
+    // Only show loading if we're still initializing AND haven't checked auth yet
+    // This prevents infinite loading loops
+    if (isInitializing && !authChecked) {
       if (!showLoader) return null;
       
       return (
@@ -53,7 +63,7 @@ const withAuth = (WrappedComponent, options = {}) => {
           </div>
         </div>
       );
-    }    // Check authentication based on type
+    }// Check authentication based on type
     const isAuthenticated = (() => {
       switch (authType) {
         case 'admin':

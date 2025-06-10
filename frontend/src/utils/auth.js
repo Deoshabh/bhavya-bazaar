@@ -199,64 +199,21 @@ export const checkAuthSession = async () => {
       `${BASE_URL}/api/auth/me`,
       { 
         withCredentials: true,
-        timeout: 15000 // Increased timeout for better reliability
+        timeout: 10000, // Reasonable timeout for session checks
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
       }
     );
     
     console.log('📨 Auth session response:', response.status, response.data);
     
-    if (response.data.success) {
+    if (response.data.success && response.data.user) {
       const { userType, user } = response.data;
       
       console.log(`✅ Session valid for ${userType}:`, user?.name || user?.shopName || 'Unknown');
-      
-      // Clear both states first to prevent conflicts
-      Store.dispatch({
-        type: 'LoadUserFail',
-        payload: 'Clearing state for session check'
-      });
-      Store.dispatch({
-        type: 'LoadSellerFail',
-        payload: 'Clearing state for session check'
-      });
-      
-      // Small delay to ensure state is cleared
-      await new Promise(resolve => setTimeout(resolve, 100));
-        // Dispatch appropriate Redux action based on user type
-      switch (userType) {
-        case 'user':
-        case 'admin':
-          // For both regular users and admins, use the user state
-          Store.dispatch({
-            type: 'LoadUserSuccess',
-            payload: user
-          });
-          break;
-          
-        case 'seller':
-          // For sellers, use the seller state
-          Store.dispatch({
-            type: 'LoadSellerSuccess', 
-            payload: user // Note: backend returns seller data as 'user'
-          });
-          
-          // If seller is in customer mode, also populate user state for dual access
-          if (user.role === 'seller_as_customer') {
-            Store.dispatch({
-              type: 'LoadUserSuccess',
-              payload: {
-                ...user,
-                isDualRole: true,
-                originalRole: 'seller'
-              }
-            });
-          }
-          break;
-          
-        default:
-          console.warn('⚠️ Unknown user type:', userType);
-          // Keep states cleared for unknown types
-      }
       
       return {
         success: true,
@@ -268,24 +225,11 @@ export const checkAuthSession = async () => {
     console.log('❌ Auth session check failed: Invalid response');
     return { success: false };
   } catch (error) {
-    console.log('❌ Auth session check error:', error.response?.status, error.response?.data?.message || error.message);
-    
-    // If 401 or any auth error, clear all auth state
-    if (error.response?.status === 401) {
-      console.log('🔄 Clearing auth state due to 401 error...');
-      Store.dispatch({
-        type: 'LoadUserFail',
-        payload: 'Session expired'
-      });
-      Store.dispatch({
-        type: 'LoadSellerFail',
-        payload: 'Session expired'
-      });
-      
-      // Clear cookies
-      removeCookie('token');
-      removeCookie('seller_token');
-      removeCookie('admin_token');
+    // Don't log 401 errors as they're expected when not authenticated
+    if (error.response?.status !== 401) {
+      console.log('❌ Auth session check error:', error.response?.status, error.response?.data?.message || error.message);
+    } else {
+      console.log('ℹ️ No active session (401 - expected)');
     }
     
     return { 
@@ -297,15 +241,53 @@ export const checkAuthSession = async () => {
 };
 
 // Authentication persistence for page refresh (now session-based)
-export const initializeAuth = async () => {
+export const initializeAuth = async (retryCount = 0) => {
   try {
     console.log('🔄 Starting session-based authentication initialization...');
     
+    // Dispatch init request to set loading state
+    Store.dispatch({ type: "AUTH_INIT_REQUEST" });
+    
     // Check for valid session using /api/auth/me endpoint
     const sessionCheck = await checkAuthSession();
-    
-    if (sessionCheck.success) {
+      if (sessionCheck.success) {
       console.log('✅ Session restored successfully:', sessionCheck.userType);
+      
+      // Dispatch success with proper data structure
+      Store.dispatch({
+        type: "AUTH_INIT_SUCCESS",
+        payload: {
+          user: sessionCheck.user,
+          userType: sessionCheck.userType
+        }
+      });
+        // Also update legacy reducers to ensure compatibility
+      if (sessionCheck.userType === 'user' || sessionCheck.userType === 'admin') {
+        // Dispatch LoadUserRequest first to set loading state
+        Store.dispatch({ type: "LoadUserRequest" });
+        Store.dispatch({
+          type: "LoadUserSuccess",
+          payload: sessionCheck.user
+        });
+        // Clear seller state to avoid conflicts
+        Store.dispatch({
+          type: "LoadSellerFail",
+          payload: "Not a seller session"
+        });
+      } else if (sessionCheck.userType === 'seller') {
+        // Dispatch LoadSellerRequest first to set loading state
+        Store.dispatch({ type: "LoadSellerRequest" });
+        Store.dispatch({
+          type: "LoadSellerSuccess",
+          payload: sessionCheck.user
+        });
+        // Clear user state to avoid conflicts
+        Store.dispatch({
+          type: "LoadUserFail", 
+          payload: "Not a user session"
+        });
+      }
+      
       return {
         success: true,
         userType: sessionCheck.userType,
@@ -316,7 +298,13 @@ export const initializeAuth = async () => {
     
     console.log('❌ No valid session found, clearing authentication state...');
     
-    // Clear authentication state if no valid session
+    // Dispatch auth init fail to clear loading state and auth data
+    Store.dispatch({
+      type: "AUTH_INIT_FAIL",
+      payload: 'No valid session found'
+    });
+    
+    // Also clear legacy states for compatibility
     Store.dispatch({
       type: 'LoadUserFail',
       payload: 'No valid session found'
@@ -335,11 +323,28 @@ export const initializeAuth = async () => {
       success: false,
       message: 'No valid session found'
     };
-    
-  } catch (error) {
+      } catch (error) {
     console.error('❌ Session initialization error:', error);
     
-    // Ensure loading state is cleared on error
+    // Retry up to 2 times on network errors, with exponential backoff
+    if (retryCount < 2 && (
+      error.code === 'ECONNABORTED' || 
+      error.code === 'NETWORK_ERROR' ||
+      error.response?.status >= 500
+    )) {
+      const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+      console.log(`🔄 Retrying authentication initialization in ${delay}ms... (attempt ${retryCount + 1})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return initializeAuth(retryCount + 1);
+    }
+    
+    // Dispatch auth init fail to clear loading state
+    Store.dispatch({
+      type: "AUTH_INIT_FAIL",
+      payload: error.message || 'Session initialization failed'
+    });
+    
+    // Ensure legacy loading states are cleared on error
     Store.dispatch({
       type: 'LoadUserFail',
       payload: error.message || 'Session initialization failed'
