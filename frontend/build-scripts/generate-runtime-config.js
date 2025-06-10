@@ -2,14 +2,19 @@ const fs = require('fs');
 const path = require('path');
 const {
   REACT_APP_API_URL,
+  REACT_APP_BACKEND_URL,
   REACT_APP_ENV,
   REACT_APP_DEBUG
 } = process.env;
 
-if (!REACT_APP_API_URL) {
-  console.error('[generate-runtime-config] ERROR: REACT_APP_API_URL is not defined');
-  process.exit(1);
-}
+// Use provided environment variables or defaults
+const API_URL = REACT_APP_API_URL || 'https://api.bhavyabazaar.com/api/v2';
+const BACKEND_URL = REACT_APP_BACKEND_URL || 'https://api.bhavyabazaar.com';
+const NODE_ENV = REACT_APP_ENV || 'production';
+const DEBUG = REACT_APP_DEBUG === 'true';
+
+console.log(`[generate-runtime-config] Using API_URL: ${API_URL}`);
+console.log(`[generate-runtime-config] Using BACKEND_URL: ${BACKEND_URL}`);
 
 const contents = `
 /**
@@ -21,14 +26,16 @@ const contents = `
 
 // Define runtime configuration with static production values
 window.__RUNTIME_CONFIG__ = {
-  API_URL: "${REACT_APP_API_URL || 'https://api.bhavyabazaar.com/api/v2'}",
-  BACKEND_URL: "${REACT_APP_API_URL || 'https://api.bhavyabazaar.com'}",
-  NODE_ENV: "${REACT_APP_ENV || 'production'}",
-  DEBUG: ${REACT_APP_DEBUG === 'true' ? true : false},
-  VERSION: "2.0.0",
+  API_URL: "${API_URL}",
+  BACKEND_URL: "${BACKEND_URL}",
+  NODE_ENV: "${NODE_ENV}",
+  DEBUG: ${DEBUG},
+  VERSION: "2.0.3",
   FEATURES: {
-    ENABLE_CHAT: false,
-    ENABLE_NOTIFICATIONS: false
+    ENABLE_CHAT: true,
+    ENABLE_NOTIFICATIONS: true,
+    ENABLE_ANALYTICS: true,
+    ENABLE_EXHIBITOR_FEATURES: true
   }
 };
 
