@@ -15,11 +15,14 @@ class CacheManager {
   // Helper method to generate cache keys
   generateKey(type, identifier, suffix = '') {
     return `bhavya:${type}:${identifier}${suffix ? ':' + suffix : ''}`;
-  }
-  // Generic get method with error handling
+  }  // Generic get method with error handling
   async get(key) {
     try {
-      const result = await redisClient.get(key);
+      if (!redisClient.isRedisConnected()) {
+        return null;
+      }
+      const client = redisClient.getClient();
+      const result = await client.get(key);
       if (result) {
         return JSON.parse(result);
       }
@@ -32,7 +35,11 @@ class CacheManager {
   // Generic set method with error handling
   async set(key, value, ttl = this.defaultTTL) {
     try {
-      await redisClient.setex(key, ttl, JSON.stringify(value));
+      if (!redisClient.isRedisConnected()) {
+        return false;
+      }
+      const client = redisClient.getClient();
+      await client.setex(key, ttl, JSON.stringify(value));
       return true;
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error.message);
@@ -42,7 +49,11 @@ class CacheManager {
   // Generic delete method
   async del(key) {
     try {
-      await redisClient.del(key);
+      if (!redisClient.isRedisConnected()) {
+        return false;
+      }
+      const client = redisClient.getClient();
+      await client.del(key);
       return true;
     } catch (error) {
       console.error(`Cache delete error for key ${key}:`, error.message);
@@ -52,9 +63,13 @@ class CacheManager {
   // Delete multiple keys with pattern
   async deletePattern(pattern) {
     try {
-      const keys = await redisClient.keys(pattern);
+      if (!redisClient.isRedisConnected()) {
+        return 0;
+      }
+      const client = redisClient.getClient();
+      const keys = await client.keys(pattern);
       if (keys.length > 0) {
-        await redisClient.del(...keys);
+        await client.del(...keys);
       }
       return keys.length;
     } catch (error) {
@@ -191,14 +206,17 @@ class CacheManager {
   async setAnalytics(type, identifier, period, data) {
     const key = this.generateKey('analytics', `${type}_${identifier}`, period);
     return await this.set(key, data, this.defaultTTL);
-  }
-  // Rate limiting helpers
+  }  // Rate limiting helpers
   async incrementRateLimit(identifier, window = 3600) {
     try {
+      if (!redisClient.isRedisConnected()) {
+        return 0;
+      }
+      const client = redisClient.getClient();
       const key = this.generateKey('rate_limit', identifier);
-      const current = await redisClient.incr(key);
+      const current = await client.incr(key);
       if (current === 1) {
-        await redisClient.expire(key, window);
+        await client.expire(key, window);
       }
       return current;
     } catch (error) {
@@ -208,8 +226,12 @@ class CacheManager {
   }
   async getRateLimit(identifier) {
     try {
+      if (!redisClient.isRedisConnected()) {
+        return 0;
+      }
+      const client = redisClient.getClient();
       const key = this.generateKey('rate_limit', identifier);
-      const count = await redisClient.get(key);
+      const count = await client.get(key);
       return parseInt(count) || 0;
     } catch (error) {
       console.error(`Rate limit get error for ${identifier}:`, error.message);
@@ -251,12 +273,18 @@ class CacheManager {
     } catch (error) {
       console.error('❌ Cache warming failed:', error.message);
     }
-  }
-  // Cache statistics
+  }  // Cache statistics
   async getCacheStats() {
     try {
-      const info = await redisClient.info('memory');
-      const keys = await redisClient.dbsize();
+      if (!redisClient.isRedisConnected()) {
+        return {
+          error: 'Redis not connected',
+          timestamp: new Date().toISOString()
+        };
+      }
+      const client = redisClient.getClient();
+      const info = await client.info('memory');
+      const keys = await client.dbsize();
       
       return {
         totalKeys: keys,
@@ -274,8 +302,16 @@ class CacheManager {
   // Health check
   async healthCheck() {
     try {
+      if (!redisClient.isRedisConnected()) {
+        return {
+          status: 'unhealthy',
+          error: 'Redis not connected',
+          timestamp: new Date().toISOString()
+        };
+      }
+      const client = redisClient.getClient();
       const start = Date.now();
-      await redisClient.ping();
+      await client.ping();
       const responseTime = Date.now() - start;
       
       return {
