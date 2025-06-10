@@ -100,16 +100,21 @@ module.exports = {
         generator: {
           filename: 'images/[name].[hash][ext]',
         },
-      },
-      {
+      },      {
         test: /\.js$/,
         enforce: "pre",
         use: ["source-map-loader"],
-        exclude: /node_modules\/timeago\.js/,
+        exclude: [
+          /node_modules\/timeago\.js/,
+          /node_modules\/@socketio/,
+          /node_modules\/socket\.io/,
+          /node_modules\/ws/,
+          /node_modules\/websocket/
+        ],
       },
     ],
   },  
-  devtool: isProduction ? 'source-map' : 'eval-source-map',
+  devtool: false, // Disable sourcemaps to remove WebSocket warnings
   plugins: [
     ...(isProduction ? [
       new CompressionPlugin({

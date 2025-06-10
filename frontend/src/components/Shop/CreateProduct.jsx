@@ -16,11 +16,11 @@ const CreateProduct = () => {
     const [images, setImages] = useState([]);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("");
+    const [category, setCategory] = useState("Choose a category");
     const [tags, setTags] = useState("");
-    const [originalPrice, setOriginalPrice] = useState();
-    const [discountPrice, setDiscountPrice] = useState();
-    const [stock, setStock] = useState();
+    const [originalPrice, setOriginalPrice] = useState("");
+    const [discountPrice, setDiscountPrice] = useState("");
+    const [stock, setStock] = useState("");
 
     useEffect(() => {
         if (error) {
@@ -40,30 +40,73 @@ const CreateProduct = () => {
         setImages((prevImages) => [...prevImages, ...files]);
     };
 
-    console.log(images);
-
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (!seller?._id) {
+        // Check if seller data is available
+        if (!seller || !seller._id) {
+            toast.error("Seller information not available. Please log in again.");
             console.error("Seller ID not available");
             return;
         }
 
-        const newForm = new FormData();
+        // Validate required fields
+        if (!name.trim()) {
+            toast.error("Product name is required");
+            return;
+        }
 
-        images.forEach((image) => {
-            newForm.append("images", image);
-        });
-        newForm.append("name", name);
-        newForm.append("description", description);
-        newForm.append("category", category);
-        newForm.append("tags", tags);
-        newForm.append("originalPrice", originalPrice);
-        newForm.append("discountPrice", discountPrice);
-        newForm.append("stock", stock);
-        newForm.append("shopId", seller._id);
-        dispatch(createProduct(newForm));
+        if (!description.trim()) {
+            toast.error("Product description is required");
+            return;
+        }
+
+        if (!category || category === "Choose a category") {
+            toast.error("Please select a category");
+            return;
+        }
+
+        if (!discountPrice || parseFloat(discountPrice) <= 0) {
+            toast.error("Valid discount price is required");
+            return;
+        }
+
+        if (!stock || parseInt(stock) <= 0) {
+            toast.error("Valid stock quantity is required");
+            return;
+        }
+
+        if (!images || images.length === 0) {
+            toast.error("At least one product image is required");
+            return;
+        }
+
+        // Validate price logic
+        if (originalPrice && parseFloat(discountPrice) >= parseFloat(originalPrice)) {
+            toast.error("Discount price must be less than original price");
+            return;
+        }
+
+        try {
+            const newForm = new FormData();
+
+            images.forEach((image) => {
+                newForm.append("images", image);
+            });
+            newForm.append("name", name.trim());
+            newForm.append("description", description.trim());
+            newForm.append("category", category);
+            newForm.append("tags", tags.trim());
+            newForm.append("originalPrice", originalPrice || "0");
+            newForm.append("discountPrice", discountPrice);
+            newForm.append("stock", stock);
+            newForm.append("shopId", seller._id);
+            
+            dispatch(createProduct(newForm));
+        } catch (error) {
+            console.error("Error creating product:", error);
+            toast.error("Failed to create product. Please try again.");
+        }
     };
 
     return (
@@ -83,6 +126,7 @@ const CreateProduct = () => {
                         className="mt-2 appearance-none block w-full px-3 h-[35px] border border-gray-300 rounded-[3px] placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Enter your product name..."
+                        required
                     />
                 </div>
                 <br />
@@ -111,6 +155,7 @@ const CreateProduct = () => {
                         className="w-full mt-2 border h-[35px] rounded-[5px]"
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
+                        required
                     >
                         <option value="Choose a category">Choose a category</option>
                         {categoriesData &&
@@ -138,7 +183,7 @@ const CreateProduct = () => {
                     <label className="pb-2">Original Price</label>
                     <input
                         type="number"
-                        name="price"
+                        name="originalPrice"
                         value={originalPrice}
                         className="mt-2 appearance-none block w-full px-3 h-[35px] border border-gray-300 rounded-[3px] placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         onChange={(e) => setOriginalPrice(e.target.value)}
@@ -152,11 +197,12 @@ const CreateProduct = () => {
                     </label>
                     <input
                         type="number"
-                        name="price"
+                        name="discountPrice"
                         value={discountPrice}
                         className="mt-2 appearance-none block w-full px-3 h-[35px] border border-gray-300 rounded-[3px] placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         onChange={(e) => setDiscountPrice(e.target.value)}
                         placeholder="Enter your product price with discount..."
+                        required
                     />
                 </div>
                 <br />
@@ -166,11 +212,12 @@ const CreateProduct = () => {
                     </label>
                     <input
                         type="number"
-                        name="price"
+                        name="stock"
                         value={stock}
                         className="mt-2 appearance-none block w-full px-3 h-[35px] border border-gray-300 rounded-[3px] placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         onChange={(e) => setStock(e.target.value)}
                         placeholder="Enter your product stock..."
+                        required
                     />
                 </div>
                 <br />
