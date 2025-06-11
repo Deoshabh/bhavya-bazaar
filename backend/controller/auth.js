@@ -1841,4 +1841,52 @@ router.get("/admin/check-access",
   })
 );
 
+// Temporary admin status check endpoint (for debugging)
+router.get("/admin/debug-status/:email",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { email } = req.params;
+      
+      if (email !== 'superadmin@bhavyabazaar.com') {
+        return next(new ErrorHandler("Only super admin email allowed", 403));
+      }
+      
+      const admin = await Admin.findOne({ email }).select("+password");
+      
+      if (!admin) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
+          message: "Admin account not found"
+        });
+      }
+      
+      // Check if account is locked
+      const isLocked = admin.lockUntil && admin.lockUntil > Date.now();
+      
+      res.status(200).json({
+        success: true,
+        exists: true,
+        admin: {
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          isActive: admin.isActive,
+          loginAttempts: admin.loginAttempts || 0,
+          lockUntil: admin.lockUntil,
+          isLocked: isLocked,
+          lastLogin: admin.lastLogin,
+          createdAt: admin.createdAt,
+          hasPassword: !!admin.password,
+          passwordLength: admin.password ? admin.password.length : 0
+        }
+      });
+      
+    } catch (error) {
+      console.error("❌ Admin debug status error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 module.exports = router;
