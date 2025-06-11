@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { server } from "../../server";
 import { 
   FiEdit3, 
   FiTrash2, 
@@ -16,6 +15,31 @@ import {
 } from "react-icons/fi";
 import { AiOutlineClose } from "react-icons/ai";
 import { MdOutlineAdminPanelSettings } from "react-icons/md";
+
+// Enhanced BASE_URL resolution with correct fallback
+const getBaseUrl = () => {
+  // Priority 1: Runtime config (for production deployments)
+  if (window.__RUNTIME_CONFIG__?.API_URL) {
+    return window.__RUNTIME_CONFIG__.API_URL.replace('/api/v2', '');
+  }
+  if (window.RUNTIME_CONFIG?.API_URL) {
+    return window.RUNTIME_CONFIG.API_URL.replace('/api/v2', '');
+  }
+  
+  // Priority 2: Environment detection
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  }
+  if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+    return 'https://bhavyabazaar.com';
+  }
+  
+  // Priority 3: Default fallback
+  return 'https://bhavyabazaar.com';
+};
+
+const BASE_URL = getBaseUrl();
 
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);

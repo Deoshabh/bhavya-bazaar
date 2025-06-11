@@ -6,7 +6,6 @@ import { MdAdminPanelSettings } from "react-icons/md";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import axios from "axios";
-import { server } from "../../server";
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
@@ -32,13 +31,42 @@ const AdminLoginPage = () => {
       toast.error("Please fill all required fields");
       setLoading(false);
       return;
-    }
-
-    try {
-      const res = await axios.post(`${server}/auth/login-admin`, {
+    }    try {
+      // Construct the correct URL for admin login
+      const getBaseUrl = () => {
+        // Priority 1: Runtime config (for production deployments)
+        if (window.__RUNTIME_CONFIG__?.API_URL) {
+          return window.__RUNTIME_CONFIG__.API_URL.replace('/api/v2', '');
+        }
+        if (window.RUNTIME_CONFIG?.API_URL) {
+          return window.RUNTIME_CONFIG.API_URL.replace('/api/v2', '');
+        }
+        
+        // Priority 2: Environment detection
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return 'http://localhost:8000';
+        }
+        if (hostname === 'bhavyabazaar.com' || hostname === 'www.bhavyabazaar.com') {
+          return 'https://bhavyabazaar.com';
+        }
+        
+        // Priority 3: Default fallback
+        return 'https://bhavyabazaar.com';
+      };
+      
+      const baseUrl = getBaseUrl();
+      const adminLoginUrl = `${baseUrl}/api/auth/login-admin`;
+      
+      console.log('🔐 Admin login attempt to:', adminLoginUrl);
+      
+      const res = await axios.post(adminLoginUrl, {
         email,
         password,
         adminSecretKey,
+      }, {
+        withCredentials: true,
+        timeout: 15000
       });
 
       if (res.data.success) {
