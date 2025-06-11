@@ -12,7 +12,6 @@ const AdminLoginPage = () => {
   const { isAuthenticated } = useSelector((state) => state.user);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [adminSecretKey, setAdminSecretKey] = useState("");
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,13 +24,11 @@ const AdminLoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    if (!email || !password || !adminSecretKey) {
+    setLoading(true);    if (!email || !password) {
       toast.error("Please fill all required fields");
       setLoading(false);
       return;
-    }    try {
+    }try {
       // Construct the correct URL for admin login
       const getBaseUrl = () => {
         // Priority 1: Runtime config (for production deployments)
@@ -59,11 +56,9 @@ const AdminLoginPage = () => {
       const adminLoginUrl = `${baseUrl}/api/auth/login-admin`;
       
       console.log('🔐 Admin login attempt to:', adminLoginUrl);
-      
-      const res = await axios.post(adminLoginUrl, {
+        const res = await axios.post(adminLoginUrl, {
         email,
         password,
-        adminSecretKey,
       }, {
         withCredentials: true,
         timeout: 15000
@@ -153,29 +148,7 @@ const AdminLoginPage = () => {
                     onClick={() => setVisible(true)}
                   />
                 )}
-              </div>
-            </div>
-
-            {/* Admin Secret Key Field */}
-            <div>
-              <label htmlFor="adminSecretKey" className="block text-sm font-medium text-gray-700 mb-2">
-                Admin Secret Key
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  name="adminSecretKey"
-                  required
-                  value={adminSecretKey}
-                  onChange={(e) => setAdminSecretKey(e.target.value)}
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out"
-                  placeholder="Enter admin secret key"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Contact your system administrator for the secret key
-              </p>
-            </div>
+              </div>            </div>
 
             {/* Submit Button */}
             <div>

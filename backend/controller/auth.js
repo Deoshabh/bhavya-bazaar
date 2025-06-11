@@ -366,16 +366,10 @@ router.post("/login-admin",
   catchAsyncErrors(async (req, res, next) => {
     try {
       console.log("🔐 Admin login request received");
-      const { email, password, adminSecretKey } = req.body;
+      const { email, password } = req.body;
 
-      if (!email || !password || !adminSecretKey) {
-        return next(new ErrorHandler("Please provide email, password, and admin secret key", 400));
-      }
-
-      // Verify admin secret key
-      if (adminSecretKey !== process.env.ADMIN_SECRET_KEY) {
-        console.warn("❌ Invalid admin secret key attempt for email:", email);
-        return next(new ErrorHandler("Invalid admin secret key", 401));
+      if (!email || !password) {
+        return next(new ErrorHandler("Please provide email and password", 400));
       }
 
       const admin = await Admin.findOne({ email }).select("+password");
@@ -499,15 +493,10 @@ router.post("/create-admin",
   catchAsyncErrors(async (req, res, next) => {
     try {
       console.log("🛡️ Admin creation request received");
-      const { name, email, password, permissions, adminSecretKey } = req.body;
+      const { name, email, password, permissions } = req.body;
 
-      if (!name || !email || !password || !adminSecretKey) {
+      if (!name || !email || !password) {
         return next(new ErrorHandler("Please provide all required fields", 400));
-      }
-
-      // Verify admin secret key
-      if (adminSecretKey !== process.env.ADMIN_SECRET_KEY) {
-        return next(new ErrorHandler("Invalid admin secret key", 401));
       }
 
       // Check if admin already exists

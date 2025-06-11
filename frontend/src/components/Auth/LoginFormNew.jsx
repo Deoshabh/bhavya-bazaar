@@ -72,11 +72,10 @@ const LoginForm = ({
       signupText: null,
       loadAction: () => dispatch(loadUser()),
       buttonText: "Admin Login",
-      inputType: "email",
-      inputLabel: "Admin Email",
+      inputType: "email",      inputLabel: "Admin Email",
       inputPlaceholder: "Enter admin email",
       inputIcon: <MdEmail className="w-5 h-5" />,
-      requiresAdminKey: true
+      requiresAdminKey: false
     }
   };
 

@@ -96,13 +96,11 @@ class SuperAdminSetup {
       throw error;
     }
   }
-
   async displayLoginInstructions() {
     log.header('LOGIN INSTRUCTIONS');
     log.info('Super Admin login credentials:');
     log.info(`📧 Email: ${SUPER_ADMIN_CONFIG.email}`);
     log.info(`🔑 Password: ${SUPER_ADMIN_CONFIG.password}`);
-    log.info(`🔐 Admin Secret Key: ${process.env.ADMIN_SECRET_KEY || 'bhavya_bazaar_admin_2025_secure_key'}`);
     log.info('');
     log.info('🌐 Admin Login URLs:');
     log.info('   - https://bhavyabazaar.com/login/admin');
@@ -115,7 +113,7 @@ class SuperAdminSetup {
     log.info('');
     log.warning('SECURITY NOTES:');
     log.warning('- Change the default password after first login');
-    log.warning('- Keep the admin secret key secure');
+    log.warning('- Admin secret key requirement has been removed for easier access');
     log.warning('- Maximum 3 regular admins + 1 super admin allowed');
   }
 
