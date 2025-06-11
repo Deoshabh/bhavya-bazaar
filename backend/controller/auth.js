@@ -1841,49 +1841,51 @@ router.get("/admin/check-access",
   })
 );
 
-// Temporary admin status check endpoint (for debugging)
-router.get("/admin/debug-status/:email",
+// Temporary admin password reset endpoint (for debugging)
+router.post("/admin/debug-reset-password",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { email } = req.params;
+      const { email, confirmKey } = req.body;
+      
+      // Security check
+      if (confirmKey !== "DEBUG_RESET_2024") {
+        return next(new ErrorHandler("Invalid confirmation key", 401));
+      }
       
       if (email !== 'superadmin@bhavyabazaar.com') {
         return next(new ErrorHandler("Only super admin email allowed", 403));
       }
       
-      const admin = await Admin.findOne({ email }).select("+password");
+      const admin = await Admin.findOne({ email });
       
       if (!admin) {
-        return res.status(200).json({
-          success: true,
-          exists: false,
-          message: "Admin account not found"
-        });
+        return next(new ErrorHandler("Admin account not found", 404));
       }
       
-      // Check if account is locked
-      const isLocked = admin.lockUntil && admin.lockUntil > Date.now();
+      // Reset password to known value
+      admin.password = "SuperAdmin@2024!";
+      admin.loginAttempts = 0;
+      admin.lockUntil = undefined;
+      admin.lastLogin = null;
+      
+      await admin.save();
+      
+      console.log("✅ Admin password reset via debug endpoint");
       
       res.status(200).json({
         success: true,
-        exists: true,
+        message: "Admin password reset successfully",
         admin: {
           name: admin.name,
           email: admin.email,
           role: admin.role,
-          isActive: admin.isActive,
-          loginAttempts: admin.loginAttempts || 0,
-          lockUntil: admin.lockUntil,
-          isLocked: isLocked,
-          lastLogin: admin.lastLogin,
-          createdAt: admin.createdAt,
-          hasPassword: !!admin.password,
-          passwordLength: admin.password ? admin.password.length : 0
+          loginAttempts: admin.loginAttempts,
+          isActive: admin.isActive
         }
       });
       
     } catch (error) {
-      console.error("❌ Admin debug status error:", error.message);
+      console.error("❌ Admin debug password reset error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }
   })
