@@ -30,8 +30,19 @@ const CreateShop = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Form validation
-    if (!name || !phoneNumber || !password || !address || !zipCode) {
+    // Debug: Log field values to help identify empty fields
+    console.log("🔍 Shop registration field validation:", {
+      name: name?.trim() || '[EMPTY]',
+      phoneNumber: phoneNumber?.trim() || '[EMPTY]',
+      password: password ? '[PROVIDED]' : '[EMPTY]',
+      address: address?.trim() || '[EMPTY]',
+      zipCode: zipCode?.trim() || '[EMPTY]',
+      avatar: avatar ? '[PROVIDED]' : '[NOT PROVIDED - OPTIONAL]'
+    });
+
+    // Form validation (trim whitespace)
+    if (!name?.trim() || !phoneNumber?.trim() || !password?.trim() || !address?.trim() || !zipCode?.trim()) {
+      console.error("❌ Required field validation failed");
       toast.error("Please fill all the fields!");
       return;
     }
@@ -47,11 +58,16 @@ const CreateShop = () => {
       return;
     }
 
+    console.log("✅ All required fields validated successfully");
+    console.log("ℹ️  Image upload is OPTIONAL - proceeding without image is perfectly fine");
+
     // Create form data
     const config = { headers: { "Content-Type": "multipart/form-data" } };
     const newForm = new FormData();
 
-    newForm.append("avatar", avatar); // Changed from "file" to "avatar" to match auth endpoint
+    if (avatar) {
+      newForm.append("avatar", avatar); // Changed from "file" to "avatar" to match auth endpoint
+    }
     newForm.append("name", name);
     newForm.append("phoneNumber", phoneNumber);
     newForm.append("password", password);
@@ -218,7 +234,7 @@ const CreateShop = () => {
 
             <div>
               <label htmlFor="avatar" className="block text-sm font-medium text-gray-700">
-                Shop Image (Optional)
+                Shop Image <span className="text-green-600 font-normal">(Optional - You can skip this)</span>
               </label>
               <div className="mt-2 flex items-center">
                 <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
@@ -253,6 +269,9 @@ const CreateShop = () => {
                   />
                 </label>
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                💡 You can add a shop image later from your dashboard settings
+              </p>
             </div>
 
             <div>

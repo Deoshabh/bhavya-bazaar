@@ -29,8 +29,8 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validation
-        if (!name || !phoneNumber || !password) {
+        // Validation (trim whitespace)
+        if (!name?.trim() || !phoneNumber?.trim() || !password?.trim()) {
             toast.error("Please fill all required fields");
             return;
         }
