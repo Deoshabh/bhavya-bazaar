@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { motion } from "framer-motion";
 import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser, AiOutlineLock, AiOutlinePhone, AiOutlineMail } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
-import { RxAvatar } from "react-icons/rx";
 import { MdCloudUpload } from "react-icons/md";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -10,6 +9,7 @@ import Card from "../common/Card";
 import Button from "../common/Button";
 import Input from "../common/Input";
 import SafeImage from "../common/SafeImage";
+import AvatarPlaceholder from "../common/AvatarPlaceholder";
 
 const Signup = () => {
     const [email, setEmail] = useState("");
@@ -327,14 +327,19 @@ const Signup = () => {
                                             fallbackType="profile"
                                         />
                                     ) : (
-                                        <RxAvatar className="w-8 h-8 text-gray-400" />
+                                        <AvatarPlaceholder 
+                                            size={32} 
+                                            name={name}
+                                            type="user"
+                                            className="w-8 h-8"
+                                        />
                                     )}
                                 </div>
                                 <label htmlFor="file-input" className="flex-1">
                                     <div className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 cursor-pointer">
                                         <MdCloudUpload className="w-5 h-5 text-gray-400 mr-2" />
                                         <span className="text-sm font-medium text-gray-600">
-                                            {avatar ? "Change Image" : "Upload Image"}
+                                            {avatar ? "Change Image" : "Upload Your Image"}
                                         </span>
                                     </div>
                                     <input

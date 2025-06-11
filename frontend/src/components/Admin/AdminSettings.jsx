@@ -32,7 +32,7 @@ const BASE_URL = getBaseUrl();
 
 const AdminSettings = () => {
   const { user } = useSelector((state) => state.user);
-  const { adminAccess } = useAdminAccess();
+  const { isSuperAdmin } = useAdminAccess();
   const [activeTab, setActiveTab] = useState('profile');
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -233,10 +233,10 @@ const AdminSettings = () => {
     </div>
   );
 
-  const SystemSettings = () => (
+    const SystemSettings = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">System Settings</h3>
-      {adminAccess?.isSuperAdmin ? (
+      {isSuperAdmin ? (
         <div className="space-y-4">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-yellow-800 text-sm">
@@ -306,9 +306,8 @@ const AdminSettings = () => {
           <div className="w-full lg:w-1/4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-4">
-                <nav className="space-y-2">
-                  {tabs
-                    .filter(tab => !tab.superAdminOnly || adminAccess?.isSuperAdmin)
+                <nav className="space-y-2">                  {tabs
+                    .filter(tab => !tab.superAdminOnly || isSuperAdmin)
                     .map((tab) => {
                       const IconComponent = tab.icon;
                       return (

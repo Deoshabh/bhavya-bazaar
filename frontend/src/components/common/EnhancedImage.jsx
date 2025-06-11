@@ -146,9 +146,33 @@ export const ProductImage = ({ product, className = '', ...props }) => {
 /**
  * Specialized Shop Avatar component
  */
-export const ShopAvatar = ({ shop, className = '', ...props }) => {
+export const ShopAvatar = ({ shop, className = '', size = '50', ...props }) => {
   const imageSrc = shop?.avatar || shop?.shop_avatar?.url;
   const brandName = shop?.name;
+  
+  // If no image is available, show a beautiful placeholder
+  if (!imageSrc) {
+    return (
+      <div className={`relative ${className}`} style={{ width: `${size}px`, height: `${size}px` }}>
+        <div className="w-full h-full rounded-full bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-lg">
+          {brandName ? (
+            <span className="text-lg">
+              {brandName
+                .split(' ')
+                .slice(0, 2)
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()}
+            </span>
+          ) : (
+            <svg className="w-1/2 h-1/2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+            </svg>
+          )}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <EnhancedImage
@@ -165,8 +189,32 @@ export const ShopAvatar = ({ shop, className = '', ...props }) => {
 /**
  * Specialized User Avatar component
  */
-export const UserAvatar = ({ user, className = '', ...props }) => {
+export const UserAvatar = ({ user, className = '', size = '50', ...props }) => {
   const imageSrc = user?.avatar?.url || user?.avatar;
+  
+  // If no image is available, show a beautiful placeholder
+  if (!imageSrc) {
+    return (
+      <div className={`relative ${className}`} style={{ width: `${size}px`, height: `${size}px` }}>
+        <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold shadow-lg">
+          {user?.name ? (
+            <span className="text-lg">
+              {user.name
+                .split(' ')
+                .slice(0, 2)
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()}
+            </span>
+          ) : (
+            <svg className="w-1/2 h-1/2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          )}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <EnhancedImage

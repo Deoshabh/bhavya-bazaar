@@ -42,18 +42,16 @@ const EnhancedUserAvatar = ({
     
     return fallbacks;
   };
-
-  const fallbackUrls = generateFallbacks(user);
-
   useEffect(() => {
     setHasError(false);
     setIsLoading(true);
     setFallbackIndex(0);
     
+    const fallbackUrls = generateFallbacks(user);
     if (fallbackUrls.length > 0) {
       setCurrentSrc(fallbackUrls[0]);
     }
-  }, [user?._id, user?.avatar, size]);
+  }, [user?._id, user?.avatar, user?.name, size]);
 
   const handleImageError = () => {
     const nextIndex = fallbackIndex + 1;
@@ -71,12 +69,17 @@ const EnhancedUserAvatar = ({
     setIsLoading(false);
     setHasError(false);
   };
-
-  // Default avatar component
+  // Default avatar component with improved styling
   const DefaultAvatar = () => (
-    <div className={`flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500 text-white font-semibold ${className}`}>
+    <div className={`flex items-center justify-center bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 text-white font-semibold shadow-lg border-2 border-white ${className}`}>
       {user?.name ? (
-        <span className="text-lg">
+        <span 
+          className="font-bold"
+          style={{ 
+            fontSize: `${parseInt(size) * 0.4}px`,
+            lineHeight: 1
+          }}
+        >
           {user.name
             .split(' ')
             .slice(0, 2)
@@ -85,7 +88,7 @@ const EnhancedUserAvatar = ({
             .toUpperCase()}
         </span>
       ) : (
-        <AiOutlineUser size={parseInt(size) * 0.6} />
+        <AiOutlineUser size={parseInt(size) * 0.5} className="opacity-90" />
       )}
     </div>
   );

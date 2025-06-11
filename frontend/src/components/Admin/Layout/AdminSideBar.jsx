@@ -10,7 +10,7 @@ import { MdOutlineLocalOffer, MdOutlineAdminPanelSettings } from "react-icons/md
 import { useAdminAccess } from "../../../hooks/useAdminAccess";
 
 const AdminSideBar = ({ active }) => {
-  const { adminAccess } = useAdminAccess();
+  const { isSuperAdmin } = useAdminAccess();
 
   const menuItems = [
     {
@@ -122,7 +122,7 @@ const AdminSideBar = ({ active }) => {
       {/* Navigation Menu */}
       <nav className="p-4 space-y-2">
         {menuItems
-          .filter(item => !item.superAdminOnly || adminAccess?.isSuperAdmin)
+          .filter(item => !item.superAdminOnly || isSuperAdmin)
           .map((item) => {
           const IconComponent = item.icon;
           return (

@@ -10,7 +10,7 @@ import { useAdminAccess } from "../../hooks/useAdminAccess";
 
 const AdminHeader = () => {
   const { user } = useSelector((state) => state.user);
-  const { adminAccess } = useAdminAccess();
+  const { isSuperAdmin } = useAdminAccess();
 
   return (
     <div className="w-full h-[80px] bg-white shadow-sm sticky top-0 left-0 z-30 border-b border-gray-200">
@@ -43,7 +43,7 @@ const AdminHeader = () => {
           </Link>
 
           {/* Admin Management - Only for SuperAdmin */}
-          {adminAccess?.isSuperAdmin && (
+          {isSuperAdmin && (
             <Link 
               to="/admin-management" 
               className="flex items-center p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors group"
@@ -115,7 +115,7 @@ const AdminHeader = () => {
             <div className="text-right hidden md:block">
               <p className="text-sm font-medium text-gray-900">{user?.name || 'Admin'}</p>
               <p className="text-xs text-gray-500">
-                {adminAccess?.isSuperAdmin ? 'Super Administrator' : 'Administrator'}
+                {isSuperAdmin ? 'Super Administrator' : 'Administrator'}
               </p>
             </div>
             <UserAvatar
