@@ -77,6 +77,26 @@ export const userReducer = createReducer(initialState, (builder) => {
       state.error = action.payload;
       state.isAuthenticated = false;
     })
+    
+    // Handle unified LOGIN_SUCCESS for both user and admin authentication
+    .addCase("LOGIN_SUCCESS", (state, action) => {
+      const { user, userType } = action.payload;
+      if (userType === 'admin' || userType === 'user') {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = user;
+        state.error = null;
+      }
+    })
+    .addCase("LOGIN_FAIL", (state, action) => {
+      state.loading = false;
+      state.isAuthenticated = false;
+      state.error = action.payload;
+    })
+    .addCase("LOGIN_REQUEST", (state) => {
+      state.loading = true;
+      state.error = null;
+    })
 
     // Admin login (uses same user state)
     .addCase("LoginAdminRequest", (state) => {

@@ -1837,58 +1837,7 @@ router.get("/admin/check-access",
     } catch (error) {
       console.error("❌ Admin access check error:", error.message);
       return next(new ErrorHandler(error.message, 500));
-    }
-  })
-);
-
-// Temporary admin password reset endpoint (for debugging)
-router.post("/admin/debug-reset-password",
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      const { email, confirmKey } = req.body;
-      
-      // Security check
-      if (confirmKey !== "DEBUG_RESET_2024") {
-        return next(new ErrorHandler("Invalid confirmation key", 401));
-      }
-      
-      if (email !== 'superadmin@bhavyabazaar.com') {
-        return next(new ErrorHandler("Only super admin email allowed", 403));
-      }
-      
-      const admin = await Admin.findOne({ email });
-      
-      if (!admin) {
-        return next(new ErrorHandler("Admin account not found", 404));
-      }
-      
-      // Reset password to known value
-      admin.password = "SuperAdmin@2024!";
-      admin.loginAttempts = 0;
-      admin.lockUntil = undefined;
-      admin.lastLogin = null;
-      
-      await admin.save();
-      
-      console.log("✅ Admin password reset via debug endpoint");
-      
-      res.status(200).json({
-        success: true,
-        message: "Admin password reset successfully",
-        admin: {
-          name: admin.name,
-          email: admin.email,
-          role: admin.role,
-          loginAttempts: admin.loginAttempts,
-          isActive: admin.isActive
-        }
-      });
-      
-    } catch (error) {
-      console.error("❌ Admin debug password reset error:", error.message);
-      return next(new ErrorHandler(error.message, 500));
-    }
-  })
+    }  })
 );
 
 module.exports = router;

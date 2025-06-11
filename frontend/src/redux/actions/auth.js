@@ -63,6 +63,18 @@ export const login = (credentials, userType) => async (dispatch) => {
         }
       });
       
+      // For admin and user types, also load the user data to ensure state consistency
+      if (userType === 'admin' || userType === 'user') {
+        try {
+          // Import loadUser dynamically to avoid circular dependency
+          const { loadUser } = await import('./user');
+          await dispatch(loadUser());
+        } catch (loadError) {
+          console.warn('Failed to load user data after login:', loadError);
+          // Don't fail the login for this
+        }
+      }
+      
       console.log(`✅ Login successful: ${data.userType}`);
       return { success: true, userType: data.userType };
     } else {

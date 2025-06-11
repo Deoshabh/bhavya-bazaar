@@ -106,10 +106,13 @@ export const RequireAdmin = ({ children, redirectTo = "/admin/login" }) => {
     return <Navigate to={redirectTo} replace />;
   }
   
-  if (!user || user.role !== "Admin") {
+  // Check for admin or superadmin roles (case-insensitive)
+  if (!user || !['admin', 'superadmin'].includes(user.role?.toLowerCase())) {
+    console.log("❌ Admin access denied - User role:", user?.role, "Required: admin or superadmin");
     return <Navigate to="/" replace />;
   }
   
+  console.log("✅ Admin access granted - User role:", user.role);
   return children;
 };
 
@@ -172,8 +175,7 @@ export const RequireAnyRole = ({
   if (allowShop && isSeller) {
     hasAccess = true;
   }
-  
-  if (allowAdmin && isAuthenticated && user?.role === "Admin") {
+    if (allowAdmin && isAuthenticated && user && ['admin', 'superadmin'].includes(user.role?.toLowerCase())) {
     hasAccess = true;
   }
   

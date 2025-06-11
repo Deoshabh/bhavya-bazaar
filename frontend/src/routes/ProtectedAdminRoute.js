@@ -14,8 +14,9 @@ const ProtectedAdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
-  // Redirect to home if user doesn't exist or is not admin
-  if (!user || user?.role !== "Admin") {
+  // Redirect to home if user doesn't exist or is not admin/superadmin
+  if (!user || !['admin', 'superadmin'].includes(user?.role?.toLowerCase())) {
+    console.log("❌ Admin access denied - User role:", user?.role, "Required: admin or superadmin");
     return <Navigate to="/" replace />;
   }
   
