@@ -23,6 +23,7 @@ import {
 // Import new unified auth pages
 import NewLoginPage from "./pages/Auth/LoginPage.jsx";
 import NewShopLoginPage from "./pages/Auth/ShopLoginPage.jsx"; 
+import AdminLoginPage from "./pages/Auth/AdminLoginPage.jsx";
 import LoginSelectionPage from "./pages/Auth/LoginSelectionPage.jsx";
 import RegistrationSelectionPage from "./pages/Auth/RegistrationSelectionPage.jsx";
 // Import auth utilities
@@ -185,6 +186,8 @@ const App = () => {
           <Route path="/login" element={<LoginSelectionPage />} />
           <Route path="/login/user" element={<NewLoginPage />} />
           <Route path="/login/seller" element={<NewShopLoginPage />} />
+          <Route path="/login/admin" element={<AdminLoginPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           
           {/* Legacy auth routes (keep for backward compatibility) */}
           <Route path="/login-legacy" element={<LoginPage />} />

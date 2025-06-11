@@ -135,7 +135,7 @@ const LoginSelectionPage = () => {  const roleOptions = [
           </div>
         </motion.div>
 
-        {/* Footer */}
+        {/* Terms and Privacy */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -152,6 +152,21 @@ const LoginSelectionPage = () => {  const roleOptions = [
               Privacy Policy
             </Link>
           </p>
+        </motion.div>
+
+        {/* Admin Access - Subtle Link */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          className="text-center mt-6"
+        >
+          <Link
+            to="/admin/login"
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          >
+            Admin Portal
+          </Link>
         </motion.div>
       </div>
     </div>
