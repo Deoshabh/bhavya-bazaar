@@ -30,10 +30,13 @@ const SUPER_ADMIN_CONFIG = {
   password: "SuperAdmin@2024!",
   role: "superadmin",
   permissions: [
-    "read_all", "write_all", "delete_all", "read_analytics", 
-    "manage_users", "manage_sellers", "manage_products", 
-    "manage_orders", "manage_coupons", "manage_events",
-    "view_reports", "manage_admins"
+    "manage_users",
+    "manage_sellers", 
+    "manage_products",
+    "manage_orders",
+    "manage_system",
+    "view_analytics",
+    "manage_admins"
   ],
   isActive: true
 };
