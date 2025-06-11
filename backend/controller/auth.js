@@ -1832,12 +1832,131 @@ router.get("/admin/check-access",
         isAdmin: false,
         isSuperAdmin: false,
         canAccessAdmin: false
-      });
-
-    } catch (error) {
+      });    } catch (error) {
       console.error("❌ Admin access check error:", error.message);
       return next(new ErrorHandler(error.message, 500));
     }  })
+);
+
+// ==============================
+// ADMIN SELF-SERVICE ENDPOINTS  
+// ==============================
+
+// Admin change password (for own account)
+router.put("/admin/change-password",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("🔐 Admin change password request received");
+      
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return next(new ErrorHandler("Please provide current and new password", 400));
+      }
+
+      if (newPassword.length < 8) {
+        return next(new ErrorHandler("New password must be at least 8 characters long", 400));
+      }
+
+      // Get current session data
+      const sessionData = SessionManager.getSessionData(req);
+      
+      if (!sessionData || !sessionData.isAuthenticated || sessionData.userType !== 'admin') {
+        return next(new ErrorHandler("Admin authentication required", 401));
+      }
+
+      // Get admin from database with password
+      const admin = await Admin.findById(sessionData.user.id).select("+password");
+      
+      if (!admin || !admin.isActive) {
+        return next(new ErrorHandler("Admin account not found or inactive", 404));
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await admin.comparePassword(currentPassword);
+      if (!isCurrentPasswordValid) {
+        return next(new ErrorHandler("Current password is incorrect", 400));
+      }
+
+      // Update password
+      admin.password = newPassword;
+      admin.updatedAt = new Date();
+      await admin.save();
+
+      console.log("✅ Admin password changed successfully:", admin.name);
+
+      res.status(200).json({
+        success: true,
+        message: "Password changed successfully"
+      });
+
+    } catch (error) {
+      console.error("❌ Admin change password error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Admin update profile (for own account)
+router.put("/admin/update-profile",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      console.log("👤 Admin update profile request received");
+      
+      const { name, email } = req.body;
+
+      if (!name || !email) {
+        return next(new ErrorHandler("Please provide name and email", 400));
+      }
+
+      // Get current session data
+      const sessionData = SessionManager.getSessionData(req);
+      
+      if (!sessionData || !sessionData.isAuthenticated || sessionData.userType !== 'admin') {
+        return next(new ErrorHandler("Admin authentication required", 401));
+      }
+
+      // Get admin from database
+      const admin = await Admin.findById(sessionData.user.id);
+      
+      if (!admin || !admin.isActive) {
+        return next(new ErrorHandler("Admin account not found or inactive", 404));
+      }
+
+      // Check if email is being changed and if it's unique
+      if (email !== admin.email) {
+        const existingAdmin = await Admin.findOne({ 
+          email, 
+          _id: { $ne: admin._id } 
+        });
+        
+        if (existingAdmin) {
+          return next(new ErrorHandler("Email already in use by another admin", 400));
+        }
+      }
+
+      // Update profile
+      admin.name = name;
+      admin.email = email;
+      admin.updatedAt = new Date();
+      await admin.save();
+
+      console.log("✅ Admin profile updated successfully:", admin.name);
+
+      // Return updated admin data (without password)
+      const updatedAdmin = await Admin.findById(admin._id).select('-password');
+
+      res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        admin: updatedAdmin
+      });
+
+    } catch (error) {
+      console.error("❌ Admin update profile error:", error.message);
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
 );
 
 module.exports = router;

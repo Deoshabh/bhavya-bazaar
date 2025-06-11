@@ -24,7 +24,7 @@ import Button from "../common/Button";
 import Badge from "../common/Badge";
 import { logoutUser } from "../../redux/actions/user";
 import { toast } from "react-toastify";
-import useAdminAccess from "../../hooks/useAdminAccess";
+import { useAdminAccess } from "../../hooks/useAdminAccess";
 
 const Header = ({ activeHeading }) => {
   const navigate = useNavigate();
