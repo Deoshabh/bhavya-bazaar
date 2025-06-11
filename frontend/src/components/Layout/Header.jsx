@@ -24,6 +24,7 @@ import Button from "../common/Button";
 import Badge from "../common/Badge";
 import { logoutUser } from "../../redux/actions/user";
 import { toast } from "react-toastify";
+import useAdminAccess from "../../hooks/useAdminAccess";
 
 const Header = ({ activeHeading }) => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const Header = ({ activeHeading }) => {
   const { wishlist } = useSelector((state) => state.wishlist);
   const { isAuthenticated, user } = useSelector((state) => state.user);
   const { allProducts } = useSelector((state) => state.products);
+  const { canAccessAdmin } = useAdminAccess();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchData, setSearchData] = useState(null);
   const [active, setActive] = useState(false);
@@ -179,6 +181,18 @@ const Header = ({ activeHeading }) => {
                   >
                     <span className="flex items-center text-white">
                       Shop Dashboard
+                      <IoIosArrowForward className="ml-2" size={16} />
+                    </span>
+                  </Button>
+                </Link>
+              ) : canAccessAdmin ? (
+                <Link to="/admin/dashboard">
+                  <Button
+                    variant="primary"
+                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg"
+                  >
+                    <span className="flex items-center text-white">
+                      Admin Dashboard
                       <IoIosArrowForward className="ml-2" size={16} />
                     </span>
                   </Button>
@@ -463,9 +477,9 @@ const Header = ({ activeHeading }) => {
             </div>
             <Navbar active={activeHeading} />
             <div className={`${styles.button} ml-4 !rounded-[4px]`}>
-              <Link to={`${isSeller ? "/dashboard" : "/shop-create"}`}>
+              <Link to={`${isSeller ? "/dashboard" : canAccessAdmin ? "/admin/dashboard" : "/shop-create"}`}>
                 <h1 className="text-[#fff] flex items-center">
-                  {isSeller ? "Go Dashboard" : "Become Seller"}{" "}
+                  {isSeller ? "Go Dashboard" : canAccessAdmin ? "Admin Dashboard" : "Become Seller"}{" "}
                   <IoIosArrowForward className="ml-1" />
                 </h1>
               </Link>

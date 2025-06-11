@@ -74,7 +74,7 @@ const AdminSideBar = ({ active }) => {
       id: 9,
       label: "Settings",
       icon: FiSettings,
-      path: "/profile",
+      path: "/admin/settings",
       color: "gray"
     }
   ];

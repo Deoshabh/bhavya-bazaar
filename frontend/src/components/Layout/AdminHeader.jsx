@@ -1,15 +1,16 @@
 import React from "react";
-import { MdOutlineLocalOffer, MdDashboard } from "react-icons/md";
+import { MdOutlineLocalOffer, MdDashboard, MdOutlineAdminPanelSettings } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { CiMoneyBill } from "react-icons/ci";
 import { GrWorkshop } from "react-icons/gr";
-import { FiUsers, FiPackage, FiBell } from "react-icons/fi";
+import { FiUsers, FiPackage, FiBell, FiSettings } from "react-icons/fi";
 import { UserAvatar } from "../common/EnhancedImage";
 import SafeImage from "../common/SafeImage";
+import { useAdminAccess } from "../../hooks/useAdminAccess";
 
 const AdminHeader = () => {
   const { user } = useSelector((state) => state.user);
+  const { adminAccess } = useAdminAccess();
 
   return (
     <div className="w-full h-[80px] bg-white shadow-sm sticky top-0 left-0 z-30 border-b border-gray-200">
@@ -40,6 +41,18 @@ const AdminHeader = () => {
             <MdDashboard size={24} />
             <span className="ml-2 text-sm font-medium hidden xl:block">Dashboard</span>
           </Link>
+
+          {/* Admin Management - Only for SuperAdmin */}
+          {adminAccess?.isSuperAdmin && (
+            <Link 
+              to="/admin-management" 
+              className="flex items-center p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors group"
+              title="Admin Management"
+            >
+              <MdOutlineAdminPanelSettings size={24} />
+              <span className="ml-2 text-sm font-medium hidden xl:block">Admins</span>
+            </Link>
+          )}
 
           {/* Users */}
           <Link 
@@ -81,14 +94,14 @@ const AdminHeader = () => {
             <span className="ml-2 text-sm font-medium hidden xl:block">Events</span>
           </Link>
 
-          {/* Withdrawals */}
+          {/* Settings */}
           <Link 
-            to="/admin-withdraw-request" 
-            className="flex items-center p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors group"
-            title="Withdrawal Requests"
+            to="/admin/settings" 
+            className="flex items-center p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors group"
+            title="Settings"
           >
-            <CiMoneyBill size={24} />
-            <span className="ml-2 text-sm font-medium hidden xl:block">Withdrawals</span>
+            <FiSettings size={24} />
+            <span className="ml-2 text-sm font-medium hidden xl:block">Settings</span>
           </Link>
 
           {/* Notifications */}
@@ -101,7 +114,9 @@ const AdminHeader = () => {
           <div className="flex items-center space-x-3 pl-6 border-l border-gray-200">
             <div className="text-right hidden md:block">
               <p className="text-sm font-medium text-gray-900">{user?.name || 'Admin'}</p>
-              <p className="text-xs text-gray-500">Administrator</p>
+              <p className="text-xs text-gray-500">
+                {adminAccess?.isSuperAdmin ? 'Super Administrator' : 'Administrator'}
+              </p>
             </div>
             <UserAvatar
               user={user}
