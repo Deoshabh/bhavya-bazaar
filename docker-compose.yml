@@ -1,0 +1,79 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bhavya-bazaar-app
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      - MONGODB_URI=mongodb://admin:StrongPassword123@mongo-db-mongodb-avaxdz:27017/bhavya_bazaar?authSource=admin
+      # Add other environment variables as needed
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-here}
+      - JWT_EXPIRE=${JWT_EXPIRE:-7d}
+      - COOKIE_EXPIRE=${COOKIE_EXPIRE:-7}
+      - SMPT_SERVICE=${SMPT_SERVICE:-gmail}
+      - SMPT_MAIL=${SMPT_MAIL:-your-email@gmail.com}
+      - SMPT_PASSWORD=${SMPT_PASSWORD:-your-app-password}
+      - SMPT_HOST=${SMPT_HOST:-smtp.gmail.com}
+      - SMPT_PORT=${SMPT_PORT:-587}
+      - STRIPE_API_KEY=${STRIPE_API_KEY:-your-stripe-key}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-your-stripe-secret}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/v2/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongo-db-mongodb-avaxdz
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=StrongPassword123
+      - MONGO_INITDB_DATABASE=bhavya_bazaar
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: bhavya-bazaar-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    command: redis-server --appendonly yes
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  redis_data:
+    driver: local
