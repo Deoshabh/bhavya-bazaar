@@ -13,7 +13,10 @@ const { ensureDirectoryExists } = require("./utils/fileSystem");
 const redisClient = require("./utils/redisClient");
 
 // Import performance optimization utilities
-const { dbOptimizer, optimizeMongoConnection } = require("./utils/databaseOptimizer");
+const {
+  dbOptimizer,
+  optimizeMongoConnection,
+} = require("./utils/databaseOptimizer");
 const { cacheManager } = require("./utils/cacheManager");
 const { recommendationEngine } = require("./utils/recommendationEngine");
 
@@ -26,49 +29,52 @@ try {
 } catch (error) {
   console.error("Failed to load rate limiters:", error.message);
   console.log("Creating fallback rate limiters...");
-  
+
   // Fallback rate limiters using express-rate-limit directly
-  const rateLimit = require('express-rate-limit');
-  
+  const rateLimit = require("express-rate-limit");
+
   apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
-    message: { error: 'Too many requests, please try again later.' }
+    message: { error: "Too many requests, please try again later." },
   });
-  
+
   authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
-    message: { error: 'Too many authentication attempts, please try again later.' }
+    message: {
+      error: "Too many authentication attempts, please try again later.",
+    },
   });
 }
 
 const app = express();
 
 // Trust proxy configuration - secure setup for production
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === "production") {
   // In production, trust only specific proxy configurations
   // This prevents IP spoofing attacks while allowing legitimate proxy forwarding
   const trustedProxies = process.env.TRUSTED_PROXIES;
-  
+
   if (trustedProxies) {
     // Trust specific IP addresses/subnets
-    const proxies = trustedProxies.split(',').map(ip => ip.trim());
-    app.set('trust proxy', proxies);
-    console.log('✅ Trust proxy configured for specific IPs:', proxies);
+    const proxies = trustedProxies.split(",").map((ip) => ip.trim());
+    app.set("trust proxy", proxies);
+    console.log("✅ Trust proxy configured for specific IPs:", proxies);
   } else {
     // Trust only the first proxy (common for single reverse proxy setups)
-    app.set('trust proxy', 1);
-    console.log('✅ Trust proxy configured for first proxy only');
+    app.set("trust proxy", 1);
+    console.log("✅ Trust proxy configured for first proxy only");
   }
 } else {
   // In development, we can be more permissive
-  app.set('trust proxy', true);
-  console.log('⚠️ Trust proxy set to true (development mode)');
+  app.set("trust proxy", true);
+  console.log("⚠️ Trust proxy set to true (development mode)");
 }
 
 // Load environment-specific configuration
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+const envFile =
+  process.env.NODE_ENV === "production" ? ".env.production" : ".env";
 const envPath = path.join(__dirname, envFile);
 
 // Only load additional config if the file exists
@@ -78,7 +84,9 @@ if (fs.existsSync(envPath)) {
   });
   console.log(`✅ Loaded environment configuration from: ${envFile}`);
 } else {
-  console.log(`⚠️ Environment file ${envFile} not found, using default environment variables`);
+  console.log(
+    `⚠️ Environment file ${envFile} not found, using default environment variables`
+  );
 }
 
 // Verify critical environment vars
@@ -95,16 +103,19 @@ const initializeRedis = async () => {
   try {
     if (redisClient) {
       // Check if redisClient has the initialize method
-      if (typeof redisClient.initialize === 'function') {
+      if (typeof redisClient.initialize === "function") {
         await redisClient.initialize();
         console.log("✅ Redis connection initialized via initialize()");
         global.redisAvailable = true;
-      } else if (typeof redisClient.connect === 'function') {
+      } else if (typeof redisClient.connect === "function") {
         await redisClient.connect();
         console.log("✅ Redis connection initialized via connect()");
         global.redisAvailable = true;
       } else {
-        console.warn("⚠️ Redis client doesn't have initialize or connect method, available methods:", Object.getOwnPropertyNames(redisClient));
+        console.warn(
+          "⚠️ Redis client doesn't have initialize or connect method, available methods:",
+          Object.getOwnPropertyNames(redisClient)
+        );
         global.redisAvailable = false;
       }
     } else {
@@ -112,7 +123,10 @@ const initializeRedis = async () => {
       global.redisAvailable = false;
     }
   } catch (error) {
-    console.warn("⚠️ Redis initialization failed, falling back to memory storage:", error.message);
+    console.warn(
+      "⚠️ Redis initialization failed, falling back to memory storage:",
+      error.message
+    );
     global.redisAvailable = false;
   }
 };
@@ -124,7 +138,9 @@ ensureDirectoryExists(uploadsPath);
 console.log("✅ Uploads directory ready:", uploadsPath);
 
 const isProduction = process.env.NODE_ENV === "production";
-console.log(`⚙️ Environment mode: ${isProduction ? "production" : "development"}`);
+console.log(
+  `⚙️ Environment mode: ${isProduction ? "production" : "development"}`
+);
 
 // —————————— Server Setup ——————————
 // **Use a plain HTTP server; Coolify’s external proxy will handle TLS/WSS**
@@ -140,7 +156,7 @@ const allowedOrigins = rawCors
 
 // Add default origins if none specified
 if (allowedOrigins.length === 0) {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     allowedOrigins.push(
       "https://bhavyabazaar.com",
       "https://www.bhavyabazaar.com",
@@ -158,13 +174,13 @@ if (allowedOrigins.length === 0) {
 }
 
 // Ensure required production origins are always included
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === "production") {
   const requiredOrigins = [
     "https://bhavyabazaar.com",
-    "https://www.bhavyabazaar.com"
+    "https://www.bhavyabazaar.com",
   ];
-  
-  requiredOrigins.forEach(origin => {
+
+  requiredOrigins.forEach((origin) => {
     if (!allowedOrigins.includes(origin)) {
       allowedOrigins.push(origin);
     }
@@ -178,7 +194,7 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       // Check if origin is in allowed list
       if (allowedOrigins.indexOf(origin) !== -1) {
         console.log(`✅ CORS allowed origin: ${origin}`);
@@ -186,28 +202,28 @@ app.use(
       } else {
         console.warn(`❌ CORS blocked request from: ${origin}`);
         console.warn(`❌ Allowed origins are:`, allowedOrigins);
-        return callback(new Error('Not allowed by CORS'));
+        return callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: [
       "Content-Type",
-      "Authorization", 
+      "Authorization",
       "X-Requested-With",
       "Accept",
       "Origin",
       "Cache-Control",
       "X-Correlation-ID",
       "X-User-ID",
-      "X-Seller-ID"
+      "X-Seller-ID",
     ],
     exposedHeaders: [
-      "Content-Range", 
+      "Content-Range",
       "X-Total-Count",
-      "X-RateLimit-Limit", 
-      "X-RateLimit-Remaining", 
-      "X-RateLimit-Reset"
+      "X-RateLimit-Limit",
+      "X-RateLimit-Remaining",
+      "X-RateLimit-Reset",
     ],
   })
 );
@@ -215,52 +231,62 @@ app.use(
 // —————————— Logging, Parsing, Static ——————————
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
-  const origin = req.get('Origin') || 'no-origin';
-  console.log(`${timestamp} | ${req.method} ${req.url} | Origin: ${origin} | IP: ${req.ip}`);
+  const origin = req.get("Origin") || "no-origin";
+  console.log(
+    `${timestamp} | ${req.method} ${req.url} | Origin: ${origin} | IP: ${req.ip}`
+  );
   next();
 });
 app.use(express.json());
 app.use(cookieParser());
-const sessionMiddleware = require('./config/session');
+const sessionMiddleware = require("./config/session");
 app.use(sessionMiddleware);
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // —————————— Rate Limiting ——————————
 // Apply general rate limiting to all API routes
-if (apiLimiter && typeof apiLimiter === 'function') {
+if (apiLimiter && typeof apiLimiter === "function") {
   app.use("/api/", apiLimiter);
   console.log("✅ API rate limiter enabled");
 } else {
-  console.warn("⚠️ API rate limiter not available, proceeding without rate limiting");
+  console.warn(
+    "⚠️ API rate limiter not available, proceeding without rate limiting"
+  );
 }
 
 // —————————— EMERGENCY CORS & PREFLIGHT HANDLERS ——————————
 // Handle preflight requests explicitly for production debugging
-app.options('*', (req, res) => {
-  const origin = req.get('Origin');
+app.options("*", (req, res) => {
+  const origin = req.get("Origin");
   console.log(`🔧 CORS Preflight from origin: ${origin}`);
-  
+
   // Check if origin is allowed
   if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,Cache-Control,X-Correlation-ID,X-User-ID,X-Seller-ID');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.header("Access-Control-Allow-Origin", origin || "*");
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    );
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type,Authorization,X-Requested-With,Accept,Origin,Cache-Control,X-Correlation-ID,X-User-ID,X-Seller-ID"
+    );
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Max-Age", "86400"); // 24 hours
     console.log(`✅ CORS Preflight allowed for: ${origin}`);
     return res.status(200).end();
   } else {
     console.warn(`❌ CORS Preflight blocked for: ${origin}`);
-    return res.status(403).json({ error: 'CORS policy violation' });
+    return res.status(403).json({ error: "CORS policy violation" });
   }
 });
 
 // Emergency CORS debug endpoint
 app.get("/api/cors-debug", (req, res) => {
-  const origin = req.get('Origin');
+  const origin = req.get("Origin");
   console.log(`🔧 CORS Debug request from: ${origin}`);
-  
+
   res.json({
     requestOrigin: origin,
     allowedOrigins: allowedOrigins,
@@ -268,7 +294,7 @@ app.get("/api/cors-debug", (req, res) => {
     corsEnvironment: process.env.CORS_ORIGIN,
     nodeEnv: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
-    headers: req.headers
+    headers: req.headers,
   });
 });
 
@@ -286,33 +312,33 @@ app.get("/api/v2/debug/env", (req, res) => {
     hasRedisPassword: !!process.env.REDIS_PASSWORD,
     redisAvailable: global.redisAvailable || false,
     allowedOrigins: allowedOrigins,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // —————————— Emergency Health Check Endpoints ——————————
 // Simple ping endpoint for immediate health verification
 app.get("/api/ping", (req, res) => {
-  const origin = req.get('Origin');
-  console.log(`🏓 Ping request from: ${origin || 'no-origin'}`);
+  const origin = req.get("Origin");
+  console.log(`🏓 Ping request from: ${origin || "no-origin"}`);
   res.json({
     status: "ok",
     message: "Backend service is running",
     timestamp: new Date().toISOString(),
     origin: origin,
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
   });
 });
 
 // Auth ping with CORS verification
 app.get("/api/auth/ping", (req, res) => {
-  const origin = req.get('Origin');
-  console.log(`🔐 Auth ping from: ${origin || 'no-origin'}`);
+  const origin = req.get("Origin");
+  console.log(`🔐 Auth ping from: ${origin || "no-origin"}`);
   res.json({
     status: "ok",
     message: "Auth service is accessible",
     corsAllowed: !origin || allowedOrigins.indexOf(origin) !== -1,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -326,12 +352,12 @@ app.get("/api/v2/health", async (req, res) => {
     res.status(200).json({
       status: "healthy",
       service: "backend",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       status: "error",
-      message: error.message
+      message: error.message,
     });
   }
 });
@@ -349,7 +375,7 @@ app.get("/", (req, res) => {
       event: "/api/v2/event",
       conversation: "/api/v2/conversation",
       message: "/api/v2/message",
-      health: "/api/v2/health/detailed"
+      health: "/api/v2/health/detailed",
     },
     documentation: "https://bhavyabazaar.com/api-docs",
   });
@@ -378,6 +404,31 @@ app.use("/api/v2/recommendations", require("./routes/recommendations"));
 // Add optimized product routes (alongside existing product routes)
 app.use("/api/v2/products", require("./routes/optimizedProduct"));
 
+// —————————— Frontend Serving (SPA Support) ——————————
+// Serve static files from React build
+app.use(express.static(path.join(__dirname, "public")));
+
+// Handle React Router - send all non-API requests to index.html
+app.get("*", (req, res) => {
+  // Skip API routes
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "API endpoint not found" });
+  }
+
+  // For uploads, let it fall through to the uploads static middleware
+  if (req.path.startsWith("/uploads/")) {
+    return res.status(404).json({ error: "File not found" });
+  }
+
+  // Serve React app for all other routes
+  res.sendFile(path.join(__dirname, "public", "index.html"), (err) => {
+    if (err) {
+      console.error("Error serving index.html:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
 // —————————— Error Handling & Unhandled Exceptions ——————————
 app.use(ErrorHandler);
 
@@ -392,60 +443,67 @@ process.on("unhandledRejection", (err) => {
 
 // —————————— Start Listening on PORT=8000 ——————————
 const PORT = process.env.PORT || 8000;
-server.listen(PORT, '0.0.0.0', async () => {
+server.listen(PORT, "0.0.0.0", async () => {
   console.log(`🚀 Server listening on port ${PORT}`);
   console.log(`🌐 API base: https://api.bhavyabazaar.com`);
   console.log(`🔗 Local access: http://localhost:${PORT}`);
-  
+
   // Log environment details for debugging
   console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`DB URI: ${process.env.DB_URI ? 'Connected' : 'Not configured'}`);
-  console.log(`Redis Host: ${process.env.REDIS_HOST || 'Not configured'}`);
-  console.log(`CORS Origins: ${process.env.CORS_ORIGIN || 'Not configured'}`);
-  
+  console.log(`DB URI: ${process.env.DB_URI ? "Connected" : "Not configured"}`);
+  console.log(`Redis Host: ${process.env.REDIS_HOST || "Not configured"}`);
+  console.log(`CORS Origins: ${process.env.CORS_ORIGIN || "Not configured"}`);
+
   // Health check for Coolify
-  console.log(`🩺 Health check available at: http://localhost:${PORT}/api/ping`);
-  
+  console.log(
+    `🩺 Health check available at: http://localhost:${PORT}/api/ping`
+  );
+
   // Initialize performance optimizations
   try {
-    console.log('🔧 Initializing performance optimizations...');
-    
+    console.log("🔧 Initializing performance optimizations...");
+
     // Initialize database optimizer
     dbOptimizer.initialize();
-    console.log('✅ Database optimizer initialized');
-    
+    console.log("✅ Database optimizer initialized");
+
     // Skip MongoDB connection optimization to avoid issues
-    console.log('ℹ️ Skipping MongoDB connection optimization (using existing connection)');
-    
+    console.log(
+      "ℹ️ Skipping MongoDB connection optimization (using existing connection)"
+    );
+
     // Initialize cache manager
-    if (cacheManager && typeof cacheManager.initialize === 'function') {
+    if (cacheManager && typeof cacheManager.initialize === "function") {
       await cacheManager.initialize();
-      console.log('✅ Cache manager initialized');
+      console.log("✅ Cache manager initialized");
     } else {
-      console.log('ℹ️ Cache manager does not have initialize method');
+      console.log("ℹ️ Cache manager does not have initialize method");
     }
-    
+
     // Warm up critical caches
-    if (cacheManager && typeof cacheManager.warmup === 'function') {
+    if (cacheManager && typeof cacheManager.warmup === "function") {
       await cacheManager.warmup();
-      console.log('🔥 Cache warmup completed');
+      console.log("🔥 Cache warmup completed");
     } else {
-      console.log('ℹ️ Cache manager does not have warmup method');
+      console.log("ℹ️ Cache manager does not have warmup method");
     }
-    
+
     // Initialize AI recommendation engine
-    if (recommendationEngine && typeof recommendationEngine.initialize === 'function') {
+    if (
+      recommendationEngine &&
+      typeof recommendationEngine.initialize === "function"
+    ) {
       await recommendationEngine.initialize();
-      console.log('🤖 AI Recommendation Engine initialized');
+      console.log("🤖 AI Recommendation Engine initialized");
     } else {
-      console.log('ℹ️ Recommendation engine does not have initialize method');
+      console.log("ℹ️ Recommendation engine does not have initialize method");
     }
-    
-    console.log('🚀 Performance optimizations initialized successfully');
+
+    console.log("🚀 Performance optimizations initialized successfully");
   } catch (error) {
-    console.error('⚠️ Performance optimization initialization failed:', error);
-    console.error('Stack trace:', error.stack);
+    console.error("⚠️ Performance optimization initialization failed:", error);
+    console.error("Stack trace:", error.stack);
     // Continue server startup even if optimizations fail
-    console.log('🔧 Server continuing startup without advanced optimizations');
+    console.log("🔧 Server continuing startup without advanced optimizations");
   }
 });

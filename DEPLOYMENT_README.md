@@ -4,11 +4,11 @@ This repository contains a full-stack e-commerce application (Bhavya Bazaar) con
 
 ## 🏗️ Architecture
 
-- **Frontend**: React.js application
+- **Frontend**: React.js application (served by backend)
 - **Backend**: Node.js/Express API
-- **Database**: MongoDB
-- **Port**: 5001
-- **Deployment**: Docker with Dokploy
+- **Database**: MongoDB (external)
+- **Port**: 8000
+- **Deployment**: Single Docker container with Dokploy
 
 ## 🚀 Quick Deployment
 
@@ -83,7 +83,7 @@ See `.env.example` for complete list.
 
 The application includes a health check endpoint:
 
-- **URL**: `http://your-domain:5001/api/v2/health`
+- **URL**: `http://your-domain:8000/api/v2/health`
 - **Method**: GET
 - **Expected Response**: 200 OK
 
