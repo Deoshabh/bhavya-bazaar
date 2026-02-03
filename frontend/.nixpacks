@@ -1,0 +1,5 @@
+[phases.setup];
+nixPkgs = ["nodejs_18"][phases.install];
+cmds = ["npm ci --prefer-offline --no-audit --no-fund"][phases.build];
+cmds = ["npm run build"][start];
+cmd = "node production-server.js";
