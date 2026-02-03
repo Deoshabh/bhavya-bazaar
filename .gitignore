@@ -38,3 +38,6 @@ yarn-error.log*
 *.swo
 
 deploy.sh
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md
