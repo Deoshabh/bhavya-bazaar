@@ -4,6 +4,7 @@ const compression = require("compression");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BUILD_DIR = path.join(__dirname, "build");
 
 // Enable gzip compression
 app.use(compression());
@@ -17,35 +18,28 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint (must come before static files)
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    port: PORT,
+  });
+});
+
 // Serve static files from the React app build directory
 app.use(
-  express.static(path.join(__dirname, "build"), {
-    maxAge: "1y",
+  express.static(BUILD_DIR, {
+    maxAge: "1d",
     etag: true,
-    lastModified: true,
-    setHeaders: (res, filePath) => {
-      // Cache control for different file types
-      if (filePath.endsWith(".html")) {
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      } else if (
-        filePath.match(
-          /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/,
-        )
-      ) {
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      }
-    },
+    index: false, // Don't auto-serve index.html
   }),
 );
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// All other routes should serve index.html (SPA routing)
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"), (err) => {
+// SPA fallback - serve index.html for all other routes
+app.get("/*", (req, res) => {
+  const indexPath = path.join(BUILD_DIR, "index.html");
+  res.sendFile(indexPath, (err) => {
     if (err) {
       console.error("Error sending index.html:", err);
       res.status(500).send("Internal Server Error");
